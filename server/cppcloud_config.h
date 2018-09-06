@@ -34,7 +34,7 @@ usage:
 #define FUNC_ARRSTR_CONF(funname) static std::string funname(int idx)
 #define DEF_CONFILENAME "monitor.conf"
 
-namespace BmshConf
+namespace CloudConf
 {
     int Init( const char* confpath );
     void UnInit( void );
@@ -46,6 +46,7 @@ namespace BmshConf
     FUNC_INT_CONF(CppCloudListenPort);
     FUNC_INT_CONF(CppCloudTaskQNum);
     FUNC_STR_CONF(CppCloudListenClass);
+    FUNC_INT_CONF(CppCloudSvrid); // 控制中心自身的svrid
 
 };
 

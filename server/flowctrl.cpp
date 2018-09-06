@@ -49,7 +49,7 @@ int FlowCtrl::addListen(const char* lisnClassName, int port, const char* svrhost
     m_listener = HEpBase::New(lisnClassName);
     ERRLOG_IF1RET_N(NULL==m_listener, -11, "FLOWADDLISTEN| msg=new listen fail| clsname=%s", lisnClassName);
     int epfd = m_hepo->getEPfd();
-    int ret = HEpBase::Notify(m_listener, HEPNTF_INIT_PARAM, port, svrhost, lqueue, epfd);
+    int ret = HEpBase::Notify(m_listener, HEPNTF_INIT_PARAM, port, svrhost, lqueue, epfd); // Listen类的初始化
 
     return ret;
 }
@@ -82,7 +82,7 @@ void FlowCtrl::uninit( void )
 
 int FlowCtrl::run( bool& bexit )
 {
-    int ret = m_hepo? m_hepo->run(bexit): -7;
+    int ret = m_hepo? m_hepo->run(bexit): -7; // 调用后不返回, 一直到需要exit
     // 等待Listen资源退出……
 
     HEpBase::Notify(m_listener, HEFG_PROGEXIT, 0); /// #PROG_EXITFLOW(2)

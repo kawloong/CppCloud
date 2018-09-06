@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "D:\\linux_usr\\local\\include",
+                "D:\\linux_usr\\include\\**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "intelliSenseMode": "msvc-x64"
+        }
+    ],
+    "version": 4
+}

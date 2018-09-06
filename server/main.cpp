@@ -90,9 +90,9 @@ static int loginit( void )
     int result;
     const int mb_size_byte = 1024*1024;
 
-    g_param.logfile = BmshConf::CppCloudLogPath(true);
-    g_param.loglevel = BmshConf::CppCloudLogLevel(true);
-    g_param.logfsize = BmshConf::CppCloudLogFSize(true);
+    g_param.logfile = CloudConf::CppCloudLogPath(true);
+    g_param.loglevel = CloudConf::CppCloudLogLevel(true);
+    g_param.logfsize = CloudConf::CppCloudLogFSize(true);
     StrParse::AdjustPath(g_param.logfile, true);
 
     if (!File::CreatDir_r(g_param.logfile.c_str()))
@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
     }
 
     // 日志例程初始化
-    if (BmshConf::Init(g_param.inifile.c_str()))
+    if (CloudConf::Init(g_param.inifile.c_str()))
     {
         PROGRAM_EXIT(RET_CONFIG);
     }
@@ -191,9 +191,9 @@ int main(int argc, char* argv[])
 
     // 2. 工作业务启动
     {
-        string lisnCls = BmshConf::CppCloudListenClass();
-        int port = BmshConf::CppCloudListenPort();
-        int taskQnum = BmshConf::CppCloudTaskQNum();
+        string lisnCls = CloudConf::CppCloudListenClass();
+        int port = CloudConf::CppCloudListenPort();
+        int taskQnum = CloudConf::CppCloudTaskQNum();
         if (FlowCtrl::Instance()->init(taskQnum))
         {
             PROGRAM_EXIT(RET_SERVICE);

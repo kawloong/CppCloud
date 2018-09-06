@@ -1,34 +1,35 @@
-#include "monitor_hand.h"
+#include "begn_hand.h"
 #include "iobuff.h"
 #include "climanage.h"
 #include "comm/strparse.h"
+#include "cppcloud_config.h"
 #include "redis/redispooladmin.h"
 #include "flowctrl.h"
 
-HEPCLASS_IMPL_EX(MoniHand, _, MoniFunc)
+HEPCLASS_IMPL_EX(BegnHand, _, MoniFunc)
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
 
-static int ss_svrid_gen = 0;
+static int ss_svrid_gen = 1000;
 const char s_app_cache_id[] = "3";
 const char s_scommid_key[] = "scomm_svrid_max";
 
-MoniHand::MoniHand(void)
+BegnHand::BegnHand(void)
 {
 	
 }
-MoniHand::~MoniHand(void)
+BegnHand::~BegnHand(void)
 {
 	
 }
 
-int MoniHand::run( int flag, long p2 )
+int BegnHand::run( int flag, long p2 )
 {
-	setToCache(s_scommid_key, StrParse::Itoa(ss_svrid_gen));
+	//setToCache(s_scommid_key, StrParse::Itoa(ss_svrid_gen));
 	return 0;
 }
 
 // 通告事件处理
-int MoniHand::onEvent( int evtype, va_list ap )
+int BegnHand::onEvent( int evtype, va_list ap )
 {
 	int ret = 0;
 	if (HEPNTF_INIT_PARAM == evtype)
@@ -39,7 +40,7 @@ int MoniHand::onEvent( int evtype, va_list ap )
 	return ret;
 }
 
-int MoniHand::ProcessOne( HEpBase* parent, unsigned cmdid, void* param )
+int BegnHand::ProcessOne( HEpBase* parent, unsigned cmdid, void* param )
 {
 	int ret = 0;
 	IOBuffItem* iBufItem = (IOBuffItem*)param;
@@ -58,11 +59,8 @@ int MoniHand::ProcessOne( HEpBase* parent, unsigned cmdid, void* param )
 	switch (cmdid)
 	{
 		CMDID2FUNCALL(CMD_WHOAMI_REQ);
-		CMDID2FUNCALL(CMD_GETCLI_REQ);
 		CMDID2FUNCALL(CMD_HUNGUP_REQ);
-		CMDID2FUNCALL(CMD_GETLOGR_REQ);
 		CMDID2FUNCALL(CMD_SETARGS_REQ);
-		CMDID2FUNCALL(CMD_GETWARN_REQ);
 
 		case CMD_EXCHANG_REQ:
 		case CMD_EXCHANG_RSP:
@@ -76,7 +74,7 @@ int MoniHand::ProcessOne( HEpBase* parent, unsigned cmdid, void* param )
 	return ret;
 }
 
-int MoniHand::Json2Map( const Value* objnode, HEpBase* dst )
+int BegnHand::Json2Map( const Value* objnode, HEpBase* dst )
 {
 	IFRETURN_N(!objnode->IsObject(), -1);
 	int ret = 0;
@@ -100,7 +98,7 @@ int MoniHand::Json2Map( const Value* objnode, HEpBase* dst )
 }
 
 // 适配整型和字符型
-int MoniHand::getIntFromJson( const string& key, const Value* doc )
+int BegnHand::getIntFromJson( const string& key, const Value* doc )
 {
 	int ret = 0;
 	string strid;
@@ -116,7 +114,7 @@ int MoniHand::getIntFromJson( const string& key, const Value* doc )
 	return ret;
 }
 
-int MoniHand::on_CMD_WHOAMI_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
+int BegnHand::on_CMD_WHOAMI_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
 {
 	int ret;
 	int svrid = 0;
@@ -140,22 +138,8 @@ int MoniHand::on_CMD_WHOAMI_REQ( HEpBase* parent, const Value* doc, unsigned seq
 
 	if (0 == svrid)
 	{
-		if (0 == ss_svrid_gen)
-		{
-			if (0 == getFromCache(str, s_scommid_key))
-			{
-				ss_svrid_gen = atoi(str.c_str());
-			}
-			else
-			{
-				LOGERROR("GENSVRID| msg=gen svrid fail from cache| pparent=%p", parent);
-				SendMsgEasy(parent, CMD_HUNGUP_RSP, seqid, 406, "gen cache svrid fail");
-				return -46;
-			}
-		}
-
-		svrid = ++ss_svrid_gen;
-		HEPCLS_STATIC_TIMER_FUN(MoniHand, 0, 200); // 异步事件调用
+		svrid = ++ss_svrid_gen + CloudConf::CppCloudSvrid()*1000;
+		//HEPCLS_STATIC_TIMER_FUN(BegnHand, 0, 200); // 异步事件调用
 		first = true;
 	}
 
@@ -191,28 +175,7 @@ int MoniHand::on_CMD_WHOAMI_REQ( HEpBase* parent, const Value* doc, unsigned seq
 	return ret;
 }
 
-int MoniHand::on_CMD_GETCLI_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
-{
-	int ret = 0;
-	int svrid = 0;
-	string dstSvrId;
-	string dstKey;
-	string outjson;
-
-	svrid = getIntFromJson("svrid", doc);
-
-	Rjson::GetStr(dstKey, "key", doc);
-
-	outjson = g_resp_strbeg;
-	ret = CliMgr::Instance()->pickupCliProfile(outjson, svrid, dstKey);
-	outjson += "}";
-	ERRLOG_IF1(ret, "CMD_GETCLI_REQ| msg=pickupCliProfile fail %d| get_svrid=%d| key=%s", ret, svrid, dstKey.c_str());
-
-	ret = SendMsg(parent, CMD_GETCLI_RSP, seqid, outjson, true);
-	return ret;
-}
-
-int MoniHand::on_CMD_HUNGUP_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
+int BegnHand::on_CMD_HUNGUP_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
 {
 	string op;
 	int svrid = getIntFromJson("svrid", doc);
@@ -240,7 +203,7 @@ int MoniHand::on_CMD_HUNGUP_REQ( HEpBase* parent, const Value* doc, unsigned seq
 }
 
 // param format: { "warn": "ok", "taskkey": "10023" }
-int MoniHand::on_CMD_SETARGS_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
+int BegnHand::on_CMD_SETARGS_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
 {
 	int ret;
 	string warnstr;
@@ -277,36 +240,8 @@ int MoniHand::on_CMD_SETARGS_REQ( HEpBase* parent, const Value* doc, unsigned se
 }
 
 
-int MoniHand::on_CMD_GETLOGR_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
-{
-	int nsize = 10;
-	Rjson::GetInt(nsize, "size", doc);
-	string outstr = g_resp_strbeg;
-	CliMgr::Instance()->pickupCliOpLog(outstr, nsize);
-	outstr += "}";
-	
-	int ret = SendMsg(parent, CMD_GETLOGR_RSP, seqid, outstr, true);
-	return ret;
-}
-
-// request format: { "filter_key": "warn", "filter_val":"ng" }
-int MoniHand::on_CMD_GETWARN_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
-{
-	string filter_key;
-	string filter_val;
-	string outstr = g_resp_strbeg;
-
-	Rjson::GetStr(filter_key, "filter_key", doc);
-	Rjson::GetStr(filter_val, "filter_val", doc);
-	CliMgr::Instance()->pickupWarnCliProfile(outstr, filter_key, filter_val);
-	outstr += "}";
-	
-	int ret = SendMsg(parent, CMD_GETWARN_RSP, seqid, outstr, true);
-	return ret;
-}
-
 // @summery: 消息转发/交换
-int MoniHand::on_ExchangeMsg( HEpBase* parent, const Value* doc, unsigned cmdid, unsigned seqid )
+int BegnHand::on_ExchangeMsg( HEpBase* parent, const Value* doc, unsigned cmdid, unsigned seqid )
 {
 	int ret = 0;
 	int fromSvrid = 0;
@@ -338,7 +273,7 @@ int MoniHand::on_ExchangeMsg( HEpBase* parent, const Value* doc, unsigned cmdid,
 	return ret;
 }
 
-int MoniHand::getFromCache( string& rdsval, const string& rdskey )
+int BegnHand::getFromCache( string& rdsval, const string& rdskey )
 {
 	Redis* rds = NULL;
 	int ret;
@@ -353,7 +288,7 @@ int MoniHand::getFromCache( string& rdsval, const string& rdskey )
 	return ret;
 }
 
-int MoniHand::setToCache( const string& rdskey, const string& rdsval )
+int BegnHand::setToCache( const string& rdskey, const string& rdsval )
 {
 	Redis* rds = NULL;
 	int ret;

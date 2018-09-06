@@ -13,14 +13,14 @@ static map<unsigned, string> s_cmdid2clsname;
 int IOHand::Init( void )
 {
 	// 预定义好的消息->处理类
-	s_cmdid2clsname[CMD_WHOAMI_REQ] = "MoniFunc";
-	s_cmdid2clsname[CMD_GETCLI_REQ] = "MoniFunc";
+	s_cmdid2clsname[CMD_WHOAMI_REQ] = "MoniFunc"; // ->BegnHand
+	s_cmdid2clsname[CMD_GETCLI_REQ] = "QueryFunc";
 	s_cmdid2clsname[CMD_HUNGUP_REQ] = "MoniFunc";
-	s_cmdid2clsname[CMD_GETLOGR_REQ] = "MoniFunc";
+	s_cmdid2clsname[CMD_GETLOGR_REQ] = "QueryFunc";
 	s_cmdid2clsname[CMD_EXCHANG_REQ] = "MoniFunc";
 	s_cmdid2clsname[CMD_EXCHANG_RSP] = "MoniFunc";
 	s_cmdid2clsname[CMD_SETARGS_REQ] = "MoniFunc";
-	s_cmdid2clsname[CMD_GETWARN_REQ] = "MoniFunc";
+	s_cmdid2clsname[CMD_GETWARN_REQ] = "QueryFunc";
 
 	s_cmdid2clsname[0] = "MoniFunc"; // default handle class
 
@@ -321,6 +321,9 @@ int IOHand::cmdProcess( IOBuffItem*& iBufItem )
 
 		m_cliProp["clisock"] = m_cliName; // 设备ip:port作为其中属性
 
+		/* 首先从cmdid对应到处理类名procClsName,
+		   再看该类名有无处理函数ProcessOne(要注册到s_procfunc),用函数处理业备;
+		   如果没有就创建处理类对象,用对象处理业务.  */
 		HEpBase::ProcOneFunT procFunc = GetProcFunc(procClsName.c_str());
 		if (procFunc)
 		{

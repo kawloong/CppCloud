@@ -2,7 +2,7 @@
 #include "cppcloud_config.h"
 #include  <stdio.h>
 
-using namespace BmshConf;
+using namespace CloudConf;
 
 int main(int argc, char* argv[])
 {
@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 	log_debug("debug message %d", ret);
 	log_warn("warn message %d", ret);
 
-	ret = BmshConf::Init("./b.ini");
+	ret = CloudConf::Init("./b.ini");
 	strt = GETLOGPATH();
 	printf("logpath=%s\n", strt.c_str());
 

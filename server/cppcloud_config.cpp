@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "cppcloud_config.h"
 
-namespace BmshConf
+namespace CloudConf
 {
     Config s_config;
 
@@ -74,12 +74,13 @@ static std::string funname(int idx, bool warnlog)              \
 
 // 快捷配置读取定义
 // <todo>: append reader function implement here
-FUNC_STR_CONF_IMP(CppCloudLogPath, "scomm_serv", "logpath", ".");
-FUNC_INT_CONF_IMP(CppCloudLogLevel, "scomm_serv", "loglevel", 4);
-FUNC_INT_CONF_IMP(CppCloudLogFSize, "scomm_serv", "logfsize", 2);
-FUNC_INT_CONF_IMP(CppCloudListenPort, "scomm_serv", "port", 4800);
-FUNC_INT_CONF_IMP(CppCloudTaskQNum, "scomm_serv", "taskqnum", 1);
-FUNC_STR_CONF_IMP(CppCloudListenClass, "scomm_serv", "listen_class", "Lisn");
+FUNC_STR_CONF_IMP(CppCloudLogPath, "cloud_serv", "logpath", ".");
+FUNC_INT_CONF_IMP(CppCloudLogLevel, "cloud_serv", "loglevel", 4);
+FUNC_INT_CONF_IMP(CppCloudLogFSize, "cloud_serv", "logfsize", 2);
+FUNC_INT_CONF_IMP(CppCloudListenPort, "cloud_serv", "port", 4800);
+FUNC_INT_CONF_IMP(CppCloudTaskQNum, "cloud_serv", "taskqnum", 1);
+FUNC_STR_CONF_IMP(CppCloudListenClass, "cloud_serv", "listen_class", "Lisn");
+FUNC_INT_CONF_IMP(CppCloudSvrid, "cloud_serv", "svrid", 1);
 
 }
 

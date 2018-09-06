@@ -21,7 +21,7 @@ public:
     void uninit(void); // 收到退出信号时调用
 	
 	// 添加tcp监听器
-    int addListen( const char*  lisnClassName, int port, const char* svrhost=NULL, int lqueue=100 );
+    int addListen( const char*  lisnClassName, int port, const char* svrhost=NULL, int lqueue=200 );
     // 清加到某一任务线程
     int appendTask( HEpBase* tsk, int qidx, int delay_ms );
 

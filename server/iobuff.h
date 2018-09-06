@@ -39,7 +39,7 @@ public:
 		if (buff.length() >= HEADER_LEN)
 		{
 			head_t* phead = (head_t*)buff.data();
-			phead->body_len = ntohs(phead->body_len);
+			phead->body_len = ntohl(phead->body_len);
 			phead->cmdid = ntohs(phead->cmdid);
 			phead->seqid = ntohs(phead->seqid);
 			seqId = phead->seqid;
@@ -48,16 +48,16 @@ public:
 	}
 	
 	// 设置待发送数据
-	void setData( unsigned short cmdid, unsigned short seqid, const char* body, unsigned short bodylen )
+	void setData( unsigned short cmdid, unsigned short seqid, const char* body, unsigned int bodylen )
 	{
 		char hstr[HEADER_LEN];
 		
 		head_t* phead = (head_t*)hstr;
 		phead->ver = g_msg_ver;
 		phead->head_len = HEADER_LEN;
-		phead->body_len = ntohs(bodylen);
-		phead->cmdid = ntohs(cmdid);
-		phead->seqid = ntohs(seqid);
+		phead->body_len = htonl(bodylen);
+		phead->cmdid = htons(cmdid);
+		phead->seqid = htons(seqid);
 		buff.assign(hstr, HEADER_LEN);
 		buff.append(body, bodylen);
 		
