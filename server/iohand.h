@@ -26,6 +26,10 @@ public: // interface HEpBase
     virtual int run( int flag, long p2 );
 	virtual int onEvent( int evtype, va_list ap );
 
+	// 自定义属性的操作
+    void setProperty( const string& key, const string& val );
+    string getProperty( const string& key );
+
 protected:
 	int onRead( int p1, long p2 );
 	int onWrite( int p1, long p2 );
@@ -46,6 +50,8 @@ protected:
 	IOBuffItem* m_iBufItem;
 	IOBuffItem* m_oBufItem;
 	Queue<IOBuffItem*, true> m_oBuffq;
+
+public:
 	map<string, string> m_cliProp; // 客户属性
 };
 

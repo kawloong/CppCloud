@@ -287,6 +287,22 @@ int IOHand::onEvent( int evtype, va_list ap )
 	return ret;
 }
 
+void IOHand::setProperty( const string& key, const string& val )
+{
+	m_cliProp[key] = val;
+}
+
+string IOHand::getProperty( const string& key )
+{
+	map<string, string>::const_iterator itr = m_cliProp.find(key);
+	if (itr != m_cliProp.end())
+	{
+		return itr->second;
+	}
+
+	return "";
+}
+
 int IOHand::onClose( void )
 {
 	int ret = 0;
