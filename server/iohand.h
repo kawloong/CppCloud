@@ -12,8 +12,9 @@ Modification :
 #include "comm/hep_base.h"
 #include "comm/queue.h"
 #include "iobuff.h"
+#include "clibase.h"
 
-class IOHand: public HEpBase
+class IOHand: public CliBase
 {
 public:
     HEPCLASS_DECL(IOHand, IOHand);
@@ -37,26 +38,20 @@ public: // interface HEpBase
 protected:
 	int onRead( int p1, long p2 );
 	int onWrite( int p1, long p2 );
-	int onClose( void );
+	virtual int onClose( int p1, long p2 );
 
 	int cmdProcess( IOBuffItem*& iBufItem );
 
 protected:
     int m_cliFd;
 	HEpEvFlag m_epCtrl;
-	string m_cliName;
 	string m_closeReason; // 关掉原因
-	int m_cliType; // 何种类型的客户端: 1 对接进程; 10 监控进程; 20 web serv; 30 观察进程
 	unsigned char m_closeFlag; // 结束标记: 0连接中, 1等待发完后关闭; 2立即要关; 3关闭
-	bool m_ntfEnd; // 被通知结束
-	//map<HEpBase*, int> m_children;
 
 	IOBuffItem* m_iBufItem;
 	IOBuffItem* m_oBufItem;
 	Queue<IOBuffItem*, true> m_oBuffq;
 
-public:
-	map<string, string> m_cliProp; // 客户属性
 };
 
 #endif

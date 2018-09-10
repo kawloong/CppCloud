@@ -1,7 +1,7 @@
 #include "act_mgr.h"
 #include "comm/strparse.h"
 #include "comm/timef.h"
-#include "iohand.h"
+#include "clibase.h"
 #include "climanage.h"
 
 Actmgr::Actmgr(void)
@@ -16,17 +16,17 @@ Actmgr::~Actmgr(void)
 
 int Actmgr::pickupWarnCliProfile( string& json, const string& filter_key, const string& filter_val )
 {
-	map<string, IOHand*>::iterator itr = m_warnLog.begin();
+	map<string, CliBase*>::iterator itr = m_warnLog.begin();
 	
 	json += "[";
 
 	for (int i = 0; itr != m_warnLog.end(); )
 	{
-		IOHand* ptr = itr->second;
+		CliBase* ptr = itr->second;
 		
 		if (m_pchildren->find(ptr) == m_pchildren->end()) // 被清除了的历史session
 		{
-			map<string, IOHand*>::iterator itr0 = itr; ++itr;
+			map<string, CliBase*>::iterator itr0 = itr; ++itr;
 			m_warnLog.erase(itr0);
 			continue;
 		}
@@ -58,7 +58,7 @@ int Actmgr::pickupCliProfile( string& json, int svrid, const string& key )
 	json += "[";
 	if (0 == svrid)
 	{
-		map<IOHand*, CliInfo>::iterator itr = m_pchildren->begin();
+		map<CliBase*, CliInfo>::iterator itr = m_pchildren->begin();
 		for (int i = 0; itr != m_pchildren->end(); ++i, ++itr)
 		{
 			if (i) json.append(",");
@@ -67,7 +67,7 @@ int Actmgr::pickupCliProfile( string& json, int svrid, const string& key )
 	}
 	else
 	{
-		IOHand* ptr = CliMgr::Instance()->getChildBySvrid(svrid);
+		CliBase* ptr = CliMgr::Instance()->getChildBySvrid(svrid);
 		if (ptr)
 		{
 			getJsonProp(ptr, json, key);
@@ -79,7 +79,7 @@ int Actmgr::pickupCliProfile( string& json, int svrid, const string& key )
 }
 
 // 获取某个app的一项或全部属性，以json字符串返回
-void Actmgr::getJsonProp( IOHand* cli, string& outj, const string& key )
+void Actmgr::getJsonProp( CliBase* cli, string& outj, const string& key )
 {
 	outj.append("{");
 	if (key.empty())
@@ -121,7 +121,7 @@ void  Actmgr::rmCloseLog( int svrid )
 	else m_closeLog.clear();
 }
 
-int Actmgr::appCloseFound( IOHand* son, int clitype, const CliInfo& cliinfo )
+int Actmgr::appCloseFound( CliBase* son, int clitype, const CliInfo& cliinfo )
 {
 	int ret = -100;
 	IFRETURN_N(NULL==son, ret);
@@ -202,7 +202,7 @@ int Actmgr::pickupCliOpLog( string& json, int nSize )
 	return 0;
 }
 
-void Actmgr::setWarnMsg( const string& taskkey, IOHand* ptr )
+void Actmgr::setWarnMsg( const string& taskkey, CliBase* ptr )
 {
 	m_warnLog[taskkey] = ptr;
 }

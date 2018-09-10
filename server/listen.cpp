@@ -53,9 +53,8 @@ int Listen::run( int p1, long p2 )
 			IFBREAK_N(NULL == worker, -40);
 			
 			HEpBase::BindSon(this, worker);
-			// ... //
-				  
-			ret = setsockopt(clifd, SOL_SOCKET, SO_KEEPALIVE, (char*)&keep_alive, sizeof(keep_alive));
+	  
+			//ret = setsockopt(clifd, SOL_SOCKET, SO_KEEPALIVE, (char*)&keep_alive, sizeof(keep_alive));
 
 			Notify(worker, HEPNTF_INIT_PARAM, clifd, m_evCtrl.m_epfd);
 			m_child = NULL; // Listen类的子对象存于map中，而非m_child

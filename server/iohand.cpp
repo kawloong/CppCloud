@@ -6,7 +6,7 @@
 #include <cstring>
 #include <cerrno>
 
-HEPCLASS_IMPL(IOHand, IOHand)
+HEPMUTICLASS_IMPL(IOHand, IOHand, CliBase)
 
 static map<unsigned, string> s_cmdid2clsname;
 
@@ -28,8 +28,8 @@ int IOHand::Init( void )
 	return 0;
 }
 
-IOHand::IOHand(void): m_cliFd(INVALID_FD), m_cliType(0), m_closeFlag(0),
-	  m_ntfEnd(false), m_iBufItem(NULL), m_oBufItem(NULL)
+IOHand::IOHand(void): m_cliFd(INVALID_FD), m_closeFlag(0),
+	  m_iBufItem(NULL), m_oBufItem(NULL)
 {
     
 }
@@ -203,7 +203,7 @@ int IOHand::run( int p1, long p2 )
 
 	if (m_closeFlag >= 2)
 	{
-		ret = onClose();
+		ret = onClose(p1, p2);
 	}
 
 	return ret;
@@ -300,7 +300,7 @@ string IOHand::getProperty( const string& key )
 	return "";
 }
 
-int IOHand::onClose( void )
+int IOHand::onClose( int p1, long p2 )
 {
 	int ret = 0;
 	int fderrno = Sock::geterrno(m_cliFd);

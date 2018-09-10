@@ -16,11 +16,11 @@ CliMgr::~CliMgr(void)
 
 int CliMgr::addChild( HEpBase* chd )
 {
-	IOHand* child = dynamic_cast<IOHand*>(chd);
+	CliBase* child = dynamic_cast<CliBase*>(chd);
 	return child? addChild(child) : -22;
 }
 
-int CliMgr::addChild( IOHand* child )
+int CliMgr::addChild( CliBase* child )
 {
 	CliInfo& cliinfo = m_children[child];
 	ERRLOG_IF1(cliinfo.t0 > 0, "ADDCLICHILD| msg=child has exist| newchild=%p| t0=%d", child, (int)cliinfo.t0);
@@ -29,11 +29,11 @@ int CliMgr::addChild( IOHand* child )
 	return 0;
 }
 
-int CliMgr::addAlias2Child( const string& asname, IOHand* ptr )
+int CliMgr::addAlias2Child( const string& asname, CliBase* ptr )
 {
 	int ret = 0;
 
-	map<IOHand*, CliInfo>::iterator it = m_children.find(ptr);
+	map<CliBase*, CliInfo>::iterator it = m_children.find(ptr);
 	if (m_children.end() == it) // 非直接子对象，暂时不处理
 	{
 		LOGWARN("ADDALIASCHILD| msg=ptr isnot listen's child| name=%s", asname.c_str());
@@ -42,11 +42,11 @@ int CliMgr::addAlias2Child( const string& asname, IOHand* ptr )
 
 	it->second.aliasName[asname] = true;
 
-	IOHand*& secondVal = m_aliName2Child[asname];
+	CliBase*& secondVal = m_aliName2Child[asname];
 	if (NULL != secondVal && ptr != secondVal) // 已存在旧引用的情况下，要先清理掉旧的设置
 	{
 		LOGWARN("ADDALIASCHILD| msg=alias child name has exist| name=%s", asname.c_str());
-		map<IOHand*, CliInfo>::iterator itr = m_children.find(secondVal);
+		map<CliBase*, CliInfo>::iterator itr = m_children.find(secondVal);
 		if (m_children.end() != itr)
 		{
 			itr->second.aliasName.erase(asname);
@@ -62,10 +62,10 @@ int CliMgr::addAlias2Child( const string& asname, IOHand* ptr )
 
 void CliMgr::removeAliasChild( const string& asname )
 {
-	map<string, IOHand*>::iterator it = m_aliName2Child.find(asname);
+	map<string, CliBase*>::iterator it = m_aliName2Child.find(asname);
 	if (m_aliName2Child.end() != it)
 	{
-		map<IOHand*, CliInfo>::iterator itr = m_children.find(it->second);
+		map<CliBase*, CliInfo>::iterator itr = m_children.find(it->second);
 		if (m_children.end() != itr)
 		{
 			itr->second.aliasName.erase(asname);
@@ -75,9 +75,9 @@ void CliMgr::removeAliasChild( const string& asname )
 	}
 }
 
-void CliMgr::removeAliasChild( IOHand* ptr, bool rmAll )
+void CliMgr::removeAliasChild( CliBase* ptr, bool rmAll )
 {
-	map<IOHand*, CliInfo>::iterator it = m_children.find(ptr);
+	map<CliBase*, CliInfo>::iterator it = m_children.find(ptr);
 	if (it != m_children.end()) // 移除所有别名引用
 	{
 		string asnamestr;
@@ -93,21 +93,29 @@ void CliMgr::removeAliasChild( IOHand* ptr, bool rmAll )
 		if (rmAll) // 移除m_children指针
 		{
 			m_children.erase(it);
-			if (ptr != m_waitRmPtr)
+			if (ptr != (CliBase*)m_waitRmPtr)
 			{
 				IFDELETE(m_waitRmPtr); // 清理前一待删对象(为避免同步递归调用)
 			}
 
 			LOGINFO("CliMgr_CHILDRM| msg=a iohand close| dt=%ds| asname=%s", int(time(NULL)-cliinfo.t0), asnamestr.c_str());
-			m_waitRmPtr = ptr;
+			if (ptr->isLocal())
+			{	
+				m_waitRmPtr = static_cast<IOHand*>(ptr);
+			}
 		}
 	}
 }
 
-IOHand* CliMgr::getChildBySvrid( int svrid )
+CliBase* CliMgr::getChildBySvrid( int svrid )
 {
-	IOHand* ptr = NULL;
-	map<string,IOHand*>::iterator it = m_aliName2Child.find(StrParse::Itoa(svrid)) ;
+	return getChildByName(StrParse::Itoa(svrid));
+}
+
+CliBase* CliMgr::getChildByName( const string& asname )
+{
+	CliBase* ptr = NULL;
+	map<string,CliBase*>::iterator it = m_aliName2Child.find(asname) ;
 	if (it != m_aliName2Child.end())
 	{
 		ptr = it->second;
@@ -116,12 +124,12 @@ IOHand* CliMgr::getChildBySvrid( int svrid )
 }
 
 
-void CliMgr::setProperty( IOHand* dst, const string& key, const string& val )
+void CliMgr::setProperty( CliBase* dst, const string& key, const string& val )
 {
 	dst->m_cliProp[key] = val;
 }
 
-string CliMgr::getProperty( IOHand* dst, const string& key )
+string CliMgr::getProperty( CliBase* dst, const string& key )
 {
 	return dst->getProperty(key);
 }
@@ -161,12 +169,15 @@ int CliMgr::onChildEvent( int evtype, va_list ap )
 // ep线程调用此方法通知各子对象退出
 int CliMgr::progExitHanele( int flg )
 {
-	map<IOHand*, CliInfo>::iterator it = m_children.begin();
+	map<CliBase*, CliInfo>::iterator it = m_children.begin();
 	for (; it != m_children.end(); )
 	{
-		map<IOHand*, CliInfo>::iterator preit = it;
+		map<CliBase*, CliInfo>::iterator preit = it;
 		++it;
-		preit->first->run(HEFG_PEXIT, 2); /// #PROG_EXITFLOW(5)
+		if (preit->first->isLocal())
+		{
+			preit->first->run(HEFG_PEXIT, 2); /// #PROG_EXITFLOW(5)
+		}
 	}
 
 	return 0;

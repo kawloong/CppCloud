@@ -12,7 +12,7 @@
 /* usage:  // 使用参考示例
     class TaskRun{
         public:
-        int run(int flag) {
+        int run(int flag, long p2) {
             print("task is %s", flag?"exit":"running");
             if (1 == flag){
                 // ... exit handle ...

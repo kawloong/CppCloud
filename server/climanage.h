@@ -39,16 +39,17 @@ class CliMgr
 public:
     // 别名引用相关的操作
     int addChild( HEpBase* chd );
-    int addChild( IOHand* child );
-    int addAlias2Child( const string& asname, IOHand* ptr );
+    int addChild( CliBase* child );
+    int addAlias2Child( const string& asname, CliBase* ptr );
     void removeAliasChild( const string& asname );
-    void removeAliasChild( IOHand* ptr, bool rmAll );
-    IOHand* getChildBySvrid( int svrid );
-    map<IOHand*, CliInfo>* getAllChild() { return &m_children; }
+    void removeAliasChild( CliBase* ptr, bool rmAll );
+    CliBase* getChildByName( const string& asname );
+    CliBase* getChildBySvrid( int svrid );
+    map<CliBase*, CliInfo>* getAllChild() { return &m_children; }
 
     // 自定义属性的操作
-    void setProperty( IOHand* dst, const string& key, const string& val );
-    string getProperty( IOHand* dst, const string& key );
+    void setProperty( CliBase* dst, const string& key, const string& val );
+    string getProperty( CliBase* dst, const string& key );
 
     // 退出处理
     int progExitHanele( int flg );
@@ -60,8 +61,8 @@ private:
     ~CliMgr(void);
 
 protected:
-    map<IOHand*, CliInfo> m_children;
-    map<string, IOHand*> m_aliName2Child;
+    map<CliBase*, CliInfo> m_children;
+    map<string, CliBase*> m_aliName2Child;
 
     IOHand* m_waitRmPtr;
 };

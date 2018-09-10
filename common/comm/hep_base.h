@@ -43,8 +43,12 @@ struct HEpEvFlag
     virtual HEpBase* clone(void){return new clsname;}
 
 #define HEPCLASS_IMPL(clsname, regname)              \
-    static clsname g_##clsname(#regname);\
+    static clsname g_##clsname(#regname);            \
     clsname::clsname(const char* name): HEpBase(name) {}
+
+#define HEPMUTICLASS_IMPL(clsname, regname, basecls) \
+    static clsname g_##clsname(#regname);            \
+    clsname::clsname(const char* name): basecls(name) {}
 
 #define HEPCLASS_IMPL_EX(clsname, regname, func)              \
     static clsname g_##clsname(#regname);\

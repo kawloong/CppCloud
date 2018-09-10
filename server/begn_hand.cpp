@@ -261,7 +261,7 @@ int BegnHand::on_ExchangeMsg( IOHand* iohand, const Value* doc, unsigned cmdid, 
 
 	do {
 		ERRLOG_IF1BRK(ret || 0 == toSvrid, -46, "EXCHMSG| msg=unknow to svrid| ret=%d| mi=%s", ret, iohand->m_idProfile.c_str());
-		dst = CliMgr::Instance()->getChildBySvrid(toSvrid);
+		dst = dynamic_cast<IOHand*>(CliMgr::Instance()->getChildBySvrid(toSvrid));
 		WARNLOG_IF1BRK(NULL == dst, -47, "EXCHMSG| msg=maybe tosvrid offline| toSvrid=%d| mi=%s", toSvrid, iohand->m_idProfile.c_str());
 	}
 	while (0);
