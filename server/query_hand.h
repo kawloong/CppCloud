@@ -12,7 +12,7 @@ Modification :
 #include "rapidjson/json.hpp"
 
 
-
+class IOHand;
 class QueryHand: public HEpBase
 {
 
@@ -22,10 +22,10 @@ public:
     virtual ~QueryHand(void);
 
     // 简单命令用函数处理
-    static int ProcessOne( HEpBase* parent, unsigned cmdid, void* param );
+    static int ProcessOne( void* parent, unsigned cmdid, void* param );
     
 private:
-    #define CMD2FUNCCALL_DESC(cmd) static int on_##cmd(HEpBase* parent, const Value* doc, unsigned seqid )
+    #define CMD2FUNCCALL_DESC(cmd) static int on_##cmd(IOHand* parent, const Value* doc, unsigned seqid )
 
     static int getIntFromJson( const string& key, const Value* doc );
 
@@ -33,7 +33,7 @@ private:
     CMD2FUNCCALL_DESC(CMD_GETLOGR_REQ);
     CMD2FUNCCALL_DESC(CMD_GETWARN_REQ);
 
-    static int on_ExchangeMsg( HEpBase* parent, const Value* doc, unsigned cmdid, unsigned seqid );
+    static int on_ExchangeMsg( IOHand* parent, const Value* doc, unsigned cmdid, unsigned seqid );
 
 protected: // interface IEPollRun
     virtual int run( int flag, long p2 );

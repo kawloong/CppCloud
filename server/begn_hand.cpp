@@ -1,10 +1,12 @@
 #include "begn_hand.h"
 #include "iobuff.h"
-#include "climanage.h"
 #include "comm/strparse.h"
 #include "cppcloud_config.h"
 #include "redis/redispooladmin.h"
+#include "exception.h"
 #include "flowctrl.h"
+#include "climanage.h"
+#include "act_mgr.h"
 
 HEPCLASS_IMPL_EX(BegnHand, _, MoniFunc)
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
@@ -40,9 +42,10 @@ int BegnHand::onEvent( int evtype, va_list ap )
 	return ret;
 }
 
-int BegnHand::ProcessOne( HEpBase* parent, unsigned cmdid, void* param )
+int BegnHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 {
 	int ret = 0;
+	IOHand* iohand = (IOHand*)ptr;
 	IOBuffItem* iBufItem = (IOBuffItem*)param;
 	unsigned seqid = iBufItem->head()->seqid;
 	char* body = iBufItem->body();
@@ -51,11 +54,11 @@ int BegnHand::ProcessOne( HEpBase* parent, unsigned cmdid, void* param )
 	if (doc.ParseInsitu(body).HasParseError())
 	{
 		// 收到的报文json格式有误
-		SendMsgEasy(parent, CMD_WHOAMI_RSP, seqid, 400, "json format invalid");
+		SendMsgEasy(iohand, CMD_WHOAMI_RSP, seqid, 400, "json format invalid");
 		return -79;
 	}
 
-#define CMDID2FUNCALL(cmd) case cmd: ret = on_##cmd(parent, &doc, seqid); break
+#define CMDID2FUNCALL(cmd) case cmd: ret = on_##cmd(iohand, &doc, seqid); break
 	switch (cmdid)
 	{
 		CMDID2FUNCALL(CMD_WHOAMI_REQ);
@@ -64,7 +67,7 @@ int BegnHand::ProcessOne( HEpBase* parent, unsigned cmdid, void* param )
 
 		case CMD_EXCHANG_REQ:
 		case CMD_EXCHANG_RSP:
-			ret = on_ExchangeMsg(parent, &doc, cmdid, seqid);
+			ret = on_ExchangeMsg(iohand, &doc, cmdid, seqid);
 		break;
 
 		default:
@@ -74,7 +77,7 @@ int BegnHand::ProcessOne( HEpBase* parent, unsigned cmdid, void* param )
 	return ret;
 }
 
-int BegnHand::Json2Map( const Value* objnode, HEpBase* dst )
+int BegnHand::Json2Map( const Value* objnode, IOHand* dst )
 {
 	IFRETURN_N(!objnode->IsObject(), -1);
 	int ret = 0;
@@ -85,12 +88,14 @@ int BegnHand::Json2Map( const Value* objnode, HEpBase* dst )
         if (itr->value.IsString())
         {
         	const char* val = itr->value.GetString();
-			ret = Notify(dst, HEPNTF_SET_PROPT, key, val);
+			//ret = Notify(dst, HEPNTF_SET_PROPT, key, val);
+			CliMgr::Instance()->setProperty(dst, key, val);
         }
 		else if (itr->value.IsInt())
 		{
 			string val = StrParse::Itoa(itr->value.GetInt());
-			ret = Notify(dst, HEPNTF_SET_PROPT, key, val.c_str());
+			//ret = Notify(dst, HEPNTF_SET_PROPT, key, val.c_str());
+			CliMgr::Instance()->setProperty(dst, key, val);
 		}
     }
 
@@ -114,68 +119,71 @@ int BegnHand::getIntFromJson( const string& key, const Value* doc )
 	return ret;
 }
 
-int BegnHand::on_CMD_WHOAMI_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
+int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
 {
 	int ret;
 	int svrid = 0;
-	bool first = false;
+	bool first = (0 == iohand->getCliType()); // 首次请求whoami
 	string str; 
 
 	ret = Rjson::GetInt(svrid, "svrid", doc);
-	if (ret)
-	{
-		SendMsgEasy(parent, CMD_WHOAMI_RSP, seqid, 401, "leak of svrid?");
-		return -40;
-	}
 
-	if (svrid > 0)
-	{
-		if (CliMgr::Instance()->getChildBySvrid(svrid))
-		{
-			svrid = 0; // 有冲突的话就要重新获取
-		}
-	}
-
-	if (0 == svrid)
-	{
-		svrid = ++ss_svrid_gen + CloudConf::CppCloudSvrid()*1000;
-		//HEPCLS_STATIC_TIMER_FUN(BegnHand, 0, 200); // 异步事件调用
-		first = true;
-	}
-
-	str = StrParse::Itoa(svrid);
-	ret = HEpBase::Notify(parent, HEPNTF_SET_ALIAS, parent, str.c_str());
-	WARNLOG_IF1(ret, "SETALIAS| msg=notify set asname fail| asname=%s| ret=%d", str.c_str(), ret);
-
-	// 解析出每一个字符串属性
-	ret = Json2Map(doc, parent);
-	ERRLOG_IF1(ret, "SETPROP| msg=json2map set prop fail %d| svrid=%d", ret, svrid);
-
-	// svrid属性新分配要设置
-	ret = Notify(parent, HEPNTF_SET_PROPT, "svrid", str.c_str());
-	WARNLOG_IF1(ret, "SETALIAS| msg=notify set svrid prop fail| svrid=%d | ret=%d", svrid, ret);
-
-	// 通知获取客户信息完成
-	Notify(parent, HEPNTF_INIT_FINISH);
-	Rjson::ToString(str, doc);
+	NormalExceptionOff_IFTRUE(ret, 400, CMD_WHOAMI_RSP, seqid, "leak of svrid?");
 
 	if (first)
 	{
-		CliMgr::Instance()->appendCliOpLog( StrParse::Format("CLIENT_LOGIN| prog=%s| %s",
-			 parent->m_idProfile.c_str(), str.c_str()) );
+		if (svrid > 0)
+		{
+			NormalExceptionOff_IFTRUE(CliMgr::Instance()->getChildBySvrid(svrid), // 是否已被使用
+				400, CMD_WHOAMI_RSP, seqid, StrParse::Format("svrid=%d existed", svrid));
+		}
+		else
+		{
+			svrid = ++ss_svrid_gen + CloudConf::CppCloudSvrid()*1000;
+		}
+		str = StrParse::Itoa(svrid);
+
+		ret = CliMgr::Instance()->addAlias2Child(str, iohand);
+		if (ret)
+		{
+			LOGERROR("SETALIAS| msg=notify set asname fail| asname=%s| ret=%d", str.c_str(), ret);
+			throw NormalExceptionOff(400, CMD_WHOAMI_RSP, seqid, "addAlias2Child fail");
+		}
+
+		// 解析出每一个字符串属性
+		ret = Json2Map(doc, iohand);
+		ERRLOG_IF1(ret, "SETPROP| msg=json2map set prop fail %d| svrid=%d", ret, svrid);
+
+		// svrid属性新分配要设置
+		CliMgr::Instance()->setProperty(iohand, "svrid", str);
+
+		// 通知获取客户信息完成
+		ret = Notify(iohand, HEPNTF_INIT_FINISH);
+		Rjson::ToString(str, doc);
+
+		Actmgr::Instance()->appendCliOpLog(StrParse::Format("CLIENT_LOGIN| prog=%s| %s",
+															iohand->m_idProfile.c_str(), str.c_str()));
 	}
 	else
 	{
-		CliMgr::Instance()->setCloseLog(svrid, ""); // clean warn message
+	    Json2Map(doc, iohand);
+		Actmgr::Instance()->setCloseLog(svrid, ""); // clean warn message
+		LOGWARN("CMD_WHOAMI| msg=set whoami twice| mi=%s", iohand->m_idProfile.c_str());
 	}
 
-	ret = SendMsg(parent, CMD_WHOAMI_RSP, seqid, true, "{ \"code\": 0, \"svrid\": %d }", svrid);
+
+	ret = SendMsg(iohand, CMD_WHOAMI_RSP, seqid, true, "{ \"code\": 0, \"svrid\": %d }", svrid);
 	LOGDEBUG("CMD_WHOAMI_REQ| req=%s| svrid=%d| seqid=%d sndret=%d", str.c_str(), svrid, seqid, ret);
 
 	return ret;
 }
 
-int BegnHand::on_CMD_HUNGUP_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
+// 自报身份完毕.
+int BegnHand::whoamiFinish( IOHand* ioh, bool first )
+{
+}
+
+int BegnHand::on_CMD_HUNGUP_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
 {
 	string op;
 	int svrid = getIntFromJson("svrid", doc);
@@ -184,18 +192,18 @@ int BegnHand::on_CMD_HUNGUP_REQ( HEpBase* parent, const Value* doc, unsigned seq
 	if ("get" == op) // 获取hung机信息
 	{
 		string json = g_resp_strbeg;
-		CliMgr::Instance()->pickupCliCloseLog(json);
+		Actmgr::Instance()->pickupCliCloseLog(json);
 		json += "}";
-		ret = SendMsg(parent, CMD_HUNGUP_RSP, seqid, json, true);
+		ret = SendMsg(iohand, CMD_HUNGUP_RSP, seqid, json, true);
 	}
 	else if ("set" == op) // 清除hung
 	{
-		CliMgr::Instance()->rmCloseLog(svrid);
-		SendMsgEasy(parent, CMD_HUNGUP_RSP, seqid, 0, "success");
+		Actmgr::Instance()->rmCloseLog(svrid);
+		SendMsgEasy(iohand, CMD_HUNGUP_RSP, seqid, 0, "success");
 	}
 	else
 	{
-		SendMsgEasy(parent, CMD_HUNGUP_RSP, seqid, 402, "leak of op param");
+		SendMsgEasy(iohand, CMD_HUNGUP_RSP, seqid, 402, "leak of op param");
 		return -42;
 	}
 
@@ -203,58 +211,58 @@ int BegnHand::on_CMD_HUNGUP_REQ( HEpBase* parent, const Value* doc, unsigned seq
 }
 
 // param format: { "warn": "ok", "taskkey": "10023" }
-int BegnHand::on_CMD_SETARGS_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
+int BegnHand::on_CMD_SETARGS_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
 {
 	int ret;
 	string warnstr;
 
 	// 解析出每一个字符串属性
-	ret = Json2Map(doc, parent);
-	ERRLOG_IF1(ret, "SETPROP| msg=json2map set prop fail %d| mi=%d", ret, parent->m_idProfile.c_str());
+	ret = Json2Map(doc, iohand);
+	ERRLOG_IF1(ret, "SETPROP| msg=json2map set prop fail %d| mi=%d", ret, iohand->m_idProfile.c_str());
 	if (0 == Rjson::GetStr(warnstr, "warn", doc) && !warnstr.empty())
 	{
-		string taskkey = parent->m_idProfile;
+		string taskkey = iohand->m_idProfile;
 		bool paramok = false;
 
 		if ( warnstr == "ok" || warnstr == "ng" )
 		{
-			CliMgr::Instance()->setWarnMsg(taskkey, parent);
+			Actmgr::Instance()->setWarnMsg(taskkey, iohand);
 			paramok = true;
 		}
 		else if (0 == warnstr.compare("clear"))
 		{
-			CliMgr::Instance()->clearWarnMsg(taskkey);
+			Actmgr::Instance()->clearWarnMsg(taskkey);
 			paramok = true;
 		}
 
 		if (!paramok)
 		{
-			SendMsgEasy(parent, CMD_SETARGS_RSP, seqid, 401, "leak of param(warn or taskkey)");
+			SendMsgEasy(iohand, CMD_SETARGS_RSP, seqid, 401, "leak of param(warn or taskkey)");
 			return -50;
 		}
 	}
 
 	
-	SendMsgEasy(parent, CMD_SETARGS_RSP, seqid, 0, "success");
+	SendMsgEasy(iohand, CMD_SETARGS_RSP, seqid, 0, "success");
 	return ret;
 }
 
 
 // @summery: 消息转发/交换
-int BegnHand::on_ExchangeMsg( HEpBase* parent, const Value* doc, unsigned cmdid, unsigned seqid )
+int BegnHand::on_ExchangeMsg( IOHand* iohand, const Value* doc, unsigned cmdid, unsigned seqid )
 {
 	int ret = 0;
 	int fromSvrid = 0;
 	int toSvrid = 0;
-	HEpBase* dst = NULL;
+	IOHand* dst = NULL;
 
 	Rjson::GetInt(fromSvrid, "from", doc);
 	ret = Rjson::GetInt(toSvrid, "to", doc);
 
 	do {
-		ERRLOG_IF1BRK(ret || 0 == toSvrid, -46, "EXCHMSG| msg=unknow to svrid| ret=%d| mi=%s", ret, parent->m_idProfile.c_str());
+		ERRLOG_IF1BRK(ret || 0 == toSvrid, -46, "EXCHMSG| msg=unknow to svrid| ret=%d| mi=%s", ret, iohand->m_idProfile.c_str());
 		dst = CliMgr::Instance()->getChildBySvrid(toSvrid);
-		WARNLOG_IF1BRK(NULL == dst, -47, "EXCHMSG| msg=maybe tosvrid offline| toSvrid=%d| mi=%s", toSvrid, parent->m_idProfile.c_str());
+		WARNLOG_IF1BRK(NULL == dst, -47, "EXCHMSG| msg=maybe tosvrid offline| toSvrid=%d| mi=%s", toSvrid, iohand->m_idProfile.c_str());
 	}
 	while (0);
 
@@ -266,7 +274,7 @@ int BegnHand::on_ExchangeMsg( HEpBase* parent, const Value* doc, unsigned cmdid,
 	{
 		if (cmdid < CMDID_MID)
 		{
-			ret = SendMsgEasy(parent, cmdid|CMDID_MID, seqid, 400, "dst svr offline");
+			ret = SendMsgEasy(iohand, cmdid|CMDID_MID, seqid, 400, "dst svr offline");
 		}
 	}
 

@@ -1,17 +1,23 @@
 #include "climanage.h"
 #include "comm/strparse.h"
 #include "comm/timef.h"
+#include "act_mgr.h"
 
 const char g_jsonconf_file[] = ".scomm_svrid.txt";
 
 CliMgr::CliMgr(void)
 {
 	m_waitRmPtr = NULL;
-	m_opLogSize = CLIOPLOG_SIZE;
 }
 CliMgr::~CliMgr(void)
 {
 	IFDELETE(m_waitRmPtr);
+}
+
+int CliMgr::addChild( HEpBase* chd )
+{
+	IOHand* child = dynamic_cast<IOHand*>(chd);
+	return child? addChild(child) : -22;
 }
 
 int CliMgr::addChild( IOHand* child )
@@ -31,7 +37,7 @@ int CliMgr::addAlias2Child( const string& asname, IOHand* ptr )
 	if (m_children.end() == it) // 非直接子对象，暂时不处理
 	{
 		LOGWARN("ADDALIASCHILD| msg=ptr isnot listen's child| name=%s", asname.c_str());
-		return -1;
+		return -11;
 	}
 
 	it->second.aliasName[asname] = true;
@@ -137,7 +143,7 @@ int CliMgr::onChildEvent( int evtype, va_list ap )
 		cliinfo.t2 = time(NULL);
 		string strsvrid = (*prop)["svrid"];
 
-		Actmgr::Instance()->appCloseFound(son, clitype);
+		Actmgr::Instance()->appCloseFound(son, clitype, cliinfo);
 
 		removeAliasChild(son, true);
 		ret = 0;

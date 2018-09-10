@@ -9,7 +9,6 @@ Modification :
 #ifndef _ACT_MGR_H_
 #define _ACT_MGR_H_
 #include "comm/public.h"
-#include "iohand.h"
 #include <cstdarg>
 #include <map>
 #include <list>
@@ -18,6 +17,9 @@ Modification :
 using std::map;
 using std::list;
 using std::string;
+
+class IOHand;
+struct CliInfo;
 
 class Actmgr
 {
@@ -35,7 +37,7 @@ public:
     int pickupWarnCliProfile( string& json, const string& filter_key, const string& filter_val );
 
 
-    int appCloseFound( IOHand* son, int clitype );
+    int appCloseFound( IOHand* son, int clitype, const CliInfo& cliinfo );
     void setCloseLog( int svrid, const string& cloLog );
     void rmCloseLog( int svrid );
     void appendCliOpLog( const string& logstr );
@@ -51,7 +53,7 @@ private:
     ~Actmgr(void);
 
 protected:
-    map<IOHand*, CliInfo>* m_pchildren;
+    map<IOHand*, CliInfo>* m_pchildren; // 对CliMgr.m_children的引用
     map<string, IOHand*> m_warnLog; // 客户机告警的任务
     map<int, string> m_closeLog; // 记录掉线了的客户机信息
     list<string> m_cliOpLog; // 客户机的操作行为记录

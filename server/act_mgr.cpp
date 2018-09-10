@@ -1,6 +1,7 @@
 #include "act_mgr.h"
 #include "comm/strparse.h"
 #include "comm/timef.h"
+#include "iohand.h"
 #include "climanage.h"
 
 Actmgr::Actmgr(void)
@@ -32,8 +33,7 @@ int Actmgr::pickupWarnCliProfile( string& json, const string& filter_key, const 
 
 		if (!filter_key.empty()) // 需要过滤条件
 		{
-			string valdata;
-			IOHand::Notify(ptr, HEPNTF_GET_PROPT, filter_key.c_str(), &valdata);
+			string valdata = ptr->getProperty(filter_key);
 			if (!filter_val.empty() && valdata != filter_val)
 			{
 				++itr;
@@ -42,7 +42,7 @@ int Actmgr::pickupWarnCliProfile( string& json, const string& filter_key, const 
 		}
 
 		if (i) json.append(",");
-		IOHand::Notify(ptr, HEPNTF_GET_PROPT_JSONALL, "", &json);
+		getJsonProp(ptr, json, "");
 		++i; ++itr;
 	}
 	
@@ -62,15 +62,15 @@ int Actmgr::pickupCliProfile( string& json, int svrid, const string& key )
 		for (int i = 0; itr != m_pchildren->end(); ++i, ++itr)
 		{
 			if (i) json.append(",");
-			getJsonProp(itr->second, json, key);
+			getJsonProp(itr->first, json, key);
 		}
 	}
 	else
 	{
-		map<string, IOHand*>::iterator itr = m_aliName2Child.find(StrParse::Itoa(svrid));
-		if (itr != m_aliName2Child.end())
+		IOHand* ptr = CliMgr::Instance()->getChildBySvrid(svrid);
+		if (ptr)
 		{
-			getJsonProp(itr->second, json, key);
+			getJsonProp(ptr, json, key);
 		}
 	}
 
@@ -87,8 +87,8 @@ void Actmgr::getJsonProp( IOHand* cli, string& outj, const string& key )
 		map<string, string>::const_iterator itr = cli->m_cliProp.begin();
 		for (int i = 0; itr != cli->m_cliProp.end(); ++itr, ++i)
 		{
-			if (i > 0) pjson->append(",");
-			StrParse::PutOneJson(*pjson, itr->first, itr->second);
+			if (i > 0) outj.append(",");
+			StrParse::PutOneJson(outj, itr->first, itr->second);
 		}
 	}
 	else
@@ -96,7 +96,7 @@ void Actmgr::getJsonProp( IOHand* cli, string& outj, const string& key )
 		map<string, string>::const_iterator itr = cli->m_cliProp.find(key);
 		if (itr != cli->m_cliProp.end())
 		{
-			StrParse::PutOneJson(*pjson, itr->first, itr->second);
+			StrParse::PutOneJson(outj, itr->first, itr->second);
 		}
 	}
 	outj.append("}");
@@ -121,14 +121,17 @@ void  Actmgr::rmCloseLog( int svrid )
 	else m_closeLog.clear();
 }
 
-int Actmgr::appCloseFound( IOHand* son, int clitype )
+int Actmgr::appCloseFound( IOHand* son, int clitype, const CliInfo& cliinfo )
 {
 	int ret = -100;
+	IFRETURN_N(NULL==son, ret);
 
-	if (1 == clitype) // 网监进程
+	string& strsvrid = son->m_cliProp["svrid"];
+	if (1 == clitype)
 	{
+		int svrid = atoi(strsvrid.c_str());
 		string jsonstr("{");
-		StrParse::PutOneJson(jsonstr, "svrid", son->m_cliProp["svrid"], true);
+		StrParse::PutOneJson(jsonstr, "svrid", strsvrid, true);
 		StrParse::PutOneJson(jsonstr, "name", son->m_cliProp["name"], true);
 		StrParse::PutOneJson(jsonstr, "svrname", son->m_cliProp["svrname"], true);
 		StrParse::PutOneJson(jsonstr, "shell", son->m_cliProp["shell"], true);

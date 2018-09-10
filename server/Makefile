@@ -1,5 +1,6 @@
 SubComCpp:=
-SrcCpp:=flowctrl.cpp climanage.cpp listen.cpp iohand.cpp begn_hand.cpp query_hand.cpp main.cpp cppcloud_config.cpp 
+SrcCpp:=flowctrl.cpp climanage.cpp act_mgr.cpp listen.cpp iohand.cpp begn_hand.cpp query_hand.cpp main.cpp 
+SrcCpp+=cppcloud_config.cpp exception.cpp
 
 TARGET=cppcloud_serv
 

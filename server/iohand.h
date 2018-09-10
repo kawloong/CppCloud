@@ -29,6 +29,10 @@ public: // interface HEpBase
 	// 自定义属性的操作
     void setProperty( const string& key, const string& val );
     string getProperty( const string& key );
+	int getCliType(void) {return m_cliType; }
+
+	int sendData( unsigned int cmdid, unsigned int seqid, const char* body, 
+		unsigned int bodylen, bool setOutAtonce );
 
 protected:
 	int onRead( int p1, long p2 );
@@ -42,9 +46,9 @@ protected:
 	HEpEvFlag m_epCtrl;
 	string m_cliName;
 	string m_closeReason; // 关掉原因
-	bool m_bClose;
-	bool m_ntfEnd; // 被通知结束
 	int m_cliType; // 何种类型的客户端: 1 对接进程; 10 监控进程; 20 web serv; 30 观察进程
+	unsigned char m_closeFlag; // 结束标记: 0连接中, 1等待发完后关闭; 2立即要关; 3关闭
+	bool m_ntfEnd; // 被通知结束
 	//map<HEpBase*, int> m_children;
 
 	IOBuffItem* m_iBufItem;

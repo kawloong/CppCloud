@@ -12,6 +12,7 @@ Modification :
 #include "rapidjson/json.hpp"
 
 
+class IOHand;
 
 class BegnHand: public HEpBase
 {
@@ -22,21 +23,23 @@ public:
     virtual ~BegnHand(void);
 
     // 简单命令用函数处理
-    static int ProcessOne( HEpBase* parent, unsigned cmdid, void* param );
+    static int ProcessOne( void* iohand, unsigned cmdid, void* param );
     
     static int getFromCache( string& rdsval, const string& rdskey );
     static int setToCache( const string& rdskey, const string& rdsval );
 
 private:
-    #define CMD2FUNCCALL_DESC(cmd) static int on_##cmd(HEpBase* parent, const Value* doc, unsigned seqid )
-    static int Json2Map( const Value* objnode, HEpBase* dst );
+    #define CMD2FUNCCALL_DESC(cmd) static int on_##cmd(IOHand* iohand, const Value* doc, unsigned seqid )
+    static int Json2Map( const Value* objnode, IOHand* dst );
     static int getIntFromJson( const string& key, const Value* doc );
 
     CMD2FUNCCALL_DESC(CMD_WHOAMI_REQ);
     CMD2FUNCCALL_DESC(CMD_HUNGUP_REQ);
     CMD2FUNCCALL_DESC(CMD_SETARGS_REQ);
 
-    static int on_ExchangeMsg( HEpBase* parent, const Value* doc, unsigned cmdid, unsigned seqid );
+    static int on_ExchangeMsg( IOHand* iohand, const Value* doc, unsigned cmdid, unsigned seqid );
+
+    int whoamiFinish( IOHand* ioh, bool first );
 
 protected: // interface IEPollRun
     virtual int run( int flag, long p2 );

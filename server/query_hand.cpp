@@ -1,16 +1,16 @@
 #include "query_hand.h"
 #include "iobuff.h"
-#include "climanage.h"
 #include "comm/strparse.h"
 #include "redis/redispooladmin.h"
 #include "flowctrl.h"
+#include "act_mgr.h"
+#include "iohand.h"
 
 HEPCLASS_IMPL_EX(QueryHand, _, QueryFunc)
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
 
-static int ss_svrid_gen = 0;
-const char s_app_cache_id[] = "3";
-const char s_scommid_key[] = "scomm_svrid_max";
+//const char s_app_cache_id[] = "3";
+//const char s_scommid_key[] = "scomm_svrid_max";
 
 QueryHand::QueryHand(void)
 {
@@ -38,9 +38,10 @@ int QueryHand::onEvent( int evtype, va_list ap )
 	return ret;
 }
 
-int QueryHand::ProcessOne( HEpBase* parent, unsigned cmdid, void* param )
+int QueryHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 {
 	int ret = 0;
+	IOHand* parent = (IOHand*)ptr;
 	IOBuffItem* iBufItem = (IOBuffItem*)param;
 	unsigned seqid = iBufItem->head()->seqid;
 	char* body = iBufItem->body();
@@ -86,7 +87,7 @@ int QueryHand::getIntFromJson( const string& key, const Value* doc )
 }
 
 
-int QueryHand::on_CMD_GETCLI_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
+int QueryHand::on_CMD_GETCLI_REQ( IOHand* parent, const Value* doc, unsigned seqid )
 {
 	int ret = 0;
 	int svrid = 0;
@@ -99,7 +100,7 @@ int QueryHand::on_CMD_GETCLI_REQ( HEpBase* parent, const Value* doc, unsigned se
 	Rjson::GetStr(dstKey, "key", doc);
 
 	outjson = g_resp_strbeg;
-	ret = CliMgr::Instance()->pickupCliProfile(outjson, svrid, dstKey);
+	ret = Actmgr::Instance()->pickupCliProfile(outjson, svrid, dstKey);
 	outjson += "}";
 	ERRLOG_IF1(ret, "CMD_GETCLI_REQ| msg=pickupCliProfile fail %d| get_svrid=%d| key=%s", ret, svrid, dstKey.c_str());
 
@@ -108,12 +109,12 @@ int QueryHand::on_CMD_GETCLI_REQ( HEpBase* parent, const Value* doc, unsigned se
 }
 
 
-int QueryHand::on_CMD_GETLOGR_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
+int QueryHand::on_CMD_GETLOGR_REQ( IOHand* parent, const Value* doc, unsigned seqid )
 {
 	int nsize = 10;
 	Rjson::GetInt(nsize, "size", doc);
 	string outstr = g_resp_strbeg;
-	CliMgr::Instance()->pickupCliOpLog(outstr, nsize);
+	Actmgr::Instance()->pickupCliOpLog(outstr, nsize);
 	outstr += "}";
 	
 	int ret = SendMsg(parent, CMD_GETLOGR_RSP, seqid, outstr, true);
@@ -121,7 +122,7 @@ int QueryHand::on_CMD_GETLOGR_REQ( HEpBase* parent, const Value* doc, unsigned s
 }
 
 // request format: { "filter_key": "warn", "filter_val":"ng" }
-int QueryHand::on_CMD_GETWARN_REQ( HEpBase* parent, const Value* doc, unsigned seqid )
+int QueryHand::on_CMD_GETWARN_REQ( IOHand* parent, const Value* doc, unsigned seqid )
 {
 	string filter_key;
 	string filter_val;
@@ -129,9 +130,9 @@ int QueryHand::on_CMD_GETWARN_REQ( HEpBase* parent, const Value* doc, unsigned s
 
 	Rjson::GetStr(filter_key, "filter_key", doc);
 	Rjson::GetStr(filter_val, "filter_val", doc);
-	CliMgr::Instance()->pickupWarnCliProfile(outstr, filter_key, filter_val);
+	Actmgr::Instance()->pickupWarnCliProfile(outstr, filter_key, filter_val);
 	outstr += "}";
 	
-	int ret = SendMsg(parent, CMD_GETWARN_RSP, seqid, outstr, true);
+	int ret = parent->sendData(CMD_GETWARN_RSP, seqid, outstr.c_str(), outstr.length(), true);
 	return ret;
 }

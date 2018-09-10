@@ -58,12 +58,12 @@ enum NOTIFY_EVENT_TYPE
 {
     HEPNTF_INIT_PARAM = 1,
     HEPNTF_SOCK_CLOSE = 2,
-    HEPNTF_SET_PROPT  = 3,
-    HEPNTF_SET_ALIAS  = 4,
+    HEPNTF_SET_PROPT  = 3, // X
+    HEPNTF_SET_ALIAS  = 4, // X
     HEPNTF_SEND_MSG   = 5,
     HEPNTF_SET_EPOUT  = 6,
-    HEPNTF_GET_PROPT  = 7,
-    HEPNTF_GET_PROPT_JSONALL = 8,
+    HEPNTF_GET_PROPT  = 7, // X
+    HEPNTF_GET_PROPT_JSONALL = 8, // X
     HEPNTF_INIT_FINISH=9,
     
 	/*
@@ -82,7 +82,7 @@ enum NOTIFY_EVENT_TYPE
 class HEpBase: public ITaskRun2
 {
  public:
-    typedef int (*ProcOneFunT)(HEpBase*, unsigned, void*);
+    typedef int (*ProcOneFunT)(void*, unsigned, void*);
     static void RegisterClass(const char* regname, HEpBase* stdptr);
     static void RegisterFunc(const char* regname, ProcOneFunT func);
     static ProcOneFunT GetProcFunc(const char* regname);

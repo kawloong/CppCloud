@@ -1,6 +1,7 @@
 #include "iohand.h"
 #include "comm/strparse.h"
 #include "comm/sock.h"
+#include "exception.h"
 #include <sys/epoll.h>
 #include <cstring>
 #include <cerrno>
@@ -27,7 +28,8 @@ int IOHand::Init( void )
 	return 0;
 }
 
-IOHand::IOHand(void): m_cliFd(INVALID_FD), m_bClose(false), m_ntfEnd(false), m_cliType(0), m_iBufItem(NULL), m_oBufItem(NULL)
+IOHand::IOHand(void): m_cliFd(INVALID_FD), m_cliType(0), m_closeFlag(0),
+	  m_ntfEnd(false), m_iBufItem(NULL), m_oBufItem(NULL)
 {
     
 }
@@ -55,15 +57,15 @@ int IOHand::onRead( int p1, long p2 )
 			IFBREAK_N(ERRSOCK_AGAIN == ret, 0);
 			if (ret <= 0) // close 清理流程 
 			{
-				m_bClose = true;
 				m_closeReason = (0==ret? "recv closed": strerror(errno));
+				throw OffConnException(m_closeReason);
 				break;
 			}
 
 			m_iBufItem->len += rcvlen;
 			if (ret != (int)rcvlen || m_iBufItem->len > HEADER_LEN)
 			{
-				m_bClose = true;
+				m_closeFlag = 2;
 				m_closeReason = "Sock::recv sys error";
 				LOGERROR("IOHAND_READ| msg=recv param error| ret=%d| olen=%u| rcvlen=%u| mi=%s",
 				 	 ret, rcvlen, m_iBufItem->len,m_cliName.c_str());
@@ -78,13 +80,13 @@ int IOHand::onRead( int p1, long p2 )
 			head_t* hdr = m_iBufItem->head();
 			if (hdr->head_len != HEADER_LEN)
 			{
-				m_bClose = true;
+				m_closeFlag = 2;
 				m_closeReason = StrParse::Format("headlen invalid(%u)", hdr->head_len);
 				break;
 			}
 			if (hdr->body_len > g_maxpkg_len)
 			{
-				m_bClose = true;
+				m_closeFlag = 2;
 				m_closeReason = StrParse::Format("bodylen invalid(%u)", hdr->body_len);
 				break;
 			}
@@ -95,14 +97,14 @@ int IOHand::onRead( int p1, long p2 )
 		ret = Sock::recv(m_cliFd, (char*)m_iBufItem->head(), m_iBufItem->len, m_iBufItem->totalLen);
 		if (ret <= 0)
 		{
-			m_bClose = true;
+			m_closeFlag = 2;
 			m_closeReason = (0==ret? "recv body closed": strerror(errno));
 			break;
 		}
 
 		if (m_iBufItem->ioFinish()) // 报文接收完毕
 		{
-			Notify(m_parent, HEPNTF_SET_ALIAS, (HEpBase*)this, m_cliName.c_str());
+			Notify(m_parent, HEPNTF_SET_ALIAS, (IOHand*)this, m_cliName.c_str());
 			// parse package [cmdid]
 			ret = cmdProcess(m_iBufItem);
 		}
@@ -127,7 +129,7 @@ int IOHand::onWrite( int p1, long p2 )
 		if (ret <= 0)
 		{
 			// maybe closed socket
-			m_bClose = true;
+			m_closeFlag = 2;
 			m_closeReason = StrParse::Format("send err(%d) sockerr(%s)", ret, strerror(Sock::geterrno(m_cliFd)));
 			break;
 		}
@@ -147,6 +149,11 @@ int IOHand::onWrite( int p1, long p2 )
 			{
 				ret = m_epCtrl.addEvt(EPOLLOUT);
 			}
+
+			if (1 == m_closeFlag)
+			{
+				m_closeFlag = 2;
+			}
 		}
 	}
 	while (0);
@@ -156,37 +163,49 @@ int IOHand::onWrite( int p1, long p2 )
 int IOHand::run( int p1, long p2 )
 {
 	int ret = 0;
-	do 
+	
+	try 
 	{
 		if (EPOLLIN & p1) // 有数据可读
 		{
 			ret = onRead(p1, p2);
 		}
-		
-		if (EPOLLOUT & p1) // 可写
-		{
-			ret = onWrite(p1, p2);
-		}
-
-		if ((EPOLLERR|EPOLLHUP) & p1)
-		{
-			int fderrno = Sock::geterrno(m_cliFd);
-			LOGERROR("IOHAND_OTHRE| msg=sock err| mi=%s| err=%d(%s)", m_cliName.c_str(), fderrno, strerror(fderrno));
-			m_bClose = true;
-		}
-
-		if (HEFG_PEXIT == p1 && 2 == p2) /// #PROG_EXITFLOW(6)
-		{
-			m_bClose = true; // program exit told
-		}
-
-		if (m_bClose)
-		{
-			ret = onClose();
-		}
 	}
-	while (0);
-	
+	catch( NormalExceptionOff& exp ) // 业务异常,先发送错误响应,后主动关闭connection
+	{
+		string rsp = StrParse::Format("{ \"code\": %d, \"desc\": \"%s\" }", exp.code, exp.desc.c_str());
+		m_closeFlag = 1; // 待发送完后close
+		sendData(exp.cmdid, exp.seqid, rsp.c_str(), rsp.length(), true);
+	}
+	catch( OffConnException& exp )
+	{
+		LOGERROR("OffConnException| reson=%s | mi=%s", exp.reson.c_str(), m_idProfile.c_str());
+		m_closeFlag = 2;
+	}
+		
+	if (EPOLLOUT & p1) // 可写
+	{
+		ret = onWrite(p1, p2);
+	}
+
+
+	if ((EPOLLERR|EPOLLHUP) & p1)
+	{
+		int fderrno = Sock::geterrno(m_cliFd);
+		LOGERROR("IOHAND_OTHRE| msg=sock err| mi=%s| err=%d(%s)", m_cliName.c_str(), fderrno, strerror(fderrno));
+		m_closeFlag = 2;
+	}
+
+	if (HEFG_PEXIT == p1 && 2 == p2) /// #PROG_EXITFLOW(6)
+	{
+		m_closeFlag = 2; // program exit told
+	}
+
+	if (m_closeFlag >= 2)
+	{
+		ret = onClose();
+	}
+
 	return ret;
 }
 
@@ -207,17 +226,6 @@ int IOHand::onEvent( int evtype, va_list ap )
 
 		LOGINFO("IOHAND_INIT| msg=a client accept| fd=%d| mi=%s", m_cliFd, m_cliName.c_str());
 	}
-	else if (HEPNTF_SET_PROPT == evtype)
-	{
-		const char* key = va_arg(ap, const char*);
-		const char* val = va_arg(ap, const char*);
-		IFRETURN_N(NULL == key || NULL == val, -77);
-		m_cliProp[key] = val;
-	}
-	else if (HEPNTF_SET_ALIAS == evtype)
-	{
-		ret = transEvent(m_parent, evtype, ap); // 转交给父级处理
-	}
 	else if (HEPNTF_SEND_MSG == evtype)
 	{
 		unsigned int cmdid = va_arg(ap, unsigned int);
@@ -225,59 +233,26 @@ int IOHand::onEvent( int evtype, va_list ap )
 		const char* body = va_arg(ap, const char*);
 		unsigned int bodylen = va_arg(ap, unsigned int);
 
-		IOBuffItem* obf = new IOBuffItem;
-		obf->setData(cmdid, seqid, body, bodylen);
-		if (!m_oBuffq.append(obf))
-		{
-			LOGERROR("IOHANDSNDMSG| msg=append to oBuffq fail| len=%d| mi=%s", m_oBuffq.size(), m_cliName.c_str());
-			delete obf;
-			ret = -74;
-		}
+		ret = sendData(cmdid, seqid, body, bodylen, false);
 	}
 	else if (HEPNTF_SET_EPOUT == evtype)
 	{
 		ret = m_epCtrl.addEvt(EPOLLOUT);
 		ERRLOG_IF1(ret, "IOHAND_SET_EPOU| msg=set out flag fail %d| mi=%s", ret, m_cliName.c_str());
 	}
-	else if (HEPNTF_GET_PROPT == evtype) // 返回string
-	{
-		const char* key = va_arg(ap, const char*);
-		string* pjson = va_arg(ap, string*);
-		map<string, string>::const_iterator itr = m_cliProp.find(key);
-		if (itr != m_cliProp.end())
-		{
-			*pjson = itr->second;
-		}
-	}
-	else if (HEPNTF_GET_PROPT_JSONALL == evtype) // 返回json
-	{
-		const char* key = va_arg(ap, const char*);
-		string* pjson = va_arg(ap, string*);
-		pjson->append("{");
-		if (ISEMPTY_PCHAR(key))
-		{
-			map<string, string>::const_iterator itr = m_cliProp.begin();
-			for (int i = 0; itr != m_cliProp.end(); ++itr, ++i)
-			{
-				if (i > 0) pjson->append(",");
-				StrParse::PutOneJson(*pjson, itr->first, itr->second);
-			}
-		}
-		else
-		{
-			map<string, string>::const_iterator itr = m_cliProp.find(key);
-			if (itr != m_cliProp.end())
-			{
-				StrParse::PutOneJson(*pjson, itr->first, itr->second);
-			}
-		}
-		pjson->append("}");
-	}
 	else if (HEPNTF_INIT_FINISH == evtype)
 	{
-		m_cliType = atoi(m_cliProp["clitype"].c_str());
-		m_idProfile = StrParse::Format("%s@%s-%d@%s", m_cliName.c_str(), 
-			m_cliProp["svrid"].c_str(), m_cliType, m_cliProp["name"].c_str());
+		int clity = atoi(m_cliProp["clitype"].c_str());
+		if (clity > 0)
+		{
+			ERRLOG_IF1RET_N(m_cliType>0&&clity!=m_cliType, -95,
+			  "IOHAND_INIT_FIN| msg=clitype not match first| cliType0=%d| cliType1=%d| mi=%s", 
+			   m_cliType, clity, m_idProfile.c_str());
+
+			m_idProfile = StrParse::Format("%s@%s-%d@%s", m_cliName.c_str(), 
+				m_cliProp["svrid"].c_str(), m_cliType, m_cliProp["name"].c_str());
+		}
+
 	}
 	else
 	{
@@ -286,6 +261,28 @@ int IOHand::onEvent( int evtype, va_list ap )
 	
 	return ret;
 }
+
+int IOHand::sendData( unsigned int cmdid, unsigned int seqid, const char* body, unsigned int bodylen, bool setOutAtonce )
+{
+	IOBuffItem* obf = new IOBuffItem;
+	obf->setData(cmdid, seqid, body, bodylen);
+	if (!m_oBuffq.append(obf))
+	{
+		LOGERROR("IOHANDSNDMSG| msg=append to oBuffq fail| len=%d| mi=%s", m_oBuffq.size(), m_cliName.c_str());
+		delete obf;
+		return -77;
+	}
+
+	if (setOutAtonce)
+	{
+		int ret = m_epCtrl.addEvt(EPOLLOUT);
+		ERRLOG_IF1(ret, "IOHAND_SET_EPOU| msg=set out flag fail %d| mi=%s", ret, m_cliName.c_str());
+	}
+
+	return 0;
+}
+
+
 
 void IOHand::setProperty( const string& key, const string& val )
 {
@@ -319,7 +316,8 @@ int IOHand::onClose( void )
 	ret = Notify(m_parent, HEPNTF_SOCK_CLOSE, (HEpBase*)this, m_cliType, (void*)&m_cliProp);
 	ERRLOG_IF1(ret, "IOHAND_CLOSE| msg=Notify ret %d| mi=%s| reason=%s", ret, m_cliName.c_str(), m_closeReason.c_str());
 
-	return ret;	
+	m_closeFlag = 3;
+	return ret;
 }
 
 int IOHand::cmdProcess( IOBuffItem*& iBufItem )
@@ -353,8 +351,9 @@ int IOHand::cmdProcess( IOBuffItem*& iBufItem )
 		{
 			LOGERROR("CMDPROCESS| msg=unknow clsname %s| mi=%s", procClsName.c_str(), m_cliName.c_str());
 			m_closeReason = "not match process_hand class";
-			m_bClose = true;
-			ret = -72;
+			//m_bClose = true;
+			//ret = -72;
+			throw NormalExceptionOff(400, hdr->cmdid, hdr->seqid, m_closeReason);
 			break;
 		}
 
