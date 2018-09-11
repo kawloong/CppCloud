@@ -1,6 +1,6 @@
 SubComCpp:=
 SrcCpp:=flowctrl.cpp climanage.cpp act_mgr.cpp listen.cpp iohand.cpp begn_hand.cpp query_hand.cpp clibase.cpp
-SrcCpp+=cppcloud_config.cpp exception.cpp main.cpp remote_serv.cpp
+SrcCpp+=cppcloud_config.cpp exception.cpp main.cpp remote_serv.cpp switchhand.cpp remote_cli.cpp
 
 TARGET=cppcloud_serv
 
@@ -11,7 +11,7 @@ LIBCOMMON=../common
 
 INCLUDEDIR+=-I.. -I$(LIBCOMMON) 
 CXX=g++
-CXXFLAGS=-Wall -g 
+CXXFLAGS=-Wall -g -std=c++11
 #AR=ar rcs
 
 CPPFLAGS+=$(CONF_HEAD_INC) $(INCLUDEDIR)

@@ -100,7 +100,7 @@ void CliMgr::removeAliasChild( CliBase* ptr, bool rmAll )
 
 			LOGINFO("CliMgr_CHILDRM| msg=a iohand close| dt=%ds| asname=%s", int(time(NULL)-cliinfo.t0), asnamestr.c_str());
 			if (ptr->isLocal())
-			{	
+			{
 				m_waitRmPtr = static_cast<IOHand*>(ptr);
 			}
 		}

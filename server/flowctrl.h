@@ -22,7 +22,7 @@ public:
 	
 	// 添加tcp监听器
     int addListen( const char*  lisnClassName, int port, const char* svrhost=NULL, int lqueue=200 );
-    // 清加到某一任务线程
+    // 添加到某一任务线程(非io-epoll线程)
     int appendTask( HEpBase* tsk, int qidx, int delay_ms );
 
     int run( bool& bexit );
@@ -35,7 +35,7 @@ protected: // for singleton func
 
 private:
     HEpoll* m_hepo; // io handle
-    TaskPoolEx<HEpBase, &HEpBase::run, HEFG_QUEUERUN, HEFG_QUEUEEXIT>* m_tskq;
+    TaskPoolEx<HEpBase, &HEpBase::qrun>* m_tskq;
     HEpBase* m_listener;
     int m_tskqNum;
 };

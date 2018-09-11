@@ -62,7 +62,7 @@ enum NOTIFY_EVENT_TYPE
 {
     HEPNTF_INIT_PARAM = 1,
     HEPNTF_SOCK_CLOSE = 2,
-    HEPNTF_SET_PROPT  = 3, // X
+    HEPNTF_NOTIFY_CHILD  = 3,
     HEPNTF_SET_ALIAS  = 4, // X
     HEPNTF_SEND_MSG   = 5,
     HEPNTF_SET_EPOUT  = 6,
@@ -105,7 +105,8 @@ public:
     virtual ~HEpBase( void );
 
     // interface ITaskRun2
-    virtual int run( int flag, long p2 ) = 0;
+    virtual int run( int flag, long p2 );
+    virtual int qrun( int flag, long p2 );
     
 protected:
     virtual const char* name( void ) = 0; // macro已实现

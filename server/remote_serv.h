@@ -14,6 +14,7 @@ Modification :
 using namespace std;
 
 const string REMOTESERV_ALIAS_PREFIX = "serv_";
+const string REMOTESERV_SVRNAME = "serv";
 const int REMOTESERV_EXIST_CHKTIME = 5*60*1000; // ms unit
 
 class RemoteServ: public IOHand
@@ -27,7 +28,7 @@ public:
 	int init( int svrid, const string& rhost, int epfd );
 
 public: // interface HEpBase
-    virtual int run( int flag, long p2 );
+    virtual int qrun( int flag, long p2 );
 	virtual int onEvent( int evtype, va_list ap );
 
 protected:
@@ -40,6 +41,9 @@ protected:
 protected:
 	int m_stage;
 	int m_seqid;
+	int m_svrid;
+	string m_rhost
+	int m_epfd;
 	static int s_my_svrid;
 };
 

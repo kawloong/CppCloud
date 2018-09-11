@@ -11,7 +11,7 @@ HEPMUTICLASS_IMPL(RemoteServ, RemoteServ, IOHand)
 
 int RemoteServ::s_my_svrid = 0;
 
-RemoteServ::RemoteServ(void): m_stage(0), m_seqid(0)
+RemoteServ::RemoteServ(void): m_stage(0), m_seqid(0), m_svrid(0), m_epfd(INVALID_FD)
 {
  	m_cliType = 1;
 }
@@ -33,6 +33,10 @@ int RemoteServ::init( int svrid, const string& rhost, int epfd )
 	int ret = StrParse::SpliteStr(vec, rhost, ':');
 	ERRLOG_IF1RET_N(ret || vec.size() < 2, -4, "REMOTES_RUN| msg=invalid host config| svrid=%d| host=%s", svrid, rhost.c_str());
 
+	m_svrid = svrid;
+	m_rhost = rhost;
+	m_epfd = epfd;
+
 	m_idProfile = "conn2" + rhost;
 	setProperty("svrid", StrParse::Itoa(svrid));
 	setProperty("_ip", vec[0]);
@@ -47,9 +51,10 @@ int RemoteServ::onEvent( int evtype, va_list ap )
 	return 0;
 }
 
-int RemoteServ::run( int flag, long p2 )
+
+int RemoteServ::qrun( int flag, long p2 )
 {
-	if (HEFG_QUEUERUN == flag)
+	if (0 == flag)
 	{
 		try {
 			return taskRun(flag, p2);
@@ -63,26 +68,23 @@ int RemoteServ::run( int flag, long p2 )
 		}
 		return -12;
 	}
-	else if (HEFG_QUEUEEXIT == flag)
+	else if (1 == flag)
 	{
 		return exitRun(flag, p2);
-	}
-	else
-	{
-		return IOHand::run(flag, p2);
 	}
 }
 
 // 连接不上或断开连接时到达
 int RemoteServ::onClose( int p1, long p2 )
 {
-	int ret = IOHand::onClose(p1, p2);
-	
 	if (!(HEFG_PEXIT == p1 && 2 == p2))
 	{
-		m_stage = 0;
-		FlowCtrl::Instance()->appendTask(this, 0, REMOTESERV_EXIST_CHKTIME); // 等待数分钟后重试
+		RemoteServ* sev = new RemoteServ;
+		sev->init(m_svrid, m_rhost, m_epfd);
+		FlowCtrl::Instance()->appendTask(sev, 0, REMOTESERV_EXIST_CHKTIME); // 等待数分钟后重试
 	}
+
+	return IOHand::onClose(p1, p2);
 }
 
 int RemoteServ::taskRun( int flag, long p2 )
@@ -133,7 +135,7 @@ int RemoteServ::prepareWhoIam( void )
 
 	whoIamJson += "{";
 	StrParse::PutOneJson(whoIamJson, "svrid", s_my_svrid, true);
-	StrParse::PutOneJson(whoIamJson, "svrname", "serv", true);
+	StrParse::PutOneJson(whoIamJson, "svrname", REMOTESERV_SVRNAME, true);
 	StrParse::PutOneJson(whoIamJson, "localsock", Sock::sock_name(m_cliFd,true, false), true);
 	StrParse::PutOneJson(whoIamJson, "begin_time", (int)time(NULL), true);
 	
@@ -143,7 +145,7 @@ int RemoteServ::prepareWhoIam( void )
 	whoIamJson += "}";
 
 	IOBuffItem* obf = new IOBuffItem;
-	obf->setData(CMD_WHOAMI_REQ, ++m_seqid, whoIamJson.c_str(), whoIamJson.length());
+	obf->setData(CMD_IAMSERV_REQ, ++m_seqid, whoIamJson.c_str(), whoIamJson.length());
 	if (!m_oBuffq.append(obf))
 	{
 		LOGERROR("REMOTES_WAI| msg=append to oBuffq fail| len=%d| mi=%s", m_oBuffq.size(), m_cliName.c_str());

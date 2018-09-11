@@ -23,6 +23,9 @@ int IOHand::Init( void )
 	s_cmdid2clsname[CMD_SETARGS_REQ] = "MoniFunc";
 	s_cmdid2clsname[CMD_GETWARN_REQ] = "QueryFunc";
 
+	s_cmdid2clsname[CMD_IAMSERV_REQ] = "RemoteCli"; // 中心端报告身份
+	s_cmdid2clsname[CMD_IAMSERV_RSP] = "RemoteCli";
+
 	s_cmdid2clsname[0] = "MoniFunc"; // default handle class
 
 	return 0;
@@ -104,9 +107,17 @@ int IOHand::onRead( int p1, long p2 )
 
 		if (m_iBufItem->ioFinish()) // 报文接收完毕
 		{
-			Notify(m_parent, HEPNTF_SET_ALIAS, (IOHand*)this, m_cliName.c_str());
+			ret = 0;
+			if (m_child)
+			{
+				ret = Notify(m_child, HEPNTF_NOTIFY_CHILD, (IOBuffItem*)m_iBufItem);
+			}
+			/// Notify(m_parent, HEPNTF_SET_ALIAS, (IOHand*)this, m_cliName.c_str());
 			// parse package [cmdid]
-			ret = cmdProcess(m_iBufItem);
+			if (1 == ret)
+			{
+				ret = cmdProcess(m_iBufItem);
+			}
 		}
 	}
 	while (0);
@@ -308,6 +319,8 @@ int IOHand::onClose( int p1, long p2 )
 	LOGOPT_EI(ret, "IOHAND_CLOSE| msg=iohand need quit %d| mi=%s| reason=%s| sock=%d%s",
 		ret, m_cliName.c_str(), m_closeReason.c_str(), fderrno, fderrno?strerror(fderrno):"");
 
+	IFDELETE(m_child); // 先清理子级对象
+
 	// 清理完监听的evflag
 	ret = m_epCtrl.setEvt(0, NULL);
 	ERRLOG_IF1(ret, "IOHAND_CLOSE| msg=rm EVflag fail %d| mi=%s| err=%s", ret, m_cliName.c_str(), strerror(errno));
@@ -345,6 +358,8 @@ int IOHand::cmdProcess( IOBuffItem*& iBufItem )
 			IFDELETE(iBufItem);
 			break;
 		}
+
+		if (m_child) break;
 		
 		HEpBase* procObj = New(procClsName.c_str());
 		if (NULL==procObj)
@@ -357,8 +372,9 @@ int IOHand::cmdProcess( IOBuffItem*& iBufItem )
 			break;
 		}
 
-		ret = Notify(procObj, HEPNTF_INIT_PARAM, this, (IOBuffItem*)iBufItem);
-		// 暂时IOHand对象不维护procObj指针
+		Notify(procObj, HEPNTF_INIT_PARAM, this);
+		BindSon(this, procObj);
+		Notify(m_child, HEPNTF_NOTIFY_CHILD, (IOBuffItem*)m_iBufItem);
 	}
 	while (0);
 

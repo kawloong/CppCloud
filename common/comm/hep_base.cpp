@@ -180,6 +180,18 @@ HEpBase* HEpBase::New(const char* name)
     return NULL;
 }
 
+int HEpBase::qrun( int flag, long p2 )
+{
+    LOGERROR("HEPQRUN| msg=need overload this method if you use TaskPool");
+    return -43;
+}
+
+int HEpBase::run( int flag, long p2 )
+{
+    LOGERROR("HEPQRUN| msg=need overload this method if you use TaskPool");
+    return -43;
+}
+
 void HEpBase::BindSon(HEpBase* parent, HEpBase* son)
 {
     if (parent && son)

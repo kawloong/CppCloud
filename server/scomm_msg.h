@@ -14,13 +14,14 @@ struct sc_msg_head_t
 
 enum command_id_t
 {
-    CMD_WHOAMI_REQ = 0x0001,
+    CMD_WHOAMI_REQ = 0x0001, // 普通app(cli)启动上报自己身份
     CMD_GETCLI_REQ = 0x0002,
     CMD_HUNGUP_REQ = 0X0003,
     CMD_GETLOGR_REQ= 0X0004,
     CMD_EXCHANG_REQ= 0X0005,
     CMD_SETARGS_REQ= 0X0006,
     CMD_GETWARN_REQ= 0X0007,
+    CMD_IAMSERV_REQ = 0x0008, // 分布式中心端启动时报上自身身份
 
     CMDID_MID = 0x1000,
 
@@ -31,6 +32,7 @@ enum command_id_t
     CMD_EXCHANG_RSP= 0X1005,
     CMD_SETARGS_RSP= 0X1006,
     CMD_GETWARN_RSP= 0X1007,
+    CMD_IAMSERV_RSP = 0x1008,
 };
 
 static const unsigned char g_msg_ver = 1;

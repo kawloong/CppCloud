@@ -161,6 +161,7 @@ int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqi
 		ret = Notify(iohand, HEPNTF_INIT_FINISH);
 		Rjson::ToString(str, doc);
 
+
 		Actmgr::Instance()->appendCliOpLog(StrParse::Format("CLIENT_LOGIN| prog=%s| %s",
 															iohand->m_idProfile.c_str(), str.c_str()));
 	}
@@ -172,6 +173,8 @@ int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqi
 	}
 
 
+	whoamiFinish(iohand, first);
+
 	ret = SendMsg(iohand, CMD_WHOAMI_RSP, seqid, true, "{ \"code\": 0, \"svrid\": %d }", svrid);
 	LOGDEBUG("CMD_WHOAMI_REQ| req=%s| svrid=%d| seqid=%d sndret=%d", str.c_str(), svrid, seqid, ret);
 
@@ -181,6 +184,7 @@ int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqi
 // 自报身份完毕.
 int BegnHand::whoamiFinish( IOHand* ioh, bool first )
 {
+
 }
 
 int BegnHand::on_CMD_HUNGUP_REQ( IOHand* iohand, const Value* doc, unsigned seqid )

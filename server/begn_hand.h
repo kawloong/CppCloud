@@ -39,7 +39,7 @@ private:
 
     static int on_ExchangeMsg( IOHand* iohand, const Value* doc, unsigned cmdid, unsigned seqid );
 
-    int whoamiFinish( IOHand* ioh, bool first );
+    static int whoamiFinish( IOHand* ioh, bool first );
 
 protected: // interface IEPollRun
     virtual int run( int flag, long p2 );

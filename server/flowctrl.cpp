@@ -31,7 +31,7 @@ int FlowCtrl::init(int tskqNum)
     if (tskqNum > 0 && NULL == m_hepo && NULL == m_tskq)
     {
         m_hepo = new HEpoll;
-        m_tskq = new TaskPoolEx<HEpBase, &HEpBase::run, HEFG_QUEUERUN, HEFG_QUEUEEXIT>[tskqNum];
+        m_tskq = new TaskPoolEx<HEpBase, &HEpBase::qrun>[tskqNum];
         m_tskqNum = tskqNum; 
         IOHand::Init();
 
