@@ -30,6 +30,8 @@ public: // interface HEpBase
     void setProperty( const string& key, const string& val );
     string getProperty( const string& key );
 	int getCliType(void) {return m_cliType; }
+	int setCliType(int tp) { m_cliType=tp; }
+	string getCliSockName() { return m_cliName; }
 	bool isLocal(void) {return m_isLocal; }
 
 

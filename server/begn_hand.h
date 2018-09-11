@@ -30,7 +30,6 @@ public:
 
 private:
     #define CMD2FUNCCALL_DESC(cmd) static int on_##cmd(IOHand* iohand, const Value* doc, unsigned seqid )
-    static int Json2Map( const Value* objnode, IOHand* dst );
     static int getIntFromJson( const string& key, const Value* doc );
 
     CMD2FUNCCALL_DESC(CMD_WHOAMI_REQ);

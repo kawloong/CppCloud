@@ -39,5 +39,49 @@ int RemoteCli::onEvent( int evtype, va_list ap )
 // 注意: 如返回1,则body应该只读,不能改写.
 int RemoteCli::cmdHandle( unsigned cmdid, unsigned seqid, char* body )
 {
+    switch (cmdid)
+    {
+        case:
+        break;
+    }
+}
 
+int RemoteCli::on_CMD_IAMSERV_REQ( const Value* doc, unsigned seqid )
+{
+    int ret;
+
+    ret = m_iohand->Json2Map(doc);
+    ERRLOG_IF1(ret, "IAMSERV_REQ| msg=json2map set prop fail %d| mi=%d", ret, m_iohand->m_idProfile.c_str());
+
+    // 添加到climanage中管理（已添加，被动方）
+
+    // 响应回复
+    m_iohand->setCliType(1);
+    string whoIamJson;
+
+	whoIamJson += "{";
+	StrParse::PutOneJson(whoIamJson, "svrid", s_my_svrid, true);
+	StrParse::PutOneJson(whoIamJson, "svrname", REMOTESERV_SVRNAME, true);
+	StrParse::PutOneJson(whoIamJson, "localsock", m_iohand->getCliSockName(), true);
+	StrParse::PutOneJson(whoIamJson, "begin_time", (int)time(NULL), true);
+	
+	StrParse::PutOneJson(whoIamJson, "pid", getpid(), true);
+	StrParse::PutOneJson(whoIamJson, "clitype", 1, false);
+	whoIamJson += "}";
+
+    m_iohand->sendData(CMD_IAMSERV_RSP, seqid, whoIamJson.c_str(), whoIamJson.length(), true);
+    return 0;
+}
+
+int RemoteCli::on_CMD_IAMSERV_RSP( const Value* doc, unsigned seqid )
+{
+    int ret;
+    int svrid = 0;
+
+    ret = m_iohand->Json2Map(doc);
+
+
+    // 添加到climanage中管理(主动方)
+
+    return 0;
 }

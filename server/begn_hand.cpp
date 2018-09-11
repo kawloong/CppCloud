@@ -151,7 +151,7 @@ int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqi
 		}
 
 		// 解析出每一个字符串属性
-		ret = Json2Map(doc, iohand);
+		ret = iohand->Json2Map(doc);
 		ERRLOG_IF1(ret, "SETPROP| msg=json2map set prop fail %d| svrid=%d", ret, svrid);
 
 		// svrid属性新分配要设置
@@ -167,7 +167,7 @@ int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqi
 	}
 	else
 	{
-	    Json2Map(doc, iohand);
+	    iohand->Json2Map(doc);
 		Actmgr::Instance()->setCloseLog(svrid, ""); // clean warn message
 		LOGWARN("CMD_WHOAMI| msg=set whoami twice| mi=%s", iohand->m_idProfile.c_str());
 	}
@@ -221,7 +221,7 @@ int BegnHand::on_CMD_SETARGS_REQ( IOHand* iohand, const Value* doc, unsigned seq
 	string warnstr;
 
 	// 解析出每一个字符串属性
-	ret = Json2Map(doc, iohand);
+	ret = iohand->Json2Map(doc);
 	ERRLOG_IF1(ret, "SETPROP| msg=json2map set prop fail %d| mi=%d", ret, iohand->m_idProfile.c_str());
 	if (0 == Rjson::GetStr(warnstr, "warn", doc) && !warnstr.empty())
 	{

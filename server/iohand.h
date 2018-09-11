@@ -11,6 +11,7 @@ Modification :
 #include <arpa/inet.h>
 #include "comm/hep_base.h"
 #include "comm/queue.h"
+#include "rapidjson/json.hpp"
 #include "iobuff.h"
 #include "clibase.h"
 
@@ -28,6 +29,7 @@ public: // interface HEpBase
 	virtual int onEvent( int evtype, va_list ap );
 
 	// 自定义属性的操作
+	int Json2Map( const Value* objnode );
     void setProperty( const string& key, const string& val );
     string getProperty( const string& key );
 	int getCliType(void) {return m_cliType; }

@@ -136,7 +136,7 @@ int RemoteServ::prepareWhoIam( void )
 	whoIamJson += "{";
 	StrParse::PutOneJson(whoIamJson, "svrid", s_my_svrid, true);
 	StrParse::PutOneJson(whoIamJson, "svrname", REMOTESERV_SVRNAME, true);
-	StrParse::PutOneJson(whoIamJson, "localsock", Sock::sock_name(m_cliFd,true, false), true);
+	StrParse::PutOneJson(whoIamJson, "localsock", Sock::sock_name(m_cliFd, true, false), true);
 	StrParse::PutOneJson(whoIamJson, "begin_time", (int)time(NULL), true);
 	
 	StrParse::PutOneJson(whoIamJson, "pid", getpid(), true);
