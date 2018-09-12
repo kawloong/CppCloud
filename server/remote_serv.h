@@ -9,12 +9,11 @@ Modification :
 #ifndef _REMOTE_SERV_H_
 #define _REMOTE_SERV_H_
 #include "iohand.h"
-#include "string"
+#include <string>
 
 using namespace std;
 
-const string REMOTESERV_ALIAS_PREFIX = "serv_";
-const string REMOTESERV_SVRNAME = "serv";
+
 const int REMOTESERV_EXIST_CHKTIME = 5*60*1000; // ms unit
 
 class RemoteServ: public IOHand
@@ -25,7 +24,8 @@ public:
     virtual ~RemoteServ(void);
 
 	static void Init( int mysvrid );
-	int init( int svrid, const string& rhost, int epfd );
+	int init( const string& rhost, int port, int epfd );
+	void setSvrid( int svrid );
 
 public: // interface HEpBase
     virtual int qrun( int flag, long p2 );
@@ -38,13 +38,16 @@ protected:
 	int prepareWhoIam( void );
 	int exitRun( int flag, long p2 );
 
+public:
+	static int s_my_svrid;
+
 protected:
 	int m_stage;
 	int m_seqid;
 	int m_svrid;
-	string m_rhost
 	int m_epfd;
-	static int s_my_svrid;
+	int m_port;
+	string m_rhost;
 };
 
 #endif

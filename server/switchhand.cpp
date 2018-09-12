@@ -68,12 +68,17 @@ int SwitchHand::appendQTask( ITaskRun2* tsk, int delay_ms )
 // 此方法运行于io-epoll线程
 int SwitchHand::run( int flag, long p2 )
 {
+    int ret = 0;
     if (EPOLLIN & flag) // 有数据可读
     {
         char buff[32] = {0};
         unsigned beg = 0;
-        int ret = Sock::recv(m_pipe[0], buff, beg, 31);
+        ret = Sock::recv(m_pipe[0], buff, beg, 31);
         char prech=' ';
+
+        IFRETURN_N(ERRSOCK_AGAIN == ret, 0);
+        ERRLOG_IF1( ret < 0, "SWITCHRUN| msg=pipe brokeren?| err=%d %s| fd=%d",
+            Sock::geterrno(m_pipe[0]), strerror(Sock::geterrno(m_pipe[0])), m_pipe[0] );
         for (unsigned i = 0; i < beg; ++i)
         {
             if (prech == buff[i]) continue;
@@ -91,6 +96,7 @@ int SwitchHand::run( int flag, long p2 )
                 break;
                 default:
                     LOGERROR("SWITCHRUN| msg=unexcept pipe msg| buff=%s", buff);
+                    ret = -76;
                 break;
             }
         }
@@ -110,6 +116,8 @@ int SwitchHand::run( int flag, long p2 )
             pipe(m_pipe);
         }
     }
+
+    return ret;
 }
 
 int SwitchHand::qrun( int flag, long p2 )

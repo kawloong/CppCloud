@@ -2,6 +2,7 @@
 #include "comm/strparse.h"
 #include "comm/timef.h"
 #include "act_mgr.h"
+#include "cloud/const.h"
 
 const char g_jsonconf_file[] = ".scomm_svrid.txt";
 
@@ -141,16 +142,12 @@ int CliMgr::onChildEvent( int evtype, va_list ap )
 	{
 		IOHand* son = va_arg(ap, IOHand*);
 		int clitype = va_arg(ap, int);
-		map<string,string>* prop = (map<string,string>*)va_arg(ap, void*);
 
-		ERRLOG_IF1RET_N(m_children.find(son)==m_children.end() || NULL==prop, -101, 
+		ERRLOG_IF1RET_N(NULL==son || m_children.find(son)==m_children.end(), -101, 
 		"CHILDEVENT| msg=HEPNTF_SOCK_CLOSE ev-param invalid| son=%s| clitype=%d", son->m_idProfile.c_str(), clitype); 
 
 		CliInfo& cliinfo = m_children[son];
-
 		cliinfo.t2 = time(NULL);
-		string strsvrid = (*prop)["svrid"];
-
 		Actmgr::Instance()->appCloseFound(son, clitype, cliinfo);
 
 		removeAliasChild(son, true);

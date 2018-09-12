@@ -3,6 +3,7 @@
 #include "comm/strparse.h"
 #include "cppcloud_config.h"
 #include "redis/redispooladmin.h"
+#include "cloud/const.h"
 #include "exception.h"
 #include "flowctrl.h"
 #include "climanage.h"
@@ -77,30 +78,6 @@ int BegnHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 	return ret;
 }
 
-int BegnHand::Json2Map( const Value* objnode, IOHand* dst )
-{
-	IFRETURN_N(!objnode->IsObject(), -1);
-	int ret = 0;
-    Value::ConstMemberIterator itr = objnode->MemberBegin();
-    for (; itr != objnode->MemberEnd(); ++itr)
-    {
-        const char* key = itr->name.GetString();
-        if (itr->value.IsString())
-        {
-        	const char* val = itr->value.GetString();
-			//ret = Notify(dst, HEPNTF_SET_PROPT, key, val);
-			CliMgr::Instance()->setProperty(dst, key, val);
-        }
-		else if (itr->value.IsInt())
-		{
-			string val = StrParse::Itoa(itr->value.GetInt());
-			//ret = Notify(dst, HEPNTF_SET_PROPT, key, val.c_str());
-			CliMgr::Instance()->setProperty(dst, key, val);
-		}
-    }
-
-    return ret;
-}
 
 // 适配整型和字符型
 int BegnHand::getIntFromJson( const string& key, const Value* doc )
@@ -126,7 +103,7 @@ int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqi
 	bool first = (0 == iohand->getCliType()); // 首次请求whoami
 	string str; 
 
-	ret = Rjson::GetInt(svrid, "svrid", doc);
+	ret = Rjson::GetInt(svrid, CONNTERID_KEY, doc);
 
 	NormalExceptionOff_IFTRUE(ret, 400, CMD_WHOAMI_RSP, seqid, "leak of svrid?");
 
@@ -155,13 +132,14 @@ int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqi
 		ERRLOG_IF1(ret, "SETPROP| msg=json2map set prop fail %d| svrid=%d", ret, svrid);
 
 		// svrid属性新分配要设置
-		CliMgr::Instance()->setProperty(iohand, "svrid", str);
+		CliMgr::Instance()->setProperty(iohand, CONNTERID_KEY, str);
 
 		// 通知获取客户信息完成
 		ret = Notify(iohand, HEPNTF_INIT_FINISH);
 		Rjson::ToString(str, doc);
 
 
+		Actmgr::Instance()->setCloseLog(svrid, ""); // clean warn message
 		Actmgr::Instance()->appendCliOpLog(StrParse::Format("CLIENT_LOGIN| prog=%s| %s",
 															iohand->m_idProfile.c_str(), str.c_str()));
 	}
@@ -190,7 +168,7 @@ int BegnHand::whoamiFinish( IOHand* ioh, bool first )
 int BegnHand::on_CMD_HUNGUP_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
 {
 	string op;
-	int svrid = getIntFromJson("svrid", doc);
+	int svrid = getIntFromJson(CONNTERID_KEY, doc);
 	int ret = Rjson::GetStr(op, "op", doc);
 
 	if ("get" == op) // 获取hung机信息

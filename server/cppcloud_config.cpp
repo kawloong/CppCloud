@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "cloud/const.h"
 #include "cppcloud_config.h"
 
 namespace CloudConf
@@ -80,7 +81,8 @@ FUNC_INT_CONF_IMP(CppCloudLogFSize, "cloud_serv", "logfsize", 2);
 FUNC_INT_CONF_IMP(CppCloudListenPort, "cloud_serv", "port", 4800);
 FUNC_INT_CONF_IMP(CppCloudTaskQNum, "cloud_serv", "taskqnum", 1);
 FUNC_STR_CONF_IMP(CppCloudListenClass, "cloud_serv", "listen_class", "Lisn");
-FUNC_INT_CONF_IMP(CppCloudSvrid, "cloud_serv", "svrid", 1);
+FUNC_INT_CONF_IMP(CppCloudSvrid, "cloud_serv", CONNTERID_KEY, 1);
+FUNC_STR_CONF_IMP(CppCloudPeerNode, "cloud_serv", "peernode", ""); 
 
 }
 

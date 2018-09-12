@@ -1,6 +1,7 @@
 #include "act_mgr.h"
 #include "comm/strparse.h"
 #include "comm/timef.h"
+#include "cloud/const.h"
 #include "clibase.h"
 #include "climanage.h"
 
@@ -126,12 +127,12 @@ int Actmgr::appCloseFound( CliBase* son, int clitype, const CliInfo& cliinfo )
 	int ret = -100;
 	IFRETURN_N(NULL==son, ret);
 
-	string& strsvrid = son->m_cliProp["svrid"];
+	string& strsvrid = son->m_cliProp[CONNTERID_KEY];
 	if (1 == clitype)
 	{
 		int svrid = atoi(strsvrid.c_str());
 		string jsonstr("{");
-		StrParse::PutOneJson(jsonstr, "svrid", strsvrid, true);
+		StrParse::PutOneJson(jsonstr, CONNTERID_KEY, strsvrid, true);
 		StrParse::PutOneJson(jsonstr, "name", son->m_cliProp["name"], true);
 		StrParse::PutOneJson(jsonstr, "svrname", son->m_cliProp["svrname"], true);
 		StrParse::PutOneJson(jsonstr, "shell", son->m_cliProp["shell"], true);

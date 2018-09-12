@@ -2,6 +2,11 @@
 #include "iohand.h"
 #include "comm/hep_base.h"
 #include "climanage.h"
+#include "cppcloud_config.h"
+#include "remote_mgr.h"
+#include "switchhand.h"
+
+HEPCLASS_IMPL(RemoteMgr, RemoteMgr);
 
 FlowCtrl* FlowCtrl::Instance(void)
 {
@@ -15,6 +20,7 @@ FlowCtrl::FlowCtrl(void)
     m_hepo = NULL;
     m_tskq = NULL;
     m_listener = NULL;
+    m_mysvrid = 0;
 }
 
 FlowCtrl::~FlowCtrl(void)
@@ -28,6 +34,7 @@ int FlowCtrl::init(int tskqNum)
 {
     int ret = -1;
 
+
     if (tskqNum > 0 && NULL == m_hepo && NULL == m_tskq)
     {
         m_hepo = new HEpoll;
@@ -36,10 +43,17 @@ int FlowCtrl::init(int tskqNum)
         IOHand::Init();
 
         ret = m_hepo->init();
+
+        if (0 == ret)
+        {
+            SwitchHand::Instance()->init(m_hepo->getEPfd());
+            ret = RemoteMgr::Instance()->init(m_hepo->getEPfd());
+        }
     }
 
     return ret;
 }
+
 
 int FlowCtrl::addListen(const char* lisnClassName, int port, const char* svrhost/*=NULL*/, int lqueue/*=100*/)
 {

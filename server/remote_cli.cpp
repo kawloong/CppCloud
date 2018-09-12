@@ -1,9 +1,14 @@
+#include "cloud/const.h"
+#include "comm/strparse.h"
+#include "climanage.h"
+#include "exception.h"
 #include "remote_cli.h"
 #include "iohand.h"
+#include "remote_serv.h"
 
 HEPMUTICLASS_IMPL(RemoteCli, RemoteCli, HEpBase)
 
-
+int RemoteCli::s_my_svrid = 0;
 RemoteCli::RemoteCli(void): m_iohand(NULL)
 {
 
@@ -13,6 +18,11 @@ RemoteCli::~RemoteCli(void)
 {
     m_iohand = NULL;
     // 删除各cli .. wait实现
+}
+
+void RemoteCli::Init( int mysid )
+{
+    s_my_svrid = mysid;
 }
 
 int RemoteCli::onEvent( int evtype, va_list ap )
@@ -32,18 +42,24 @@ int RemoteCli::onEvent( int evtype, va_list ap )
         ret = cmdHandle(cmdid, seqid, body);
     }
 
-    return 0;
+    return ret;
 }
 
 // return 1 上层IOHand将会继续调用IOHand::cmdProcess()处理
 // 注意: 如返回1,则body应该只读,不能改写.
 int RemoteCli::cmdHandle( unsigned cmdid, unsigned seqid, char* body )
 {
-    switch (cmdid)
-    {
-        case:
-        break;
-    }
+#define CMDID2FUNCALL(CMDID)                                                              \
+    if(CMDID==cmdid) { Document doc;                                                      \
+        if (doc.ParseInsitu(body).HasParseError()) {                                      \
+            throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "body json invalid"); }  \
+        return on_##CMDID(&doc, seqid);  }
+
+
+    CMDID2FUNCALL(CMD_IAMSERV_REQ);
+    CMDID2FUNCALL(CMD_IAMSERV_RSP);
+
+    return 1;
 }
 
 int RemoteCli::on_CMD_IAMSERV_REQ( const Value* doc, unsigned seqid )
@@ -53,20 +69,29 @@ int RemoteCli::on_CMD_IAMSERV_REQ( const Value* doc, unsigned seqid )
     ret = m_iohand->Json2Map(doc);
     ERRLOG_IF1(ret, "IAMSERV_REQ| msg=json2map set prop fail %d| mi=%d", ret, m_iohand->m_idProfile.c_str());
 
+    m_iohand->setCliType(SERV_CLITYPE_ID);
+
     // 添加到climanage中管理（已添加，被动方）
+    string strsvrid = m_iohand->getProperty(CONNTERID_KEY);
+    if ( CliMgr::Instance()->getChildByName(strsvrid) )
+    {
+        throw OffConnException(string("svrid exist ")+strsvrid);
+    }
+
+    CliMgr::Instance()->addAlias2Child(strsvrid, m_iohand);
+    m_iohand->m_idProfile = strsvrid + "C" + m_iohand->getCliSockName();
 
     // 响应回复
-    m_iohand->setCliType(1);
     string whoIamJson;
 
 	whoIamJson += "{";
-	StrParse::PutOneJson(whoIamJson, "svrid", s_my_svrid, true);
-	StrParse::PutOneJson(whoIamJson, "svrname", REMOTESERV_SVRNAME, true);
-	StrParse::PutOneJson(whoIamJson, "localsock", m_iohand->getCliSockName(), true);
+	StrParse::PutOneJson(whoIamJson, CONNTERID_KEY, s_my_svrid, true);
+	StrParse::PutOneJson(whoIamJson, "svrname", MYSERVNAME, true);
+	StrParse::PutOneJson(whoIamJson, CLISOCKET_KEY, m_iohand->getCliSockName(), true);
 	StrParse::PutOneJson(whoIamJson, "begin_time", (int)time(NULL), true);
 	
 	StrParse::PutOneJson(whoIamJson, "pid", getpid(), true);
-	StrParse::PutOneJson(whoIamJson, "clitype", 1, false);
+	StrParse::PutOneJson(whoIamJson, CLIENT_TYPE_KEY, 1, false);
 	whoIamJson += "}";
 
     m_iohand->sendData(CMD_IAMSERV_RSP, seqid, whoIamJson.c_str(), whoIamJson.length(), true);
@@ -76,12 +101,30 @@ int RemoteCli::on_CMD_IAMSERV_REQ( const Value* doc, unsigned seqid )
 int RemoteCli::on_CMD_IAMSERV_RSP( const Value* doc, unsigned seqid )
 {
     int ret;
-    int svrid = 0;
+    int nsvrid = 0;
+
+    RemoteServ* rsev = dynamic_cast<RemoteServ*>(m_iohand);
+    NormalExceptionOff_IFTRUE(NULL==rsev, 400, CMD_IAMSERV_RSP, seqid, 
+            "iohand type must RemoteServ class");
 
     ret = m_iohand->Json2Map(doc);
+    string strsvrid = m_iohand->getProperty(CONNTERID_KEY);
+    nsvrid = atoi(strsvrid.c_str());
 
+    bool validsvr = (0 == nsvrid || nsvrid == RemoteServ::s_my_svrid);
+    NormalExceptionOff_IFTRUE(!validsvr, 400, CMD_IAMSERV_RSP, seqid, 
+            string("svrid invalid ")+strsvrid);
+
+    rsev->setSvrid(nsvrid);
 
     // 添加到climanage中管理(主动方)
-
-    return 0;
+    strsvrid += "S"; // 标识来自主动方和被动的serv分开
+    ret = CliMgr::Instance()->addChild(m_iohand);
+    ret |= CliMgr::Instance()->addAlias2Child(strsvrid, m_iohand);
+    NormalExceptionOff_IFTRUE(ret, 400, CMD_IAMSERV_RSP, seqid, 
+            string("addChild fail ")+strsvrid);
+    
+    m_iohand->m_idProfile = strsvrid + m_iohand->getCliSockName();
+    
+    return ret;
 }

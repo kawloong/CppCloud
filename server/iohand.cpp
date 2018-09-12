@@ -1,6 +1,7 @@
 #include "iohand.h"
 #include "comm/strparse.h"
 #include "comm/sock.h"
+#include "cloud/const.h"
 #include "exception.h"
 #include <sys/epoll.h>
 #include <cstring>
@@ -253,7 +254,7 @@ int IOHand::onEvent( int evtype, va_list ap )
 	}
 	else if (HEPNTF_INIT_FINISH == evtype)
 	{
-		int clity = atoi(m_cliProp["clitype"].c_str());
+		int clity = atoi(m_cliProp[CLIENT_TYPE_KEY].c_str());
 		if (clity > 0)
 		{
 			ERRLOG_IF1RET_N(m_cliType>0&&clity!=m_cliType, -95,
@@ -261,7 +262,7 @@ int IOHand::onEvent( int evtype, va_list ap )
 			   m_cliType, clity, m_idProfile.c_str());
 
 			m_idProfile = StrParse::Format("%s@%s-%d@%s", m_cliName.c_str(), 
-				m_cliProp["svrid"].c_str(), m_cliType, m_cliProp["name"].c_str());
+				m_cliProp[CONNTERID_KEY].c_str(), m_cliType, m_cliProp["name"].c_str());
 		}
 
 	}
@@ -338,6 +339,7 @@ int IOHand::onClose( int p1, long p2 )
 {
 	int ret = 0;
 	int fderrno = Sock::geterrno(m_cliFd);
+	bool isExit = (HEFG_PEXIT == p1 && 2 == p2);
 
 	LOGOPT_EI(ret, "IOHAND_CLOSE| msg=iohand need quit %d| mi=%s| reason=%s| sock=%d%s",
 		ret, m_cliName.c_str(), m_closeReason.c_str(), fderrno, fderrno?strerror(fderrno):"");
@@ -349,7 +351,7 @@ int IOHand::onClose( int p1, long p2 )
 	ERRLOG_IF1(ret, "IOHAND_CLOSE| msg=rm EVflag fail %d| mi=%s| err=%s", ret, m_cliName.c_str(), strerror(errno));
 
 	IFCLOSEFD(m_cliFd);
-	ret = Notify(m_parent, HEPNTF_SOCK_CLOSE, (HEpBase*)this, m_cliType, (void*)&m_cliProp);
+	ret = Notify(m_parent, HEPNTF_SOCK_CLOSE, this, m_cliType, (int)isExit);
 	ERRLOG_IF1(ret, "IOHAND_CLOSE| msg=Notify ret %d| mi=%s| reason=%s", ret, m_cliName.c_str(), m_closeReason.c_str());
 
 	m_closeFlag = 3;

@@ -5,7 +5,7 @@ Author hejl
 Description  : 适用于有多线程同时访问链表的情况, 内部自带条件变量通知功能
 Modification Log:
 --------------------------------------------------------------------------
-<日期，格式mm/dd/yyyy>   <编写人名>     zhanglei   <修改记录说明>
+<日期，格式mm/dd/yyyy>   <编写人名>     hejl   <修改记录说明>
 <2016-09-27>  hejl  加入延时任务功能
 -------------------------------------------------------------------------*/
 #ifndef __GENERAL_QUEUE_H__
@@ -18,9 +18,10 @@ Modification Log:
 #include <iostream>
 #include <pthread.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 using namespace std; 
-
+#define USE_QUEUE_CPP // 如果想单独使用此文件,脱离queue.cpp,则注释此行
 
 template<bool isPtr=false>
 class Bool2Type
@@ -28,11 +29,15 @@ class Bool2Type
 	enum{eType = isPtr};
 };
 
+#ifdef USE_QUEUE_CPP
+bool operator<(struct timeval l, struct timeval r);
+#else
 static bool operator<(struct timeval l, struct timeval r)
 {
     bool ret = (l.tv_sec == r.tv_sec) ? (l.tv_usec < r.tv_usec): (l.tv_sec < r.tv_sec);
     return ret;
 }
+#endif
 
 template< typename T, bool isPtr=false, typename storage=deque<T> >
 class Queue
@@ -383,6 +388,7 @@ public:
 		return ;
 		
 	}
+
     
 protected:
 	//微秒1s=1000ms=1000000us=1000000000ns

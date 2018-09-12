@@ -3,6 +3,7 @@ SrcCpp+=comm/taskpool.cpp comm/file.cpp comm/sock.cpp comm/timef.cpp comm/timesp
 SrcCpp+=comm/des_code.cpp comm/simplehttp.cpp comm/hep_base.cpp comm/hepoll.cpp
 SrcCpp+=rapidxml/bmshxml.cpp
 SrcCpp+=redis/redis.cpp redis/redispool.cpp redis/redispooladmin.cpp
+SrcCpp+=comm/queue.cpp
 
 
 

@@ -33,11 +33,13 @@ protected: // for singleton func
     FlowCtrl(const FlowCtrl&); // dummy
     FlowCtrl& operator=(const FlowCtrl&); // dummy
 
+ 
 private:
     HEpoll* m_hepo; // io handle
     TaskPoolEx<HEpBase, &HEpBase::qrun>* m_tskq;
     HEpBase* m_listener;
     int m_tskqNum;
+    int m_mysvrid;
 };
 
 #endif

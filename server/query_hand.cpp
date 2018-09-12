@@ -1,6 +1,7 @@
 #include "query_hand.h"
 #include "iobuff.h"
 #include "comm/strparse.h"
+#include "cloud/const.h"
 #include "redis/redispooladmin.h"
 #include "flowctrl.h"
 #include "act_mgr.h"
@@ -95,7 +96,7 @@ int QueryHand::on_CMD_GETCLI_REQ( IOHand* parent, const Value* doc, unsigned seq
 	string dstKey;
 	string outjson;
 
-	svrid = getIntFromJson("svrid", doc);
+	svrid = getIntFromJson(CONNTERID_KEY, doc);
 
 	Rjson::GetStr(dstKey, "key", doc);
 
