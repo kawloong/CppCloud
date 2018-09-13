@@ -116,7 +116,7 @@ int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqi
 		}
 		else
 		{
-			svrid = ++ss_svrid_gen + CloudConf::CppCloudSvrid()*1000;
+			svrid = ++ss_svrid_gen + CloudConf::CppCloudServID()*1000;
 		}
 		str = StrParse::Itoa(svrid);
 

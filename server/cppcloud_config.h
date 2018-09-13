@@ -29,10 +29,18 @@ usage:
 //#include "public.h"
 #include "comm/config.h"
 
-#define FUNC_STR_CONF(funname) std::string funname(bool b=false)
-#define FUNC_INT_CONF(funname) int funname(bool b=false)
+#define FUNC_STR_CONF(funname)                      \
+void funname##_SET(const std::string&);             \
+void funname##_DEFAULT(const std::string&);         \
+std::string funname(bool b=false)
+
+#define FUNC_INT_CONF(funname)                      \
+void funname##_SET(int);                            \
+void funname##_DEFAULT(int);                        \
+int funname(bool b=false)
+
 #define FUNC_ARRSTR_CONF(funname) static std::string funname(int idx)
-#define DEF_CONFILENAME "monitor.conf"
+#define DEF_CONFILENAME "cppcloud.conf"
 
 namespace CloudConf
 {
@@ -46,7 +54,8 @@ namespace CloudConf
     FUNC_INT_CONF(CppCloudListenPort);
     FUNC_INT_CONF(CppCloudTaskQNum);
     FUNC_STR_CONF(CppCloudListenClass);
-    FUNC_INT_CONF(CppCloudSvrid); // 控制中心自身的svrid
+    FUNC_INT_CONF(CppCloudServID); // 控制中心自身的svrid
+    FUNC_INT_CONF(CppCloudPort); // 监听端口
     FUNC_STR_CONF(CppCloudPeerNode); // 分布式其他serv: 192.168.10.44:3303|192.168.10.55:3409
 };
 

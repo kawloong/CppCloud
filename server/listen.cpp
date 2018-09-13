@@ -39,7 +39,6 @@ int Listen::creatSock( int port, const char* svrhost/*= NULL*/, int lqueue/*=100
 int Listen::run( int p1, long p2 )
 {
 	int ret = 0;
-	int keep_alive = 1;
 
 	if (EPOLLIN & p1)
 	{
@@ -54,6 +53,7 @@ int Listen::run( int p1, long p2 )
 			
 			HEpBase::BindSon(this, worker);
 	  
+			//int keep_alive = 1;
 			//ret = setsockopt(clifd, SOL_SOCKET, SO_KEEPALIVE, (char*)&keep_alive, sizeof(keep_alive));
 
 			Notify(worker, HEPNTF_INIT_PARAM, clifd, m_evCtrl.m_epfd);

@@ -6,6 +6,22 @@
 
 const char g_jsonconf_file[] = ".scomm_svrid.txt";
 
+CliMgr::AliasCursor::AliasCursor( const string& key_beg ): 
+	iter_range(CliMgr::Instance()->m_aliName2Child, key_beg)
+{
+}
+
+CliMgr::AliasCursor::AliasCursor( const string& key_beg, const string& key_end ): 
+	iter_range(CliMgr::Instance()->m_aliName2Child, key_beg, key_end)
+{
+}
+
+CliBase* CliMgr::AliasCursor::pop(void)
+{
+	return iter_range.pop();
+}
+
+
 CliMgr::CliMgr(void)
 {
 	m_waitRmPtr = NULL;
@@ -100,7 +116,7 @@ void CliMgr::removeAliasChild( CliBase* ptr, bool rmAll )
 			}
 
 			LOGINFO("CliMgr_CHILDRM| msg=a iohand close| dt=%ds| asname=%s", int(time(NULL)-cliinfo.t0), asnamestr.c_str());
-			if (ptr->isLocal())
+			if (!ptr->isLocal())
 			{
 				m_waitRmPtr = static_cast<IOHand*>(ptr);
 			}

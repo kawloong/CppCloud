@@ -20,7 +20,7 @@ int RemoteMgr::init( int epfd )
     StrParse::SpliteStr(vhost, peernodes, '|');
 
 	m_epfd = epfd;
-    m_mysvrid = CloudConf::CppCloudSvrid();
+    m_mysvrid = CloudConf::CppCloudServID();
     RemoteServ::Init(m_mysvrid);
 
 	int ret = 0;
@@ -59,7 +59,7 @@ int RemoteMgr::onEvent( int evtype, va_list ap )
 
 		CliMgr::Instance()->removeAliasChild(son, true);
 
-		delete ptr; // isLocal = false
+		delete ptr; // m_outObj = true
 		m_rSvrs.erase(ptr);
 
 		if (isExit)

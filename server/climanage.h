@@ -9,6 +9,7 @@ Modification :
 #ifndef _CLIMANAGE_H_
 #define _CLIMANAGE_H_
 #include "comm/public.h"
+#include "comm/maprange.hpp"
 #include "iohand.h"
 #include <cstdarg>
 #include <map>
@@ -19,6 +20,7 @@ using std::map;
 using std::list;
 using std::string;
 
+typedef MapRanger<string, CliBase*> CliMapRange;
 
 struct CliInfo
 {
@@ -34,7 +36,15 @@ class CliMgr
 {
     SINGLETON_CLASS2(CliMgr)
 
+public:
     enum { CLIOPLOG_SIZE = 200 };
+    struct AliasCursor
+    {
+        CliMapRange iter_range;
+        AliasCursor(const string& key_beg);
+        AliasCursor(const string& key_beg, const string& key_end);
+        CliBase* pop(void);
+    };
 
 public:
     // 别名引用相关的操作
@@ -46,6 +56,9 @@ public:
     CliBase* getChildByName( const string& asname );
     CliBase* getChildBySvrid( int svrid );
     map<CliBase*, CliInfo>* getAllChild() { return &m_children; }
+
+    // 获取一个范围的CliBase*
+    // 使用AliasCursor struct
 
     // 自定义属性的操作
     void setProperty( CliBase* dst, const string& key, const string& val );

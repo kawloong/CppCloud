@@ -29,16 +29,20 @@ public: // interface HEpBase
 	// 自定义属性的操作
     void setProperty( const string& key, const string& val );
     string getProperty( const string& key );
-	int getCliType(void) {return m_cliType; }
 	void setCliType(int tp) { m_cliType=tp; }
-	string getCliSockName() { return m_cliName; }
-	bool isLocal(void) {return m_isLocal; }
+
+
+	int getCliType(void) const {return m_cliType; }
+	string getCliSockName() const { return m_cliName; }
+	bool isLocal(void) const {return m_isLocal; }
+	bool isOutObj(void) const {return m_outObj; }
 
 
 protected:
 	string m_cliName;
-	int m_cliType; // 何种类型的客户端: 1 sevr端服务; 10 监控进程; 20 web serv; 30 观察进程; 40
-	bool m_isLocal; 
+	int m_cliType; // 何种类型的客户应用: 1 sevr端服务; 10 监控进程; 20 web serv; 30 观察进程; 40
+	bool m_isLocal; // 直连为true(有socket connect); 间接的为false;
+	bool m_outObj; // 外部对象,不交给climgr释放;
 
 public:
 	map<string, string> m_cliProp; // 客户属性

@@ -15,7 +15,7 @@ int CliBase::Init( void )
 	return 0;
 }
 
-CliBase::CliBase(void): m_cliType(0), m_isLocal(true)
+CliBase::CliBase(void): m_cliType(0), m_isLocal(true), m_outObj(false)
 {
     
 }

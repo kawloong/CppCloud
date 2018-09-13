@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include "cloud/const.h"
 #include "cppcloud_config.h"
 
@@ -7,6 +8,11 @@ namespace CloudConf
 {
     Config s_config;
 
+static bool isFileExists(const char* name)
+{
+    struct stat st;
+    return stat(name?name:"", &st) == 0;
+}
 
 int Init( const char* conffile )
 {
@@ -14,7 +20,10 @@ int Init( const char* conffile )
 
     if (NULL == conffile || 0 == conffile[0])
     {
-        ret = s_config.load(DEF_CONFILENAME);
+        if (isFileExists(DEF_CONFILENAME))
+        {
+            ret = s_config.load(DEF_CONFILENAME);
+        }
     }
     else
     {
@@ -35,43 +44,68 @@ void UnInit( void )
 }
 
 #define FUNC_STR_CONF_IMP(funname, szSec, szKey, defval)             \
-std::string funname(bool commIfnil)                            \
+static std::string s_##funname##_default = defval;                   \
+static std::string s_##funname##_val;                                \
+static bool s_##funname##_reset = false;                             \
+std::string funname(bool commIfnil)                                  \
 {                                                                    \
+    if (s_##funname##_reset) return s_##funname##_val;               \
     std::string outval;                                              \
     int result = s_config.read(szSec, szKey, outval);                \
     if (result&&commIfnil)                                           \
         result = s_config.read("common", szKey, outval);             \
-    if (result) return defval;                                       \
+    if (result) return s_##funname##_default;                        \
     return outval;                                                   \
+}                                                                    \
+void funname##_DEFAULT(const std::string& newdef ) {                 \
+    s_##funname##_default = newdef;                                  \
+}                                                                    \
+void funname##_SET(const std::string& newdef ) {                     \
+    s_##funname##_val = newdef;   s_##funname##_reset=true;          \
 }
 
+
 #define FUNC_INT_CONF_IMP(funname, szSec, szKey, defval)             \
-int funname(bool commIfnil)                                    \
+static int s_##funname##_default = defval;                           \
+static int s_##funname##_val = 0;                                    \
+static bool s_##funname##_reset = false;                             \
+int funname(bool commIfnil)                                          \
 {                                                                    \
+    if (s_##funname##_reset) return s_##funname##_val;               \
     int outi;                                                        \
     std::string outval;                                              \
     int result = s_config.read(szSec, szKey, outval);                \
     if (result&&commIfnil)                                           \
         result = s_config.read("common", szKey, outval);             \
-    if (result) return defval;                                       \
+    if (result) return s_##funname##_default;                        \
     if (outval.length() > 1){                                        \
     const char* p = outval.c_str();                                  \
     sscanf(p, ('0'==p[0]?('x'==p[1]? "%x": "%o") : "%d"), &outi);}   \
     else { outi = atoi(outval.c_str()); }                            \
     return outi;                                                     \
+}                                                                    \
+void funname##_DEFAULT( int newdef ) {                               \
+    s_##funname##_default = newdef;                                  \
+}                                                                    \
+void funname##_SET( int newdef ) {                                   \
+    s_##funname##_val = newdef;                                      \
+    s_##funname##_reset=true;                                        \
 }
 
 #define FUNC_ARRSTR_CONF_IMP(funname, szSec, szKey, defval)          \
-static std::string funname(int idx, bool warnlog)              \
+static std::string s_##funname##_default = defval;                   \
+static std::string funname(int idx, bool warnlog)                    \
 {                                                                    \
     int result;                                                      \
     char outval;                                                     \
     char keystr[128];                                                \
     snprintf(keystr, sizeof(keystr), "%s%d", szKey, idx);            \
     result = s_config.read(szSec, keystr, outval);                   \
-    if (result) return defval;                                       \
+    if (result) return s_##funname##_default;                        \
     return outval;                                                   \
 }
+
+
 
 // 快捷配置读取定义
 // <todo>: append reader function implement here
@@ -81,7 +115,8 @@ FUNC_INT_CONF_IMP(CppCloudLogFSize, "cloud_serv", "logfsize", 2);
 FUNC_INT_CONF_IMP(CppCloudListenPort, "cloud_serv", "port", 4800);
 FUNC_INT_CONF_IMP(CppCloudTaskQNum, "cloud_serv", "taskqnum", 1);
 FUNC_STR_CONF_IMP(CppCloudListenClass, "cloud_serv", "listen_class", "Lisn");
-FUNC_INT_CONF_IMP(CppCloudSvrid, "cloud_serv", CONNTERID_KEY, 1);
+FUNC_INT_CONF_IMP(CppCloudServID, "cloud_serv", "servid", 1);
+FUNC_INT_CONF_IMP(CppCloudPort, "cloud_serv", "port", 1);
 FUNC_STR_CONF_IMP(CppCloudPeerNode, "cloud_serv", "peernode", ""); 
 
 }

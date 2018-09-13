@@ -15,7 +15,8 @@ int RemoteServ::s_my_svrid = 0;
 RemoteServ::RemoteServ(void): m_stage(0), m_seqid(0), m_svrid(0), m_epfd(INVALID_FD), m_port(0)
 {
  	m_cliType = SERV_CLITYPE_ID;
-	m_isLocal = false;
+	m_isLocal = true;
+	m_outObj = true;
 }
 
 RemoteServ::~RemoteServ(void)

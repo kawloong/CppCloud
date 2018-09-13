@@ -27,9 +27,11 @@ struct ParamConf
     string inifile; // 配置文件
     string logfile; // 日志文件全路径
     string workpath; // 进程工作目录
+    string peerhosts; // 直连的Serv: ip1:port1-ip2:port2
     int loglevel;
     int logfsize;
-    int msg_id;
+    int servid;
+    int port;
 
     bool debug;
     bool daemon;
@@ -113,11 +115,14 @@ static int parse_cmdline(int argc, char** argv)
 {
     int ret = 0;
     int c;
-    int debug = 0;
-    int daemon = 0;
     string conffile(DEF_CONFILE);
 
-    while ((c = getopt(argc, argv, "c:w:W:q:vdD")) != -1)
+    g_param.debug = 0;
+    g_param.daemon = 0;
+    g_param.servid = 0;
+    g_param.port = 0;
+
+    while ((c = getopt(argc, argv, "c:i:p:s:vdD")) != -1)
     {
         switch (c)
         {
@@ -125,10 +130,23 @@ static int parse_cmdline(int argc, char** argv)
             conffile = optarg;
             break;
         case 'd' :
-            daemon = 1;
+            g_param.daemon = 1;
             break;
         case 'D':
-            debug = 1;
+            g_param.debug = 1;
+            break;
+        
+        case 'i': // 分布式进程的ServID,不能冲突
+            g_param.servid = atoi(optarg);
+            CloudConf::CppCloudServID_SET(g_param.servid); // 设置默认值
+            break;
+        case 'p': // 监听端口
+            g_param.port = atoi(optarg);
+            CloudConf::CppCloudPort_SET(g_param.port); // 设置默认值
+            break;
+        case 's': // 要连接的别的Serv服务地址
+            g_param.peerhosts = optarg;
+            CloudConf::CppCloudPeerNode_SET(optarg); // 设置默认值
             break;
             
         case 'v':
@@ -140,7 +158,9 @@ static int parse_cmdline(int argc, char** argv)
         default :
             printf("command parameter fail! \n"
                 "\t-c <f.conf> configure file name\n"
-                //"\t-p <port> listen port\n"
+                "\t-i <servid> \n"
+                "\t-p <port> listen port\n"
+                "\t-s <peerhosts> ip1:port1-ip2:port2\n"
                 "\t-v show program version\n"
                 "\t-d  run as a deamon\n");
             ret = RET_COMMOND;
@@ -149,8 +169,6 @@ static int parse_cmdline(int argc, char** argv)
     }
 
     g_param.inifile = conffile;
-    g_param.debug = debug;
-    g_param.daemon = daemon;
 
     return ret;
 }
