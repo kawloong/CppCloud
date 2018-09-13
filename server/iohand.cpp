@@ -119,6 +119,8 @@ int IOHand::onRead( int p1, long p2 )
 			{
 				ret = cmdProcess(m_iBufItem);
 			}
+
+			CliMgr::Instance()->updateCliTime(this);
 		}
 	}
 	while (0);

@@ -59,6 +59,7 @@ int Listen::run( int p1, long p2 )
 			Notify(worker, HEPNTF_INIT_PARAM, clifd, m_evCtrl.m_epfd);
 			m_child = NULL; // Listen类的子对象存于map中，而非m_child
 			CliMgr::Instance()->addChild(worker);
+			CliMgr::Instance()->updateCliTime(worker);
 		}
 		
 		if ( -1 == ret )

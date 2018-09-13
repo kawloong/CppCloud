@@ -124,6 +124,7 @@ int RemoteCli::on_CMD_IAMSERV_RSP( const Value* doc, unsigned seqid )
     NormalExceptionOff_IFTRUE(ret, 400, CMD_IAMSERV_RSP, seqid, 
             string("addChild fail ")+strsvrid);
     
+    CliMgr::Instance()->updateCliTime(m_iohand);
     m_iohand->m_idProfile = strsvrid + m_iohand->getCliSockName();
     
     return ret;

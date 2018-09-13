@@ -57,6 +57,8 @@ public:
     CliBase* getChildBySvrid( int svrid );
     map<CliBase*, CliInfo>* getAllChild() { return &m_children; }
 
+    void updateCliTime( CliBase* child );
+
     // 获取一个范围的CliBase*
     // 使用AliasCursor struct
 

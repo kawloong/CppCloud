@@ -140,6 +140,10 @@ CliBase* CliMgr::getChildByName( const string& asname )
 	return ptr;
 }
 
+void CliMgr::updateCliTime( CliBase* child )
+{
+	
+}
 
 void CliMgr::setProperty( CliBase* dst, const string& key, const string& val )
 {
