@@ -9,7 +9,7 @@
 #include "climanage.h"
 #include "act_mgr.h"
 
-HEPCLASS_IMPL_EX(BegnHand, _, MoniFunc)
+HEPCLASS_IMPL_FUNC(BegnHand, ProcessOne)
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
 
 static int ss_svrid_gen = 1000;

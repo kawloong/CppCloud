@@ -16,21 +16,24 @@ static map<unsigned, string> s_cmdid2clsname;
 int IOHand::Init( void )
 {
 	// 预定义好的消息->处理类
-	s_cmdid2clsname[CMD_WHOAMI_REQ] = "MoniFunc"; // ->BegnHand
-	s_cmdid2clsname[CMD_GETCLI_REQ] = "QueryFunc";
-	s_cmdid2clsname[CMD_HUNGUP_REQ] = "MoniFunc";
-	s_cmdid2clsname[CMD_GETLOGR_REQ] = "QueryFunc";
-	s_cmdid2clsname[CMD_EXCHANG_REQ] = "MoniFunc";
-	s_cmdid2clsname[CMD_EXCHANG_RSP] = "MoniFunc";
-	s_cmdid2clsname[CMD_SETARGS_REQ] = "MoniFunc";
-	s_cmdid2clsname[CMD_GETWARN_REQ] = "QueryFunc";
-	s_cmdid2clsname[CMD_KEEPALIVE_REQ] = "MoniFunc";
-	s_cmdid2clsname[CMD_KEEPALIVE_RSP] = "MoniFunc";
+	s_cmdid2clsname[CMD_WHOAMI_REQ] = "BegnHand::ProcessOne"; // ->BegnHand
+	s_cmdid2clsname[CMD_GETCLI_REQ] = "QueryHand::ProcessOne";
+	s_cmdid2clsname[CMD_HUNGUP_REQ] = "BegnHand::ProcessOne";
+	s_cmdid2clsname[CMD_GETLOGR_REQ] = "QueryHand::ProcessOne";
+	s_cmdid2clsname[CMD_EXCHANG_REQ] = "BegnHand::ProcessOne";
+	s_cmdid2clsname[CMD_EXCHANG_RSP] = "BegnHand::ProcessOne";
+	s_cmdid2clsname[CMD_SETARGS_REQ] = "BegnHand::ProcessOne";
+	s_cmdid2clsname[CMD_GETWARN_REQ] = "QueryHand::ProcessOne";
+	s_cmdid2clsname[CMD_KEEPALIVE_REQ] = "BegnHand::ProcessOne";
+	s_cmdid2clsname[CMD_KEEPALIVE_RSP] = "BegnHand::ProcessOne";
 
 	s_cmdid2clsname[CMD_IAMSERV_REQ] = "RemoteCli"; // 中心端报告身份
 	s_cmdid2clsname[CMD_IAMSERV_RSP] = "RemoteCli";
 
-	s_cmdid2clsname[0] = "MoniFunc"; // default handle class
+	s_cmdid2clsname[CMD_BROADCAST_REQ] = "BroadCastCli::OnBroadCMD"; // 中心端报告身份
+	s_cmdid2clsname[CMD_BROADCAST_RSP] = "BroadCastCli::OnBroadCMD";
+
+	s_cmdid2clsname[0] = "BegnHand::ProcessOne"; // default handle class
 
 	return 0;
 }

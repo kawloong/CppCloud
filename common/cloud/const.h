@@ -19,5 +19,6 @@ const char CLI_PREFIX_KEY_SERV[] = "dserv";
 const int SERV_CLITYPE_ID = 1;
 const int CLI_KEEPALIVE_TIME_SEC = 60*2;
 const int CLI_DEAD_TIME_SEC = 60*8;
+const int BROADCASTCLI_INTERVAL_SEC = 60*10;
 
 #endif

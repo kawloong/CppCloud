@@ -50,9 +50,10 @@ struct HEpEvFlag
     static clsname g_##clsname(#regname);            \
     clsname::clsname(const char* name): basecls(name) {}
 
-#define HEPCLASS_IMPL_EX(clsname, regname, func)              \
-    static clsname g_##clsname(#regname);\
-    clsname::clsname(const char* name): HEpBase(name) {RegisterFunc(#func, &clsname::ProcessOne);}
+#define HEPCLASS_IMPL_FUNC(clsname, static_method_name)    \
+    static clsname g_##clsname("_"); \
+    clsname::clsname(const char* name): HEpBase(name) \
+    {RegisterFunc(clsname::##static_method_name, &clsname::static_method_name);}
 
 #define HEPCLS_STATIC_TIMER_FUN(clsname, qidx, delay_ms) \
     FlowCtrl::Instance()->appendTask(&g_##clsname, qidx, delay_ms)

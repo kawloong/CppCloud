@@ -7,7 +7,7 @@
 #include "act_mgr.h"
 #include "iohand.h"
 
-HEPCLASS_IMPL_EX(QueryHand, _, QueryFunc)
+HEPCLASS_IMPL_FUNC(QueryHand, ProcessOne)
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
 
 //const char s_app_cache_id[] = "3";
