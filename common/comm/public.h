@@ -10,6 +10,7 @@
 
 
 #ifdef LOG2STDOUT
+#include <unistd.h>
 #define LOGDEBUG(fmt, ...) printf("-- Debug[%d/%x][%s:%d]:"  fmt "\n", getpid(), (unsigned)pthread_self(), __FILE__, __LINE__, ##__VA_ARGS__)
 #define LOGINFO(fmt, ...)  printf("-- Info[%d/%x][%s:%d]:"   fmt "\n", getpid(), (unsigned)pthread_self(), __FILE__, __LINE__, ##__VA_ARGS__)
 #define LOGWARN(fmt, ...)  printf("-- Warn[%d/%x][%s:%d]:"   fmt "\n", getpid(), (unsigned)pthread_self(), __FILE__, __LINE__, ##__VA_ARGS__)

@@ -140,9 +140,29 @@ CliBase* CliMgr::getChildByName( const string& asname )
 	return ptr;
 }
 
+CliInfo* CliMgr::getCliInfo( CliBase* child )
+{
+	map<CliBase*, CliInfo>::iterator itr = m_children.find(child);
+	return (itr!=m_children.end() ? &itr->second : NULL);
+}
+
 void CliMgr::updateCliTime( CliBase* child )
 {
-	
+	CliInfo* clif = getCliInfo(child);
+	ERRLOG_IF1RET(NULL==clif, "UPDATECLITIM| msg=null pointer at %p", child);
+	string svrid = child->getProperty(CONNTERID_KEY);
+	if (clif->t1 >= clif->t0)
+	{
+		string atimkey = StrParse::Format("%s%ld", CLI_PREFIX_KEY_TIMEOUT, clif->t1);
+		atimkey += svrid;
+		removeAliasChild(atimkey);
+	}
+
+	clif->t1 = time(NULL);
+	string atimkey = StrParse::Format("%s%ld", CLI_PREFIX_KEY_TIMEOUT, clif->t1);
+	atimkey += svrid;
+	int ret = addAlias2Child(atimkey, child);
+	ERRLOG_IF1(ret, "UPDATECLITIM| msg=add alias atimkey fail| ret=%d| mi=%s", ret, child->m_idProfile.c_str());
 }
 
 void CliMgr::setProperty( CliBase* dst, const string& key, const string& val )

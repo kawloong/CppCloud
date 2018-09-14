@@ -77,7 +77,7 @@ int FlowCtrl::appendTask( HEpBase* tsk, int qidx, int delay_ms )
 
 int FlowCtrl::notifyExit( void )
 {
-
+    SwitchHand::Instance()->notifyExit();
     for (int i = 0; i < m_tskqNum; ++i)
     {
         m_tskq[i].setExit();
@@ -106,6 +106,8 @@ int FlowCtrl::run( bool& bexit )
         m_tskq[i].unInit();
     }
 
+    RemoteMgr::Instance()->uninit();
+    SwitchHand::Instance()->join();
 	CliMgr::Instance()->progExitHanele(0);
     m_hepo->unInit();
 

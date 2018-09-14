@@ -17,17 +17,11 @@ static bool isFileExists(const char* name)
 int Init( const char* conffile )
 {
     int ret = 0;
+    const char* filename = (NULL == conffile || 0 == conffile[0])? DEF_CONFILENAME: conffile;
 
-    if (NULL == conffile || 0 == conffile[0])
+    if (isFileExists(filename))
     {
-        if (isFileExists(DEF_CONFILENAME))
-        {
-            ret = s_config.load(DEF_CONFILENAME);
-        }
-    }
-    else
-    {
-        ret = s_config.load(conffile);
+        ret = s_config.load(filename);
     }
 
     if ( 0 != ret )
@@ -116,7 +110,6 @@ FUNC_INT_CONF_IMP(CppCloudListenPort, "cloud_serv", "port", 4800);
 FUNC_INT_CONF_IMP(CppCloudTaskQNum, "cloud_serv", "taskqnum", 1);
 FUNC_STR_CONF_IMP(CppCloudListenClass, "cloud_serv", "listen_class", "Lisn");
 FUNC_INT_CONF_IMP(CppCloudServID, "cloud_serv", "servid", 1);
-FUNC_INT_CONF_IMP(CppCloudPort, "cloud_serv", "port", 1);
 FUNC_STR_CONF_IMP(CppCloudPeerNode, "cloud_serv", "peernode", ""); 
 
 }

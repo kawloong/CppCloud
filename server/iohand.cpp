@@ -3,6 +3,7 @@
 #include "comm/sock.h"
 #include "cloud/const.h"
 #include "exception.h"
+#include "climanage.h"
 #include <sys/epoll.h>
 #include <cstring>
 #include <cerrno>
@@ -23,6 +24,8 @@ int IOHand::Init( void )
 	s_cmdid2clsname[CMD_EXCHANG_RSP] = "MoniFunc";
 	s_cmdid2clsname[CMD_SETARGS_REQ] = "MoniFunc";
 	s_cmdid2clsname[CMD_GETWARN_REQ] = "QueryFunc";
+	s_cmdid2clsname[CMD_KEEPALIVE_REQ] = "MoniFunc";
+	s_cmdid2clsname[CMD_KEEPALIVE_RSP] = "MoniFunc";
 
 	s_cmdid2clsname[CMD_IAMSERV_REQ] = "RemoteCli"; // 中心端报告身份
 	s_cmdid2clsname[CMD_IAMSERV_RSP] = "RemoteCli";
@@ -98,12 +101,15 @@ int IOHand::onRead( int p1, long p2 )
 		}
 		
 		// body 接收
-		ret = Sock::recv(m_cliFd, (char*)m_iBufItem->head(), m_iBufItem->len, m_iBufItem->totalLen);
-		if (ret <= 0)
+		if (m_iBufItem->totalLen > m_iBufItem->len)
 		{
-			m_closeFlag = 2;
-			m_closeReason = (0==ret? "recv body closed": strerror(errno));
-			break;
+			ret = Sock::recv(m_cliFd, (char*)m_iBufItem->head(), m_iBufItem->len, m_iBufItem->totalLen);
+			if (ret <= 0)
+			{
+				m_closeFlag = 2;
+				m_closeReason = (0==ret? "recv body closed": strerror(errno));
+				break;
+			}
 		}
 
 		if (m_iBufItem->ioFinish()) // 报文接收完毕
@@ -335,6 +341,11 @@ int IOHand::Json2Map( const Value* objnode )
     }
 
     return ret;
+}
+
+int IOHand::driveClose( void )
+{
+	return onClose(0, 0);
 }
 
 int IOHand::onClose( int p1, long p2 )

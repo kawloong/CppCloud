@@ -2,3 +2,8 @@
 
 
 HEPMUTICLASS_IMPL(OuterServ, OuterServ, CliBase)
+
+OuterServ::OuterServ()
+{
+    
+}

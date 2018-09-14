@@ -22,6 +22,7 @@ enum command_id_t
     CMD_SETARGS_REQ= 0X0006,
     CMD_GETWARN_REQ= 0X0007,
     CMD_IAMSERV_REQ = 0x0008, // 分布式中心端启动时报上自身身份
+    CMD_KEEPALIVE_REQ = 0x0009,
 
     CMDID_MID = 0x1000,
 
@@ -33,6 +34,7 @@ enum command_id_t
     CMD_SETARGS_RSP= 0X1006,
     CMD_GETWARN_RSP= 0X1007,
     CMD_IAMSERV_RSP = 0x1008,
+    CMD_KEEPALIVE_RSP = 0x1009,
 };
 
 static const unsigned char g_msg_ver = 1;

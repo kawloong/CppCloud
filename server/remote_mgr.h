@@ -25,6 +25,7 @@ public:
 
 public:
 	int init( int epfd );
+	void uninit( void );
 
 	// interface HEpBase
 	virtual int onEvent( int evtype, va_list ap );

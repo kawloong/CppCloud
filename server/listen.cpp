@@ -29,6 +29,7 @@ int Listen::creatSock( int port, const char* svrhost/*= NULL*/, int lqueue/*=100
 		
 		m_evCtrl.setActFd(m_listenFd);
 		IFBREAK_N(ret, -21);
+		printf("Serv Listen on %s:%d\n", svrhost, port);
 	}
 	while (0);
 	
@@ -59,7 +60,7 @@ int Listen::run( int p1, long p2 )
 			Notify(worker, HEPNTF_INIT_PARAM, clifd, m_evCtrl.m_epfd);
 			m_child = NULL; // Listen类的子对象存于map中，而非m_child
 			CliMgr::Instance()->addChild(worker);
-			CliMgr::Instance()->updateCliTime(worker);
+			CliMgr::Instance()->updateCliTime(dynamic_cast<CliBase*>(worker));
 		}
 		
 		if ( -1 == ret )

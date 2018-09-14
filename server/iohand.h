@@ -34,6 +34,7 @@ public: // interface HEpBase
     string getProperty( const string& key );
 	int getCliType(void) {return m_cliType; }
 
+	int driveClose( void );
 	int sendData( unsigned int cmdid, unsigned int seqid, const char* body, 
 		unsigned int bodylen, bool setOutAtonce );
 

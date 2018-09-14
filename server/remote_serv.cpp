@@ -60,7 +60,7 @@ int RemoteServ::qrun( int flag, long p2 )
 		}
 		catch(OffConnException& exp)
 		{
-			LOGERROR("REMOTES_TASKRUN| msg=exception| reson=%s", exp.reson.c_str(), m_idProfile.c_str());
+			LOGERROR("REMOTES_TASKRUN| msg=exception| reson=%s| mi=%s", exp.reson.c_str(), m_idProfile.c_str());
 			IOHand::onClose(flag, p2);
 			m_stage = 0;
 		}

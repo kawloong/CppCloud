@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 FileName     : outer_cli.h
-Description  : 客户对象保活机制
+Description  : 间隔过来的客户对象
 remark       : 
 Modification :
 --------------------------------------------------------------------------
@@ -13,12 +13,15 @@ Modification :
 
 class OuterCli: public CliBase
 {
+public:
     HEPCLASS_DECL(OuterCli, OuterCli);
+
+    OuterCli(void);
     void init( void );
 
 protected: // interface IEPollRun
-	virtual int onEvent( int evtype, va_list ap );
-    virtual int qrun( int flag, long p2 );
+	//virtual int onEvent( int evtype, va_list ap );
+    //virtual int qrun( int flag, long p2 );
 
 protected:
 

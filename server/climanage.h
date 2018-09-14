@@ -51,11 +51,15 @@ public:
     int addChild( HEpBase* chd );
     int addChild( CliBase* child );
     int addAlias2Child( const string& asname, CliBase* ptr );
+
     void removeAliasChild( const string& asname );
     void removeAliasChild( CliBase* ptr, bool rmAll );
+
     CliBase* getChildByName( const string& asname );
     CliBase* getChildBySvrid( int svrid );
+    CliInfo* getCliInfo( CliBase* child );
     map<CliBase*, CliInfo>* getAllChild() { return &m_children; }
+
 
     void updateCliTime( CliBase* child );
 

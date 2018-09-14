@@ -65,6 +65,8 @@ int BegnHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 		CMDID2FUNCALL(CMD_WHOAMI_REQ);
 		CMDID2FUNCALL(CMD_HUNGUP_REQ);
 		CMDID2FUNCALL(CMD_SETARGS_REQ);
+		CMDID2FUNCALL(CMD_KEEPALIVE_REQ);
+		CMDID2FUNCALL(CMD_KEEPALIVE_RSP);
 
 		case CMD_EXCHANG_REQ:
 		case CMD_EXCHANG_RSP:
@@ -200,7 +202,7 @@ int BegnHand::on_CMD_SETARGS_REQ( IOHand* iohand, const Value* doc, unsigned seq
 
 	// 解析出每一个字符串属性
 	ret = iohand->Json2Map(doc);
-	ERRLOG_IF1(ret, "SETPROP| msg=json2map set prop fail %d| mi=%d", ret, iohand->m_idProfile.c_str());
+	ERRLOG_IF1(ret, "SETPROP| msg=json2map set prop fail %d| mi=%s", ret, iohand->m_idProfile.c_str());
 	if (0 == Rjson::GetStr(warnstr, "warn", doc) && !warnstr.empty())
 	{
 		string taskkey = iohand->m_idProfile;
@@ -229,6 +231,17 @@ int BegnHand::on_CMD_SETARGS_REQ( IOHand* iohand, const Value* doc, unsigned seq
 	return ret;
 }
 
+
+int BegnHand::on_CMD_KEEPALIVE_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
+{
+	return iohand->sendData(CMD_KEEPALIVE_RSP, seqid, "", 0, true);
+}
+
+int BegnHand::on_CMD_KEEPALIVE_RSP( IOHand* iohand, const Value* doc, unsigned seqid )
+{
+	LOGDEBUG("KEEPALIVE_RSP| mi=%s", iohand->m_idProfile.c_str());
+	return 0;
+}
 
 // @summery: 消息转发/交换
 int BegnHand::on_ExchangeMsg( IOHand* iohand, const Value* doc, unsigned cmdid, unsigned seqid )

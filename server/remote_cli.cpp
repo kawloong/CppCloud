@@ -67,7 +67,7 @@ int RemoteCli::on_CMD_IAMSERV_REQ( const Value* doc, unsigned seqid )
     int ret;
 
     ret = m_iohand->Json2Map(doc);
-    ERRLOG_IF1(ret, "IAMSERV_REQ| msg=json2map set prop fail %d| mi=%d", ret, m_iohand->m_idProfile.c_str());
+    ERRLOG_IF1(ret, "IAMSERV_REQ| msg=json2map set prop fail %d| mi=%s", ret, m_iohand->m_idProfile.c_str());
 
     m_iohand->setCliType(SERV_CLITYPE_ID);
 

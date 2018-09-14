@@ -71,3 +71,15 @@ int RemoteMgr::onEvent( int evtype, va_list ap )
 	
 	return ret;
 }
+
+void RemoteMgr::uninit( void )
+{
+	map<RemoteServ*, int>::iterator itr = m_rSvrs.begin();
+	for (; itr != m_rSvrs.end(); ++itr)
+	{
+		itr->first->driveClose();
+		delete itr->first;
+	}
+
+	m_rSvrs.clear();
+}

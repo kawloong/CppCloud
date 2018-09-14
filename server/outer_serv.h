@@ -13,12 +13,15 @@ Modification :
 
 class OuterServ: public CliBase
 {
+public:
     HEPCLASS_DECL(OuterServ, OuterServ);
+    OuterServ();
+    
     void init( void );
 
 protected: // interface IEPollRun
-	virtual int onEvent( int evtype, va_list ap );
-    virtual int qrun( int flag, long p2 );
+	//virtual int onEvent( int evtype, va_list ap );
+    //virtual int qrun( int flag, long p2 );
 
 protected:
 

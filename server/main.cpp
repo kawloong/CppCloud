@@ -50,7 +50,7 @@ enum _ret_main_
 };
 
 // 程序配置文件，日志文件，名称，版本号
-#define DEF_CONFILE "monitor.conf"
+#define DEF_CONFILE "cppcloud.conf"
 #define LOGFILE_NAME "cppcloud_serv.log"
 #define PROGRAM_NAME "cppcloud_serv"
 #define PROGRAM_VER "1.0.0"
@@ -122,7 +122,7 @@ static int parse_cmdline(int argc, char** argv)
     g_param.servid = 0;
     g_param.port = 0;
 
-    while ((c = getopt(argc, argv, "c:i:p:s:vdD")) != -1)
+    while ((c = getopt(argc, argv, "c:i:p:s:vhdD")) != -1)
     {
         switch (c)
         {
@@ -142,7 +142,7 @@ static int parse_cmdline(int argc, char** argv)
             break;
         case 'p': // 监听端口
             g_param.port = atoi(optarg);
-            CloudConf::CppCloudPort_SET(g_param.port); // 设置默认值
+            CloudConf::CppCloudListenPort_SET(g_param.port); // 设置默认值
             break;
         case 's': // 要连接的别的Serv服务地址
             g_param.peerhosts = optarg;
@@ -156,7 +156,7 @@ static int parse_cmdline(int argc, char** argv)
 
         case 'h':
         default :
-            printf("command parameter fail! \n"
+            printf("command parameter usage: \n"
                 "\t-c <f.conf> configure file name\n"
                 "\t-i <servid> \n"
                 "\t-p <port> listen port\n"

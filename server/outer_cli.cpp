@@ -2,3 +2,8 @@
 
 
 HEPMUTICLASS_IMPL(OuterCli, OuterCli, CliBase)
+
+OuterCli::OuterCli( void )
+{
+
+}

@@ -77,8 +77,8 @@ int SwitchHand::run( int flag, long p2 )
         char prech=' ';
 
         IFRETURN_N(ERRSOCK_AGAIN == ret, 0);
-        ERRLOG_IF1( ret < 0, "SWITCHRUN| msg=pipe brokeren?| err=%d %s| fd=%d",
-            Sock::geterrno(m_pipe[0]), strerror(Sock::geterrno(m_pipe[0])), m_pipe[0] );
+        ERRLOG_IF1( ret < 0, "SWITCHRUN| msg=pipe brokeren?| ret=%d| err=%d %s| fd=%d",
+            ret, Sock::geterrno(m_pipe[0]), strerror(Sock::geterrno(m_pipe[0])), m_pipe[0] );
         for (unsigned i = 0; i < beg; ++i)
         {
             if (prech == buff[i]) continue;
@@ -113,7 +113,7 @@ int SwitchHand::run( int flag, long p2 )
         }
         else
         {
-            LOGERROR("SWITCHRUN| msg=maybe pipe fail| err=%s| param=%d-%d", strerror(errno), flag, p2);
+            LOGERROR("SWITCHRUN| msg=maybe pipe fail| err=%s| param=%d-%ld", strerror(errno), flag, p2);
             m_epCtrl.setEvt(0, 0);
             IFCLOSEFD(m_pipe[0]);
             IFCLOSEFD(m_pipe[1]);
@@ -124,11 +124,6 @@ int SwitchHand::run( int flag, long p2 )
     return ret;
 }
  
-void SwitchHand::keepAliveRun( void )
-{
-
-} 
-
 int SwitchHand::qrun( int flag, long p2 )
 {
     LOGERROR("SWITCHRUN| msg=undefine flow qrun");
@@ -158,12 +153,12 @@ void SwitchHand::TimeWaitThreadFunc( SwitchHand* This )
             bool bret = This->tskioq.append(item);
             if (bret)
             {
-                LOGERROR("SwitchHand| msg=append task fail| qsize=%d", This->tskioq.size());
-                This->tskwaitq.append_delay(item, 5000);
+                This->setActive('q');
             }
             else
             {
-                This->setActive('q');
+                LOGERROR("SwitchHand| msg=append task fail| qsize=%d", This->tskioq.size());
+                This->tskwaitq.append_delay(item, 5000);
             }
 
             item = NULL;

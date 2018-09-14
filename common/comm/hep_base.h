@@ -120,7 +120,7 @@ protected:
     int transEvent( HEpBase* dst, int evtype, va_list ap );
     
 public:
-    string m_idProfile; // 客户端标识字符串
+    string m_idProfile; // 客户端标识字符串,用于日志跟踪
 
 protected:
     HEpBase* m_parent;

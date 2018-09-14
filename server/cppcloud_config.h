@@ -51,11 +51,10 @@ namespace CloudConf
     FUNC_STR_CONF(CppCloudLogPath);
     FUNC_INT_CONF(CppCloudLogLevel);
     FUNC_INT_CONF(CppCloudLogFSize);
-    FUNC_INT_CONF(CppCloudListenPort);
+    FUNC_INT_CONF(CppCloudListenPort); // 监听端口
     FUNC_INT_CONF(CppCloudTaskQNum);
     FUNC_STR_CONF(CppCloudListenClass);
     FUNC_INT_CONF(CppCloudServID); // 控制中心自身的svrid
-    FUNC_INT_CONF(CppCloudPort); // 监听端口
     FUNC_STR_CONF(CppCloudPeerNode); // 分布式其他serv: 192.168.10.44:3303|192.168.10.55:3409
 };
 

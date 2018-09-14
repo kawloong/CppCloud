@@ -35,6 +35,8 @@ private:
     CMD2FUNCCALL_DESC(CMD_WHOAMI_REQ);
     CMD2FUNCCALL_DESC(CMD_HUNGUP_REQ);
     CMD2FUNCCALL_DESC(CMD_SETARGS_REQ);
+    CMD2FUNCCALL_DESC(CMD_KEEPALIVE_REQ);
+    CMD2FUNCCALL_DESC(CMD_KEEPALIVE_RSP);
 
     static int on_ExchangeMsg( IOHand* iohand, const Value* doc, unsigned cmdid, unsigned seqid );
 
