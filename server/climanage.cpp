@@ -7,7 +7,7 @@
 const char g_jsonconf_file[] = ".scomm_svrid.txt";
 
 CliMgr::AliasCursor::AliasCursor( const string& key_beg ): 
-	iter_range(CliMgr::Instance()->m_aliName2Child, key_beg)
+	iter_range(CliMgr::Instance()->m_aliName2Child, key_beg, key_beg+"~")
 {
 }
 
@@ -25,6 +25,7 @@ CliBase* CliMgr::AliasCursor::pop(void)
 CliMgr::CliMgr(void)
 {
 	m_waitRmPtr = NULL;
+	m_localEra = 0;
 }
 CliMgr::~CliMgr(void)
 {

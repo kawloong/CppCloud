@@ -27,6 +27,8 @@ void SwitchHand::init( int epFd )
     int ret = pipe(m_pipe);
     if (0 == ret && INVALID_FD != epFd)
     {
+        sock_nonblock(m_pipe[0]);
+        sock_nonblock(m_pipe[1]);
         m_epCtrl.setEPfd(epFd);
         m_epCtrl.setActFd(m_pipe[0]); // read pipe
 

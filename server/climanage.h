@@ -59,6 +59,7 @@ public:
     CliBase* getChildBySvrid( int svrid );
     CliInfo* getCliInfo( CliBase* child );
     map<CliBase*, CliInfo>* getAllChild() { return &m_children; }
+    int getLocalClisEra( void ) { return m_localEra; }
 
 
     void updateCliTime( CliBase* child );
@@ -84,6 +85,7 @@ protected:
     map<string, CliBase*> m_aliName2Child;
 
     IOHand* m_waitRmPtr;
+    int m_localEra;
 };
 
 #endif

@@ -15,6 +15,8 @@ const char REMOTESERV_ALIAS_PREFIX[] = "serv_";
 
 const char CLI_PREFIX_KEY_TIMEOUT[] = "atime_";
 const char CLI_PREFIX_KEY_SERV[] = "dserv";
+const char EXCLUDE_SVRID_LIST[] = "haspass";
+const char ROUTE_PATH[] = "route";
 
 const int SERV_CLITYPE_ID = 1;
 const int CLI_KEEPALIVE_TIME_SEC = 60*2;
