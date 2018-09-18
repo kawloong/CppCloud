@@ -15,10 +15,10 @@ class CliBase;
 
 class KeepAliver: public ITaskRun2
 {
-public:
     SINGLETON_CLASS2(KeepAliver)
     KeepAliver();
 
+public:
     void init( void );
 
 protected: // interface IEPollRun

@@ -5,6 +5,7 @@
 #include "cppcloud_config.h"
 #include "remote_mgr.h"
 #include "switchhand.h"
+#include "keepaliver.h"
 
 HEPCLASS_IMPL(RemoteMgr, RemoteMgr);
 
@@ -47,6 +48,7 @@ int FlowCtrl::init(int tskqNum)
         if (0 == ret)
         {
             SwitchHand::Instance()->init(m_hepo->getEPfd());
+            KeepAliver::Instance()->init();
             ret = RemoteMgr::Instance()->init(m_hepo->getEPfd());
         }
     }

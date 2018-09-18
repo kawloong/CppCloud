@@ -121,7 +121,7 @@ int Sock::create_fd(const char* ip, int port, bool udp, bool v6)
 template<bool TPeer>
 std::string Sock::_getName_(int fd, bool hasport /*= false*/, bool v6 /*= false*/)
 {
-   int result, ret;
+   int result, ret = 0;
     socklen_t addr_len;
     std::string name;
 
@@ -131,8 +131,8 @@ std::string Sock::_getName_(int fd, bool hasport /*= false*/, bool v6 /*= false*
         {
             struct sockaddr_in6 addr6;
             addr_len = sizeof(addr6);
-            result = TPeer? getpeername(fd, (sockaddr*)&addr6, &addr_len) : getsockname(fd, (sockaddr*)&addr6, &addr_len);
-            ERRLOG_IF1BRK(result, result, "SOCKNAME| err(%d)=%s", errno, strerror(errno));
+            ret = TPeer? getpeername(fd, (sockaddr*)&addr6, &addr_len) : getsockname(fd, (sockaddr*)&addr6, &addr_len);
+            ERRLOG_IF1BRK(ret, ret, "SOCKNAME| err(%d)=%s", errno, strerror(errno));
             sock6_ntop(straddr, addr6);
             name = straddr;
             if (hasport)
@@ -157,6 +157,7 @@ std::string Sock::_getName_(int fd, bool hasport /*= false*/, bool v6 /*= false*
                 name += strport;
             }
         }
+        ret = 0;
     }
     while(false);
     return name;
@@ -172,6 +173,42 @@ std::string Sock::peer_name(int fd, bool hasport/* = false*/, bool v6/* = false*
     return _getName_<true>(fd, hasport, v6);
 }
 
+int Sock::read(int fd, char* buff, unsigned& begpos, unsigned endpos)
+{
+    int ret = 0;
+    //int nread, nleft;
+    unsigned length_byte;
+    char* pdata;
+
+    do 
+    {
+        ERRLOG_IF1BRK(fd<0 || 0==buff || begpos >= endpos, ERRSOCK_PARAM,
+            "SOCKRECV| fd=%d| buff=%p| beg=%u| end=%u", fd, buff, begpos, endpos);
+        
+        length_byte = endpos - begpos;
+        pdata = buff + begpos;
+        ret = ::read(fd, pdata, length_byte);
+        if (ret > 0)
+        {
+            begpos += ret;
+        }
+        else if (0 == ret)
+        {
+            break;
+        }
+        else
+        {
+            int eno = errno;
+            if (eno == EINTR || eno == EAGAIN)
+            {
+                ret = ERRSOCK_AGAIN;
+                break;
+            }
+        }
+    }
+    while(0);
+    return ret;
+}
 
 int Sock::recv(int fd, char* buff, unsigned& begpos, unsigned endpos)
 {
@@ -205,7 +242,7 @@ int Sock::recv(int fd, char* buff, unsigned& begpos, unsigned endpos)
         nleft = nread;
         while (nleft > 0) 
         {
-            if ((nread = read(fd, pdata, nleft)) < 0)
+            if ((nread = ::read(fd, pdata, nleft)) < 0)
             {
                 int eno = errno;
                 if (eno == EINTR || eno == EAGAIN)

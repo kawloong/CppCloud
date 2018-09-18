@@ -97,6 +97,8 @@ int RemoteCli::on_CMD_IAMSERV_REQ( const Value* doc, unsigned seqid )
 	whoIamJson += "}";
 
     m_iohand->sendData(CMD_IAMSERV_RSP, seqid, whoIamJson.c_str(), whoIamJson.length(), true);
+    LOGINFO("IAMSERV_REQ| msg=recv from Serv at %s", m_iohand->m_idProfile.c_str());
+
     return 0;
 }
 
@@ -109,13 +111,14 @@ int RemoteCli::on_CMD_IAMSERV_RSP( const Value* doc, unsigned seqid )
     NormalExceptionOff_IFTRUE(NULL==rsev, 400, CMD_IAMSERV_RSP, seqid, 
             "iohand type must RemoteServ class");
 
+    string strsvrid0 = m_iohand->getProperty(CONNTERID_KEY); // 假如此消息发生多次,svrid要一样
     ret = m_iohand->Json2Map(doc);
     string strsvrid = m_iohand->getProperty(CONNTERID_KEY);
     nsvrid = atoi(strsvrid.c_str());
 
-    bool validsvr = (0 == nsvrid || nsvrid == RemoteServ::s_my_svrid);
+    bool validsvr = (strsvrid0.empty() || strsvrid0 == strsvrid) && (nsvrid > 0);
     NormalExceptionOff_IFTRUE(!validsvr, 400, CMD_IAMSERV_RSP, seqid, 
-            string("svrid invalid ")+strsvrid);
+            string("2 times svrid diff ")+strsvrid);
 
     rsev->setSvrid(nsvrid);
 
@@ -130,6 +133,7 @@ int RemoteCli::on_CMD_IAMSERV_RSP( const Value* doc, unsigned seqid )
     
     CliMgr::Instance()->updateCliTime(m_iohand);
     m_iohand->m_idProfile = strsvrid + m_iohand->getCliSockName();
+    LOGINFO("IAMSERV_RSP| msg=connect to %s success", m_iohand->m_idProfile.c_str());
     
     return ret;
 }

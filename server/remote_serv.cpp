@@ -5,7 +5,7 @@
 #include "cloud/const.h"
 #include "exception.h"
 #include "climanage.h"
-#include "flowctrl.h"
+#include "switchhand.h"
 
 
 HEPMUTICLASS_IMPL(RemoteServ, RemoteServ, IOHand)
@@ -17,6 +17,7 @@ RemoteServ::RemoteServ(void): m_stage(0), m_seqid(0), m_svrid(0), m_epfd(INVALID
  	m_cliType = SERV_CLITYPE_ID;
 	m_isLocal = true;
 	m_outObj = true;
+	m_inqueue = false;
 }
 
 RemoteServ::~RemoteServ(void)
@@ -35,7 +36,7 @@ int RemoteServ::init( const string& rhost, int port, int epfd )
 	m_epfd = epfd;
 	m_port = port;
 
-	m_idProfile = "conn2" + rhost;
+	m_idProfile = "connTO" + rhost;
 	m_epCtrl.setEPfd(epfd);
 	return 0;
 }
@@ -53,10 +54,12 @@ int RemoteServ::onEvent( int evtype, va_list ap )
 
 int RemoteServ::qrun( int flag, long p2 )
 {
+	int  ret = 0;
+	m_inqueue = false;
 	if (0 == flag)
 	{
 		try {
-			return taskRun(flag, p2);
+			ret = taskRun(flag, p2);
 		}
 		catch(OffConnException& exp)
 		{
@@ -64,7 +67,8 @@ int RemoteServ::qrun( int flag, long p2 )
 			IOHand::onClose(flag, p2);
 			m_stage = 0;
 		}
-		return -12;
+
+		return appendTimerq();
 	}
 	else if (1 == flag)
 	{
@@ -80,6 +84,18 @@ int RemoteServ::onClose( int p1, long p2 )
 	return IOHand::onClose(p1, p2);
 }
 
+int RemoteServ::appendTimerq( void )
+{
+	int ret = 0;
+	if (!m_inqueue)
+	{
+		ret = SwitchHand::Instance()->appendQTask(this, REMOTESERV_EXIST_CHKTIME + s_my_svrid*1000);
+		m_inqueue = (0 == ret);
+		ERRLOG_IF1(ret, "APPENDQTASK| msg=append fail| ret=%d", ret);
+	}
+	return ret;
+}
+
 int RemoteServ::taskRun( int flag, long p2 )
 {
 	// 向远端serv发起连接
@@ -91,7 +107,6 @@ int RemoteServ::taskRun( int flag, long p2 )
 	if (CliMgr::Instance()->getChildByName(alias))
 	{
 		LOGDEBUG("REMOTES_RUN| msg=remote serv exist| svr=%s", alias.c_str());
-		FlowCtrl::Instance()->appendTask(this, 0, REMOTESERV_EXIST_CHKTIME);
 	}
 	else
 	{
@@ -106,11 +121,14 @@ int RemoteServ::taskRun( int flag, long p2 )
 		{
 			m_epCtrl.setActFd(m_cliFd);
 			m_stage = 1; // connecting
-			m_cliName = Sock::peer_name(m_cliFd, true);
-			m_idProfile = m_cliName;
-			prepareWhoIam();
+			if (0 == ret)
+			{
+				m_cliName = Sock::peer_name(m_cliFd, true);
+				m_idProfile = m_cliName;
+			}
 
-			m_epCtrl.setEvt(EPOLLOUT, this);
+			prepareWhoIam();
+			m_epCtrl.setEvt(EPOLLOUT|EPOLLIN, this);
 		}
 		else
 		{

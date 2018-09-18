@@ -152,15 +152,19 @@ void CliMgr::updateCliTime( CliBase* child )
 	CliInfo* clif = getCliInfo(child);
 	ERRLOG_IF1RET(NULL==clif, "UPDATECLITIM| msg=null pointer at %p", child);
 	string svrid = child->getProperty(CONNTERID_KEY);
+	time_t now = time(NULL);
+
+	if (now < clif->t1 + 20) return; // 超20sec才刷新
+
 	if (clif->t1 >= clif->t0)
 	{
-		string atimkey = StrParse::Format("%s%ld", CLI_PREFIX_KEY_TIMEOUT, clif->t1);
+		string atimkey = StrParse::Format("%s%ld@", CLI_PREFIX_KEY_TIMEOUT, clif->t1);
 		atimkey += svrid;
 		removeAliasChild(atimkey);
 	}
 
-	clif->t1 = time(NULL);
-	string atimkey = StrParse::Format("%s%ld", CLI_PREFIX_KEY_TIMEOUT, clif->t1);
+	clif->t1 = now;
+	string atimkey = StrParse::Format("%s%ld@", CLI_PREFIX_KEY_TIMEOUT, clif->t1);
 	atimkey += svrid;
 	int ret = addAlias2Child(atimkey, child);
 	ERRLOG_IF1(ret, "UPDATECLITIM| msg=add alias atimkey fail| ret=%d| mi=%s", ret, child->m_idProfile.c_str());

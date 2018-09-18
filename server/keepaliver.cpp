@@ -40,7 +40,7 @@ int KeepAliver::qrun( int flag, long p2 )
         {
             closeCli(cli);
         }
-        else if (expire_kaliv_key.compare(expire_kaliv_key) > 0) // 需keepalive
+        else if (expire_kaliv_key.compare(alcur.iter_range.retKey) > 0) // 需keepalive
         {
             sendReq(cli);
         }

@@ -9,7 +9,12 @@
 #include "climanage.h"
 #include "act_mgr.h"
 
-HEPCLASS_IMPL_FUNC(BegnHand, ProcessOne)
+
+HEPCLASS_IMPL_FUNC_BEG(BegnHand)
+HEPCLASS_IMPL_FUNC_MORE(BegnHand, ProcessOne)
+HEPCLASS_IMPL_FUNC_MORE(BegnHand, ProcessKeepaliveRsp)
+HEPCLASS_IMPL_FUNC_END
+
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
 
 static int ss_svrid_gen = 1000;
@@ -43,6 +48,13 @@ int BegnHand::onEvent( int evtype, va_list ap )
 	return ret;
 }
 
+int BegnHand::ProcessKeepaliveRsp( void* ptr, unsigned cmdid, void* param )
+{
+	IOHand* iohand = (IOHand*)ptr;
+	LOGDEBUG("KEEPALIVE_RSP| mi=%s", iohand->m_idProfile.c_str());
+	return 0;
+}
+
 int BegnHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 {
 	int ret = 0;
@@ -66,7 +78,7 @@ int BegnHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 		CMDID2FUNCALL(CMD_HUNGUP_REQ);
 		CMDID2FUNCALL(CMD_SETARGS_REQ);
 		CMDID2FUNCALL(CMD_KEEPALIVE_REQ);
-		CMDID2FUNCALL(CMD_KEEPALIVE_RSP);
+		//CMDID2FUNCALL(CMD_KEEPALIVE_RSP);
 
 		case CMD_EXCHANG_REQ:
 		case CMD_EXCHANG_RSP:

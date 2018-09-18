@@ -24,6 +24,7 @@ public:
 
     // 简单命令用函数处理
     static int ProcessOne( void* iohand, unsigned cmdid, void* param );
+    static int ProcessKeepaliveRsp( void* ptr, unsigned cmdid, void* param );
     
     static int getFromCache( string& rdsval, const string& rdskey );
     static int setToCache( const string& rdskey, const string& rdsval );

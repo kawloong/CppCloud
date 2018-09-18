@@ -64,7 +64,7 @@ int SwitchHand::setActive( char fg )
 // thread-safe
 int SwitchHand::appendQTask( ITaskRun2* tsk, int delay_ms )
 {
-    return tskwaitq.append_delay(tsk, delay_ms);
+    return tskwaitq.append_delay(tsk, delay_ms)? 0: -46;
 }
 
 // 此方法运行于io-epoll线程
@@ -75,7 +75,7 @@ int SwitchHand::run( int flag, long p2 )
     {
         char buff[32] = {0};
         unsigned beg = 0;
-        ret = Sock::recv(m_pipe[0], buff, beg, 31);
+        ret = Sock::read(m_pipe[0], buff, beg, 31);
         char prech=' ';
 
         IFRETURN_N(ERRSOCK_AGAIN == ret, 0);
@@ -142,6 +142,7 @@ void SwitchHand::notifyExit( void )
     bexit = true;
     tskwaitq.wakeup();
     tskioq.wakeup();
+    m_epCtrl.setEvt(0, NULL);
 }
 
 void SwitchHand::TimeWaitThreadFunc( SwitchHand* This )

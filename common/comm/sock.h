@@ -48,6 +48,7 @@ public:
     static std::string peer_name(int fd, bool hasport = false, bool v6 = false);
     static int geterrno(int fd);
 
+    static int read(int fd, char* buff, unsigned& begpos, unsigned bufflen);
     static int recv(int fd, char* buff, unsigned& begpos, unsigned bufflen);
     static int send(int fd, char* buff, unsigned& begpos, unsigned bufflen);
 

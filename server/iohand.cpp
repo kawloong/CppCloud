@@ -25,7 +25,7 @@ int IOHand::Init( void )
 	s_cmdid2clsname[CMD_SETARGS_REQ] = "BegnHand::ProcessOne";
 	s_cmdid2clsname[CMD_GETWARN_REQ] = "QueryHand::ProcessOne";
 	s_cmdid2clsname[CMD_KEEPALIVE_REQ] = "BegnHand::ProcessOne";
-	s_cmdid2clsname[CMD_KEEPALIVE_RSP] = "BegnHand::ProcessOne";
+	s_cmdid2clsname[CMD_KEEPALIVE_RSP] = "BegnHand::ProcessKeepaliveRsp";
 
 	s_cmdid2clsname[CMD_IAMSERV_REQ] = "RemoteCli"; // 中心端报告身份
 	s_cmdid2clsname[CMD_IAMSERV_RSP] = "RemoteCli";
@@ -58,6 +58,11 @@ int IOHand::onRead( int p1, long p2 )
 		{
 			m_iBufItem = new IOBuffItem;
 		}
+
+		if (m_cliName.empty())
+		{
+			m_cliName = Sock::peer_name(m_cliFd, true);
+		}
 		
 		if (m_iBufItem->len < HEADER_LEN)
 		{
@@ -65,11 +70,17 @@ int IOHand::onRead( int p1, long p2 )
 			char buff[HEADER_LEN];
 			ret = Sock::recv(m_cliFd, buff, rcvlen, HEADER_LEN);
 			IFBREAK_N(ERRSOCK_AGAIN == ret, 0);
-			if (ret <= 0) // close 清理流程 
+
+			if (0 == ret)
 			{
-				m_closeReason = (0==ret? "recv closed": strerror(errno));
-				throw OffConnException(m_closeReason);
+				m_closeReason = "normal recv close";
+				m_closeFlag = 2;
 				break;
+			}
+			if (ret < 0) // close 清理流程 
+			{
+				m_closeReason = (strerror(errno));
+				throw OffConnException(m_closeReason);
 			}
 
 			m_iBufItem->len += rcvlen;
@@ -120,16 +131,18 @@ int IOHand::onRead( int p1, long p2 )
 			ret = 0;
 			if (m_child)
 			{
-				ret = Notify(m_child, HEPNTF_NOTIFY_CHILD, (IOBuffItem*)m_iBufItem);
+				if (1 == Notify(m_child, HEPNTF_NOTIFY_CHILD, (IOBuffItem*)m_iBufItem))
+				{
+					ret = cmdProcess(m_iBufItem); // parse package [cmdid]
+				}
 			}
-			/// Notify(m_parent, HEPNTF_SET_ALIAS, (IOHand*)this, m_cliName.c_str());
-			// parse package [cmdid]
-			if (1 == ret)
+			else
 			{
 				ret = cmdProcess(m_iBufItem);
 			}
-
+			
 			CliMgr::Instance()->updateCliTime(this);
+			IFDELETE(m_iBufItem);
 		}
 	}
 	while (0);
@@ -198,12 +211,15 @@ int IOHand::run( int p1, long p2 )
 	{
 		string rsp = StrParse::Format("{ \"code\": %d, \"desc\": \"%s\" }", exp.code, exp.desc.c_str());
 		m_closeFlag = 1; // 待发送完后close
+		LOGERROR("NormalExceptionOff| reson=%s | mi=%s", exp.desc.c_str(), m_idProfile.c_str());
 		sendData(exp.cmdid, exp.seqid, rsp.c_str(), rsp.length(), true);
+		IFDELETE(m_iBufItem);
 	}
 	catch( OffConnException& exp )
 	{
 		LOGERROR("OffConnException| reson=%s | mi=%s", exp.reson.c_str(), m_idProfile.c_str());
 		m_closeFlag = 2;
+		IFDELETE(m_iBufItem);
 	}
 		
 	if (EPOLLOUT & p1) // 可写

@@ -14,7 +14,7 @@ Modification :
 using namespace std;
 
 
-const int REMOTESERV_EXIST_CHKTIME = 5*60*1000; // ms unit
+const int REMOTESERV_EXIST_CHKTIME = 20*1000; // ms unit
 
 class RemoteServ: public IOHand
 {
@@ -26,6 +26,7 @@ public:
 	static void Init( int mysvrid );
 	int init( const string& rhost, int port, int epfd );
 	void setSvrid( int svrid );
+	int appendTimerq( void );
 
 public: // interface HEpBase
     virtual int qrun( int flag, long p2 );
@@ -47,6 +48,7 @@ protected:
 	int m_svrid;
 	int m_epfd;
 	int m_port;
+	bool m_inqueue;
 	string m_rhost;
 };
 

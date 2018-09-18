@@ -4,6 +4,7 @@
 #include "switchhand.h"
 #include "cppcloud_config.h"
 #include "remote_serv.h"
+#include "remote_cli.h"
 #include "climanage.h"
 
 RemoteMgr::RemoteMgr()
@@ -22,6 +23,7 @@ int RemoteMgr::init( int epfd )
 	m_epfd = epfd;
     m_mysvrid = CloudConf::CppCloudServID();
     RemoteServ::Init(m_mysvrid);
+	RemoteCli::Init(m_mysvrid);
 
 	int ret = 0;
     vector<string>::const_iterator itr = vhost.begin();
@@ -59,13 +61,14 @@ int RemoteMgr::onEvent( int evtype, va_list ap )
 
 		CliMgr::Instance()->removeAliasChild(son, true);
 
-		delete ptr; // m_outObj = true
-		m_rSvrs.erase(ptr);
-
 		if (isExit)
 		{
-			ret = SwitchHand::Instance()->appendQTask(ptr, m_mysvrid*1000);
-			ERRLOG_IF1(ret, "APPENDQTASK| msg=append fail| ptr=%p| ret=%d", ptr, ret);
+			delete ptr; // m_outObj = true
+			m_rSvrs.erase(ptr);
+		}
+		else
+		{
+			ptr->appendTimerq();
 		}
 	}
 	
@@ -74,11 +77,13 @@ int RemoteMgr::onEvent( int evtype, va_list ap )
 
 void RemoteMgr::uninit( void )
 {
+	map<RemoteServ*, int>::iterator itr_;
 	map<RemoteServ*, int>::iterator itr = m_rSvrs.begin();
-	for (; itr != m_rSvrs.end(); ++itr)
+	for (; itr != m_rSvrs.end(); )
 	{
-		itr->first->driveClose();
-		delete itr->first;
+		itr_ = itr++;
+		itr_->first->driveClose();
+		// delete itr->first; // 上一句会调用到this->ononEvent() HEPNTF_SOCK_CLOSE
 	}
 
 	m_rSvrs.clear();

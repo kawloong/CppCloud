@@ -19,7 +19,7 @@ const char EXCLUDE_SVRID_LIST[] = "haspass";
 const char ROUTE_PATH[] = "route";
 
 const int SERV_CLITYPE_ID = 1;
-const int CLI_KEEPALIVE_TIME_SEC = 60*2;
+const int CLI_KEEPALIVE_TIME_SEC = 30;
 const int CLI_DEAD_TIME_SEC = 60*8;
 const int BROADCASTCLI_INTERVAL_SEC = 60*10;
 
