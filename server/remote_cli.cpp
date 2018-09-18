@@ -49,15 +49,15 @@ int RemoteCli::onEvent( int evtype, va_list ap )
 // 注意: 如返回1,则body应该只读,不能改写.
 int RemoteCli::cmdHandle( unsigned cmdid, unsigned seqid, char* body )
 {
-#define CMDID2FUNCALL(CMDID)                                                              \
+#define CMDID2FUNCALL1(CMDID)                                                              \
     if(CMDID==cmdid) { Document doc;                                                      \
         if (doc.ParseInsitu(body).HasParseError()) {                                      \
             throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "body json invalid"); }  \
         return on_##CMDID(&doc, seqid);  }
 
 
-    CMDID2FUNCALL(CMD_IAMSERV_REQ);
-    CMDID2FUNCALL(CMD_IAMSERV_RSP);
+    CMDID2FUNCALL1(CMD_IAMSERV_REQ);
+    CMDID2FUNCALL1(CMD_IAMSERV_RSP);
 
     return 1;
 }

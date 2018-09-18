@@ -6,6 +6,7 @@
 #include "flowctrl.h"
 #include "act_mgr.h"
 #include "iohand.h"
+#include "homacro.h"
 
 HEPCLASS_IMPL_FUNC(QueryHand, ProcessOne)
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
@@ -41,32 +42,12 @@ int QueryHand::onEvent( int evtype, va_list ap )
 
 int QueryHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 {
-	int ret = 0;
-	IOHand* parent = (IOHand*)ptr;
-	IOBuffItem* iBufItem = (IOBuffItem*)param;
-	unsigned seqid = iBufItem->head()->seqid;
-	char* body = iBufItem->body();
-
-	Document doc;
-	if (doc.ParseInsitu(body).HasParseError())
-	{
-		// 收到的报文json格式有误
-		SendMsgEasy(parent, CMD_WHOAMI_RSP, seqid, 400, "json format invalid");
-		return -79;
-	}
-
-#define CMDID2FUNCALL(cmd) case cmd: ret = on_##cmd(parent, &doc, seqid); break
-	switch (cmdid)
-	{
-		CMDID2FUNCALL(CMD_GETCLI_REQ);
-		CMDID2FUNCALL(CMD_GETLOGR_REQ);
-		CMDID2FUNCALL(CMD_GETWARN_REQ);
-
-		default:
-		break;
-	}
-
-	return ret;
+	CMDID2FUNCALL_BEGIN
+	CMDID2FUNCALL_CALL(CMD_GETCLI_REQ);
+	CMDID2FUNCALL_CALL(CMD_GETLOGR_REQ);
+	CMDID2FUNCALL_CALL(CMD_GETWARN_REQ);
+	
+	return 0;
 }
 
 

@@ -20,6 +20,8 @@ public:
     SINGLETON_CLASS2(BroadCastCli)
     BroadCastCli();
 
+    static int OnBroadCMD( void* ptr, unsigned cmdid, void* param );
+
     void init( void );
 
 protected: // interface IEPollRun

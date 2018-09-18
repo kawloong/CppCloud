@@ -8,6 +8,7 @@
 #include "flowctrl.h"
 #include "climanage.h"
 #include "act_mgr.h"
+#include "homacro.h"
 
 
 HEPCLASS_IMPL_FUNC_BEG(BegnHand)
@@ -57,39 +58,19 @@ int BegnHand::ProcessKeepaliveRsp( void* ptr, unsigned cmdid, void* param )
 
 int BegnHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 {
-	int ret = 0;
-	IOHand* iohand = (IOHand*)ptr;
-	IOBuffItem* iBufItem = (IOBuffItem*)param;
-	unsigned seqid = iBufItem->head()->seqid;
-	char* body = iBufItem->body();
+	CMDID2FUNCALL_BEGIN
+	CMDID2FUNCALL_CALL(CMD_WHOAMI_REQ)
+	CMDID2FUNCALL_CALL(CMD_HUNGUP_REQ)
+	CMDID2FUNCALL_CALL(CMD_SETARGS_REQ)
+	CMDID2FUNCALL_CALL(CMD_KEEPALIVE_REQ)
 
-	Document doc;
-	if (doc.ParseInsitu(body).HasParseError())
+	if (CMD_EXCHANG_REQ == cmdid || CMD_EXCHANG_RSP == cmdid)
 	{
-		// 收到的报文json格式有误
-		SendMsgEasy(iohand, CMD_WHOAMI_RSP, seqid, 400, "json format invalid");
-		return -79;
+		return on_ExchangeMsg(iohand, &doc, cmdid, seqid);
 	}
 
-#define CMDID2FUNCALL(cmd) case cmd: ret = on_##cmd(iohand, &doc, seqid); break
-	switch (cmdid)
-	{
-		CMDID2FUNCALL(CMD_WHOAMI_REQ);
-		CMDID2FUNCALL(CMD_HUNGUP_REQ);
-		CMDID2FUNCALL(CMD_SETARGS_REQ);
-		CMDID2FUNCALL(CMD_KEEPALIVE_REQ);
-		//CMDID2FUNCALL(CMD_KEEPALIVE_RSP);
-
-		case CMD_EXCHANG_REQ:
-		case CMD_EXCHANG_RSP:
-			ret = on_ExchangeMsg(iohand, &doc, cmdid, seqid);
-		break;
-
-		default:
-		break;
-	}
-
-	return ret;
+	LOGWARN("BEGNHANDRUN| msg=unknow cmdid 0x%x| mi=%s", cmdid, iohand->m_idProfile.c_str());
+	return 0;
 }
 
 
