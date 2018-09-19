@@ -44,6 +44,7 @@ protected:
 	virtual int onClose( int p1, long p2 );
 	void clearBuf( void );
 
+	int interceptorProcess( IOBuffItem*& iBufItem );
 	int cmdProcess( IOBuffItem*& iBufItem );
 
 protected:

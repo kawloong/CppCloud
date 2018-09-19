@@ -122,7 +122,8 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
         outsvr->init(osvrid);
         ret = outsvr->setRoutePath(routepath);
         ret |= CliMgr::Instance()->addChild(outsvr);
-        ret |= CliMgr::Instance()->addAlias2Child(aliasPrefix + str_osvrid + "s");
+        ret |= CliMgr::Instance()->addAlias2Child(aliasPrefix + str_osvrid + "s", outsvr);
+        ret |= CliMgr::Instance()->addAlias2Child(str_osvrid + "_s", outsvr);
 
         if (ret)
         {

@@ -125,9 +125,19 @@ void CliMgr::removeAliasChild( CliBase* ptr, bool rmAll )
 	}
 }
 
+// 分布式的情况下cli有多种对象，所以以不同后缀区别
 CliBase* CliMgr::getChildBySvrid( int svrid )
 {
-	return getChildByName(StrParse::Itoa(svrid));
+	static const char* svr_subfix[] = {"_C", "_S", "_I", "_s", NULL};
+	CliBase* ret = NULL;
+	string strsvrid = StrParse::Itoa(svrid);
+
+	for (int i = 0; NULL != svr_subfix[i] && NULL == ret; ++i)
+	{
+		ret = getChildByName(strsvrid + svr_subfix[i]);
+	}
+
+	return ret;
 }
 
 CliBase* CliMgr::getChildByName( const string& asname )

@@ -72,7 +72,7 @@ int RemoteCli::on_CMD_IAMSERV_REQ( const Value* doc, unsigned seqid )
     m_iohand->setCliType(SERV_CLITYPE_ID);
 
     // 添加到climanage中管理（已添加，被动方）
-    string strsvrid = m_iohand->getProperty(CONNTERID_KEY);
+    string strsvrid = m_iohand->getProperty(CONNTERID_KEY) + "_C";
     if ( CliMgr::Instance()->getChildByName(strsvrid) )
     {
         throw OffConnException(string("svrid exist ")+strsvrid);
@@ -81,7 +81,7 @@ int RemoteCli::on_CMD_IAMSERV_REQ( const Value* doc, unsigned seqid )
     string servAlias = string(REMOTESERV_ALIAS_PREFIX) + strsvrid;
     CliMgr::Instance()->addAlias2Child(strsvrid, m_iohand);
     CliMgr::Instance()->addAlias2Child(servAlias, m_iohand);
-    m_iohand->m_idProfile = strsvrid + "C" + m_iohand->getCliSockName();
+    m_iohand->m_idProfile = strsvrid + m_iohand->getCliSockName();
 
     // 响应回复
     string whoIamJson;
@@ -123,7 +123,7 @@ int RemoteCli::on_CMD_IAMSERV_RSP( const Value* doc, unsigned seqid )
     rsev->setSvrid(nsvrid);
 
     // 添加到climanage中管理(主动方)
-    strsvrid += "S"; // 标识来自主动方和被动的serv分开
+    strsvrid += "_S"; // 标识来自主动方和被动的serv分开
     string servAlias = string(REMOTESERV_ALIAS_PREFIX) + strsvrid;
     ret = CliMgr::Instance()->addChild(m_iohand);
     ret |= CliMgr::Instance()->addAlias2Child(strsvrid, m_iohand);

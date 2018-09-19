@@ -10,7 +10,8 @@
 
 HEPMUTICLASS_IMPL(IOHand, IOHand, CliBase)
 
-static map<unsigned, string> s_cmdid2clsname;
+static map<unsigned, string> s_cmdid2interceptor; // 消息拦截器
+static map<unsigned, string> s_cmdid2clsname; // 事件处理器，滞后于拦截器
 
 // static
 int IOHand::Init( void )
@@ -138,7 +139,9 @@ int IOHand::onRead( int p1, long p2 )
 
 		if (m_iBufItem->ioFinish()) // 报文接收完毕
 		{
-			ret = 0;
+			ret = interceptorProcess(m_iBufItem);
+			IFBREAK_N(1 != ret, 0);
+
 			if (m_child)
 			{
 				if (1 == Notify(m_child, HEPNTF_NOTIFY_CHILD, (IOBuffItem*)m_iBufItem))
@@ -401,6 +404,25 @@ int IOHand::onClose( int p1, long p2 )
 	return ret;
 }
 
+int IOHand::interceptorProcess( IOBuffItem*& iBufItem )
+{
+	int ret = 1; // 1 is continue
+	map<unsigned,string>::iterator it;
+
+	it = s_cmdid2interceptor.find(hdr->cmdid);
+	if (it != s_cmdid2interceptor.end())
+	{
+		string funcname = it->second;
+		HEpBase::ProcOneFunT procFunc = GetProcFunc(funcname.c_str());
+		if (procFunc)
+		{
+			ret = procFunc(this, hdr->cmdid, (void*)iBufItem);
+		}
+	}
+
+	return ret;
+}
+
 int IOHand::cmdProcess( IOBuffItem*& iBufItem )
 {
 	int ret = 0;
@@ -409,8 +431,9 @@ int IOHand::cmdProcess( IOBuffItem*& iBufItem )
 		IFBREAK_N(NULL==iBufItem, -71);
 		head_t* hdr = iBufItem->head();
 		string procClsName;
+		map<unsigned,string>::iterator it;
 
-		map<unsigned,string>::iterator it = s_cmdid2clsname.find(hdr->cmdid);
+		it = s_cmdid2clsname.find(hdr->cmdid);
 		procClsName = (s_cmdid2clsname.end() != it) ? it->second : s_cmdid2clsname[0];
 		WARNLOG_IF1(s_cmdid2clsname.end() == it, "CMDPROCESS| msg=an undefine cmdid recv| cmdid=0x%X| mi=%s", hdr->cmdid, m_cliName.c_str());
 

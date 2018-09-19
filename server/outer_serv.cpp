@@ -43,3 +43,26 @@ int OuterServ::setRoutePath( const string& strpath )
     return ret;
 }
 
+/**
+ * @summery: 获取较优的下一跳路由点
+ * @remark:
+ **/
+IOHand* OuterServ::getNearSendServ( void )
+{
+    const int alive_interval_sec = 60*8;
+    map<string, RoutePath>::iterator it = m_routpath.begin();
+    for (; it != m_routpath.end(); ++it)
+    {
+        RoutePath& ref = it->second;
+        CliBase* servptr = CliMgr::Instance()->getChildBySvrid(ref.next_svrid);
+        if (servptr)
+        {
+
+        }
+        else
+        {
+            
+        }
+    }
+}
+

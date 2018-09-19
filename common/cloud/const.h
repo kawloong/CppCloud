@@ -17,7 +17,7 @@ const char LAST_REQ_SERVMTIME[] = "lastreqall_mtime";
 const char CLI_PREFIX_KEY_TIMEOUT[] = "atime_";
 const char CLI_PREFIX_KEY_SERV[] = "dserv";
 const char EXCLUDE_SVRID_LIST[] = "haspass";
-const char ROUTE_PATH[] = "route";
+const char ROUTE_PATH[] = "act_path";
 
 const int SERV_CLITYPE_ID = 1;
 const int CLI_KEEPALIVE_TIME_SEC = 30;
