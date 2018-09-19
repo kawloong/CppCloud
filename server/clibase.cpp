@@ -53,3 +53,12 @@ string CliBase::getProperty( const string& key )
 	return "";
 }
 
+void CliBase::setIntProperty( const string& key, int val )
+{
+	m_cliProp[key] = StrParse::Itoa(val);
+}
+
+int CliBase::getIntProperty( const string& key )
+{
+	return atoi(getProperty(key).c_str());
+}

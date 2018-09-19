@@ -75,7 +75,8 @@ void KeepAliver::closeCli( CliBase* cli )
     ERRLOG_IF1RET(NULL==cli||!cli->isLocal(), "KEEPALIVEREQ| msg=invalid cli %p", cli);
     IOHand* ioh = dynamic_cast<IOHand*>(cli);
     string mi = ioh->m_idProfile;
+    int atime = ioh->getIntProperty("atime");
 
     int ret = ioh->driveClose();
-    LOGINFO("KEEPALIVECLOSE| msg=close zombie connect| ret=%d| cli=%s", ret, mi.c_str());
+    LOGINFO("KEEPALIVECLOSE| msg=close zombie connect| ret=%d| cli=%s| dt=%ds", ret, mi.c_str(), (int)time(NULL)-atime);
 }

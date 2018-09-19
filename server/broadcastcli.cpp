@@ -5,6 +5,7 @@
 #include "iohand.h"
 #include "switchhand.h"
 #include "climanage.h"
+#include "outer_serv.h"
 
 HEPCLASS_IMPL_FUNC(BroadCastCli, OnBroadCMD)
 
@@ -109,6 +110,8 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
     const string aliasPrefix(REMOTESERV_ALIAS_PREFIX);
     CliMgr::AliasCursor citr(aliasPrefix + str_osvrid);
     CliBase* servptr = citr->pop();
+    int old_era = 0;
+
     if (NULL == servptr)
     {
         NormalExceptionOn_IFTRUE(near_servid==str_osvrid, 410, CMD_BROADCAST_RSP,
@@ -116,8 +119,9 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
             near_servid.c_str(), osvrid)); // assert
 
         OuterServ* outsvr = new OuterServ;
-        outsvr->setRoutePath(routepath);
-        ret = CliMgr::Instance()->addChild(outsvr);
+        outsvr->init(osvrid);
+        ret = outsvr->setRoutePath(routepath);
+        ret |= CliMgr::Instance()->addChild(outsvr);
         ret |= CliMgr::Instance()->addAlias2Child(aliasPrefix + str_osvrid + "s");
 
         if (ret)
@@ -126,25 +130,59 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
             throw NormalExceptionOn(411, CMD_BROADCAST_RSP, seqid,
                 StrParse::Format("%s:%d addChild ret %d", __FILE__ __LINE__, ret));
         }
+
+        servptr = outsvr;
     }
     else
     // 2. 编号为osvrid的对象的era是否最新，否则请求获取
     {
-        int old_era = 0;
-        string strEra = iohand->getProperty("era");
 
-        if (routepath == ">") // 直连的Serv发出的广播
+        if (routepath == ">" || servptr->isLocal()) // 直连的Serv发出的广播
         {
             NormalExceptionOn_IFTRUE(near_servid!=str_osvrid, 412, CMD_BROADCAST_RSP,
                 seqid, StrParse::Format("first broadcast serv-%d should be near serv-%s ", 
                 osvrid, near_servid.c_str())); // assert
+
+            old_era = iohand->getIntProperty("era");
         }
         else
         {
-            // era新旧判断
+            OuterServ* outsvr = dynamic_cast<OuterServ*>(servptr);
+            NormalExceptionOn_IFTRUE(NULL==outsvr, 413, CMD_BROADCAST_RSP,
+                seqid, StrParse::Format("servptr-%d isnot OuterServ instance ", 
+                servptr.m_idProfile.c_str())); // assert
+
+            old_era = outsvr->getIntProperty("era");
 
             // 更新路由信息
+            ret = outsvr->setRoutePath(routepath);
+            ERRLOG_IF1(ret, "SETROUTPATH| msg=route path fail| path=%s", routpath.c_str());
         }
+    }
+
+    int last_reqera_time = servptr->getIntProperty(LAST_REQ_SERVMTIME);
+    int now = time(NULL);
+    const int reqall_interval_sec = 10;
+
+    // era新旧判断
+    if (era > old_era && now > last_reqera_time + reqall_interval_sec)
+    {
+        // 请求获取某Serv下的所有cli (CMD_ERAALL_REQ)
+        string msgbody;
+
+        msgbody += "{";
+        StrParse::PutOneJson(msgbody, "to", osvrid, true);
+        StrParse::PutOneJson(msgbody, "from", s_my_svrid, true);
+        StrParse::PutOneJson(msgbody, "oldera", old_era, true);
+        StrParse::PutOneJson(msgbody, "newera", era, true);
+        StrParse::PutOneJson(msgbody, "refer_path", route, true); // 参考路线
+        StrParse::PutOneJson(msgbody, ROUTE_PATH, string(s_my_svrid)+">", false); // 已经过的路线
+        msgbody += "}";
+
+        ret = iohand->sendData(CMD_ERAALL_REQ, seqid, msgbody.c_str(), msgbody.size(), true);
+        servptr->setIntProperty(LAST_REQ_SERVMTIME, now);
+        LOGDEBUG("REQERAALL| msg=Serv-%s need %s eraall data| era=%d->%d| refpath=%s| retsend=%d", 
+            s_my_svrid, osvrid, old_era, era, route.c_str(), ret);
     }
 
     return ret;

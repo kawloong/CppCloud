@@ -42,6 +42,7 @@ protected:
 	int onRead( int p1, long p2 );
 	int onWrite( int p1, long p2 );
 	virtual int onClose( int p1, long p2 );
+	void clearBuf( void );
 
 	int cmdProcess( IOBuffItem*& iBufItem );
 

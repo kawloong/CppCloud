@@ -13,7 +13,8 @@
 
 HEPCLASS_IMPL_FUNC_BEG(BegnHand)
 HEPCLASS_IMPL_FUNC_MORE(BegnHand, ProcessOne)
-HEPCLASS_IMPL_FUNC_MORE(BegnHand, ProcessKeepaliveRsp)
+HEPCLASS_IMPL_FUNC_MORE(BegnHand, on_CMD_KEEPALIVE_REQ)
+HEPCLASS_IMPL_FUNC_MORE(BegnHand, on_CMD_KEEPALIVE_RSP)
 HEPCLASS_IMPL_FUNC_END
 
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
@@ -49,7 +50,14 @@ int BegnHand::onEvent( int evtype, va_list ap )
 	return ret;
 }
 
-int BegnHand::ProcessKeepaliveRsp( void* ptr, unsigned cmdid, void* param )
+
+int BegnHand::on_CMD_KEEPALIVE_REQ( void* ptr, unsigned cmdid, void* param )
+{
+	CMDID2FUNCALL_BEGIN
+	return iohand->sendData(CMD_KEEPALIVE_RSP, seqid, body, 0, true);
+}
+
+int BegnHand::on_CMD_KEEPALIVE_RSP( void* ptr, unsigned cmdid, void* param )
 {
 	IOHand* iohand = (IOHand*)ptr;
 	LOGDEBUG("KEEPALIVE_RSP| mi=%s", iohand->m_idProfile.c_str());
@@ -62,10 +70,13 @@ int BegnHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 	CMDID2FUNCALL_CALL(CMD_WHOAMI_REQ)
 	CMDID2FUNCALL_CALL(CMD_HUNGUP_REQ)
 	CMDID2FUNCALL_CALL(CMD_SETARGS_REQ)
-	CMDID2FUNCALL_CALL(CMD_KEEPALIVE_REQ)
 
 	if (CMD_EXCHANG_REQ == cmdid || CMD_EXCHANG_RSP == cmdid)
 	{
+		Document doc;
+        if (doc.ParseInsitu(body).HasParseError())
+			throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "body json invalid"); 
+		
 		return on_ExchangeMsg(iohand, &doc, cmdid, seqid);
 	}
 
@@ -225,16 +236,6 @@ int BegnHand::on_CMD_SETARGS_REQ( IOHand* iohand, const Value* doc, unsigned seq
 }
 
 
-int BegnHand::on_CMD_KEEPALIVE_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
-{
-	return iohand->sendData(CMD_KEEPALIVE_RSP, seqid, "", 0, true);
-}
-
-int BegnHand::on_CMD_KEEPALIVE_RSP( IOHand* iohand, const Value* doc, unsigned seqid )
-{
-	LOGDEBUG("KEEPALIVE_RSP| mi=%s", iohand->m_idProfile.c_str());
-	return 0;
-}
 
 // @summery: 消息转发/交换
 int BegnHand::on_ExchangeMsg( IOHand* iohand, const Value* doc, unsigned cmdid, unsigned seqid )

@@ -7,6 +7,7 @@
 #include "act_mgr.h"
 #include "iohand.h"
 #include "homacro.h"
+#include "exception.h"
 
 HEPCLASS_IMPL_FUNC(QueryHand, ProcessOne)
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";

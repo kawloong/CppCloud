@@ -27,6 +27,7 @@ public:
 	int init( const string& rhost, int port, int epfd );
 	void setSvrid( int svrid );
 	int appendTimerq( void );
+	void reset( void );
 
 public: // interface HEpBase
     virtual int qrun( int flag, long p2 );

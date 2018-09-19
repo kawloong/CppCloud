@@ -75,13 +75,21 @@ int RemoteServ::qrun( int flag, long p2 )
 		onClose(HEFG_PEXIT, 2);
 	}
 
-	return 0;
+	return ret;
 }
 
 // 连接不上或断开连接时到达
 int RemoteServ::onClose( int p1, long p2 )
 {
 	return IOHand::onClose(p1, p2);
+}
+
+void RemoteServ::reset( void )
+{
+	m_stage = 0;
+	m_closeReason.clear();
+	m_closeFlag = 0;
+	IFCLOSEFD(m_cliFd);
 }
 
 int RemoteServ::appendTimerq( void )
@@ -100,13 +108,17 @@ int RemoteServ::taskRun( int flag, long p2 )
 {
 	// 向远端serv发起连接
 	// 先检查是否已有同一ID的远端serv,有则无需发起
-	string rsvrid = getProperty(CONNTERID_KEY);
-	string alias = string(REMOTESERV_ALIAS_PREFIX) + rsvrid;
+	string rsvrid = StrParse::Itoa(m_svrid);
+	string alias_beg = string(REMOTESERV_ALIAS_PREFIX) + rsvrid + "A"; // "A"是排除serv11进入serv1的范围
+	string alias_end = string(REMOTESERV_ALIAS_PREFIX) + rsvrid + "z"; // serv1C serv1S
 	int ret = 0;
 
-	if (CliMgr::Instance()->getChildByName(alias))
+	CliMgr::AliasCursor finder(alias_beg, alias_end);
+	CliBase* serv = NULL;
+
+	if ( (serv = finder.pop()) )
 	{
-		LOGDEBUG("REMOTES_RUN| msg=remote serv exist| svr=%s", alias.c_str());
+		LOGDEBUG("REMOTES_RUN| msg=remote serv aliving| svr=%s", serv->m_idProfile.c_str());
 	}
 	else
 	{
@@ -116,6 +128,7 @@ int RemoteServ::taskRun( int flag, long p2 )
 			throw OffConnException("cliFd not null at stage0");
 		}
 
+		reset();
 		ret = Sock::connect(m_cliFd, m_rhost.c_str(), m_port, false);
 		if (ERRSOCK_AGAIN == ret || 0 == ret)
 		{
@@ -163,6 +176,7 @@ int RemoteServ::prepareWhoIam( void )
 		delete obf;
 		throw OffConnException("oBuffq.append fail");
 	}
+	LOGDEBUG("REMOTES_WAI| msg=send iamserv req| mi=%s", m_cliName.c_str());
 
 	return 0;
 }

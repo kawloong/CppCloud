@@ -24,8 +24,8 @@ int IOHand::Init( void )
 	s_cmdid2clsname[CMD_EXCHANG_RSP] = "BegnHand::ProcessOne";
 	s_cmdid2clsname[CMD_SETARGS_REQ] = "BegnHand::ProcessOne";
 	s_cmdid2clsname[CMD_GETWARN_REQ] = "QueryHand::ProcessOne";
-	s_cmdid2clsname[CMD_KEEPALIVE_REQ] = "BegnHand::ProcessOne";
-	s_cmdid2clsname[CMD_KEEPALIVE_RSP] = "BegnHand::ProcessKeepaliveRsp";
+	s_cmdid2clsname[CMD_KEEPALIVE_REQ] = "BegnHand::on_CMD_KEEPALIVE_REQ";
+	s_cmdid2clsname[CMD_KEEPALIVE_RSP] = "BegnHand::on_CMD_KEEPALIVE_RSP";
 
 	s_cmdid2clsname[CMD_IAMSERV_REQ] = "RemoteCli"; // 中心端报告身份
 	s_cmdid2clsname[CMD_IAMSERV_RSP] = "RemoteCli";
@@ -45,8 +45,18 @@ IOHand::IOHand(void): m_cliFd(INVALID_FD), m_closeFlag(0),
 }
 IOHand::~IOHand(void)
 {
+	clearBuf();
+}
+
+void IOHand::clearBuf( void )
+{
 	IFDELETE(m_iBufItem);
 	IFDELETE(m_oBufItem);
+	IOBuffItem* buf = NULL;
+	while (m_oBuffq.pop(buf, 0))
+	{
+		IFDELETE(buf);
+	}
 }
 
 int IOHand::onRead( int p1, long p2 )
@@ -386,6 +396,7 @@ int IOHand::onClose( int p1, long p2 )
 	ret = Notify(m_parent, HEPNTF_SOCK_CLOSE, this, m_cliType, (int)isExit);
 	ERRLOG_IF1(ret, "IOHAND_CLOSE| msg=Notify ret %d| mi=%s| reason=%s", ret, m_cliName.c_str(), m_closeReason.c_str());
 
+	clearBuf();
 	m_closeFlag = 3;
 	return ret;
 }

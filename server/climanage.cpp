@@ -164,6 +164,7 @@ void CliMgr::updateCliTime( CliBase* child )
 	}
 
 	clif->t1 = now;
+	child->setIntProperty("atime", now);
 	string atimkey = StrParse::Format("%s%ld@", CLI_PREFIX_KEY_TIMEOUT, clif->t1);
 	atimkey += svrid;
 	int ret = addAlias2Child(atimkey, child);

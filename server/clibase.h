@@ -29,6 +29,8 @@ public: // interface HEpBase
 	// 自定义属性的操作
     void setProperty( const string& key, const string& val );
     string getProperty( const string& key );
+    void setIntProperty( const string& key, int val );
+    int getIntProperty( const string& key );
 	void setCliType(int tp) { m_cliType=tp; }
 
 

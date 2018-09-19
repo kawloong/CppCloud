@@ -24,7 +24,8 @@ public:
 
     // 简单命令用函数处理
     static int ProcessOne( void* iohand, unsigned cmdid, void* param );
-    static int ProcessKeepaliveRsp( void* ptr, unsigned cmdid, void* param );
+    static int on_CMD_KEEPALIVE_REQ( void* ptr, unsigned cmdid, void* param );
+    static int on_CMD_KEEPALIVE_RSP( void* ptr, unsigned cmdid, void* param );
     
     static int getFromCache( string& rdsval, const string& rdskey );
     static int setToCache( const string& rdskey, const string& rdsval );
@@ -36,8 +37,6 @@ private:
     CMD2FUNCCALL_DESC(CMD_WHOAMI_REQ);
     CMD2FUNCCALL_DESC(CMD_HUNGUP_REQ);
     CMD2FUNCCALL_DESC(CMD_SETARGS_REQ);
-    CMD2FUNCCALL_DESC(CMD_KEEPALIVE_REQ);
-    CMD2FUNCCALL_DESC(CMD_KEEPALIVE_RSP);
 
     static int on_ExchangeMsg( IOHand* iohand, const Value* doc, unsigned cmdid, unsigned seqid );
 
