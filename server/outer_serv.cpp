@@ -51,20 +51,50 @@ int OuterServ::setRoutePath( const string& strpath )
  **/
 IOHand* OuterServ::getNearSendServ( void )
 {
-    const int alive_interval_sec = 60*8;
+    static const int alive_interval_sec1 = 60*5;
+    static const int alive_interval_sec2 = 60*15;
+    IOHand* ret = NULL;
     map<string, RoutePath>::iterator it = m_routpath.begin();
-    for (; it != m_routpath.end(); ++it)
+    map<string, RoutePath>::iterator it0;
+    int now = time(NULL);
+
+    for ( ; it != m_routpath.end(); )
     {
-        RoutePath& ref = it->second;
+        it0 = it++;
+        RoutePath& ref = it0->second;
         CliBase* servptr = CliMgr::Instance()->getChildBySvrid(ref.next_svrid);
         if (servptr)
         {
-
+            IOHand* tmpptr = dynamic_cast<IOHand*>(servptr);
+            if (!servptr->isLocal() || NULL==tmpptr)
+            {
+                "GETNEARSERV| msg=logic error| servptr=%s", servptr->m_idProfile.c_str());
+                m_routpath.erase(it0);
+                continue;
+            }
+            
+            if (now < ref.mtime + alive_interval_sec1)
+            {
+                ret = tmpptr; // 得到最优下一跳，即刻返回
+                break;
+            }
+            if (now > ref.mtime + alive_interval_sec2)
+            {
+                m_routpath.erase(it0);
+                break;
+            }
+            
+            if (NULL == ret)
+            {
+                ret = tmpptr;
+            }
         }
         else
         {
-            
+            m_routpath.erase(it0);
         }
     }
+
+    return ret;
 }
 

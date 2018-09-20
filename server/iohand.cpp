@@ -234,6 +234,18 @@ int IOHand::run( int p1, long p2 )
 		m_closeFlag = 2;
 		IFDELETE(m_iBufItem);
 	}
+	catch( RouteExException& exp )
+	{
+		string rsp = StrParse::Format(
+				"{ \"from\": %u, \"to\": %u, \"refer_path\":\"%s\", \"act_path\":\"%u>\" }", 
+				exp.from, exp.to, exp.rpath.c_str(), exp.from);
+		LOGERROR("RouteExException| reson=%s | mi=%s| rsp=%s", 
+				exp.desc.c_str(), m_idProfile.c_str(), rsp.c_str());
+		if (exp.reqcmd < CMDID_MID)
+		{
+			sendData(exp.reqcmd|CMDID_MID, exp.seqid, rsp.c_str(), rsp.length(), true);
+		}
+	}
 		
 	if (EPOLLOUT & p1) // 可写
 	{
