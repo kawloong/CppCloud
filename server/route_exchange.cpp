@@ -1,5 +1,9 @@
 #include "route_exchange.h"
-
+#include "rapidjson/json.hpp"
+#include "exception.h"
+#include "comm/strparse.h"
+#include "climanage.h"
+#include "homacro.h"
 
 HEPCLASS_IMPL_FUNC_BEG(RouteExchage)
 HEPCLASS_IMPL_FUNC_MORE(RouteExchage, on_CMD_ERAALL_REQ)
@@ -10,6 +14,17 @@ int RouteExchage::s_my_svrid = 0;
 RouteExchage::RouteExchage( void )
 {
 
+}
+
+int setJsonObj( const string& key, const string& val, Document* node )
+{
+    node->RemoveMember(key.c_str());
+    Value tmpkey(kStringType);
+    Value tmpstr(kStringType);
+    tmpkey.SetString(key.c_str(), node->GetAllocator()); 
+    tmpstr.SetString(val.c_str(), node->GetAllocator()); 
+    node->AddMember(tmpkey, tmpstr, node->GetAllocator());
+    return 0;
 }
 
 int RouteExchage::on_CMD_ERAALL_REQ( void* ptr, unsigned cmdid, void* param )
@@ -59,7 +74,8 @@ int RouteExchage::on_CMD_ERAALL_REQ( void* ptr, unsigned cmdid, void* param )
         {
             IOHand* ioh = dynamic_cast<IOHand*>(cliptr);
             actpath += StrParse::Format("%d>", s_my_svrid);
-            doc.setStr("act_path", actpath + "");
+            //doc.setStr("act_path", actpath + ""); 
+            setJsonObj("act_path", actpath, &doc);
 
             string msg = Rjson::ToString(&doc);
             ioh->sendData(cmdid, seqid, msg.c_str(), msg.length(), true);

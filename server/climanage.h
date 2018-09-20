@@ -25,10 +25,11 @@ typedef MapRanger<string, CliBase*> CliMapRange;
 struct CliInfo
 {
     time_t t0, t1, t2; // 连接时间，活动时间，关闭时间
+    bool inControl; // 如果为true,当调用removeAliasChild删除时会delete对象
     map<string, bool> aliasName; // 客户端的别名，其他人可以通过该别人找到此对象
     map<string, string>* cliProp; // 客户属性
 
-    CliInfo(void): t0(0),t1(0),t2(0),cliProp(NULL){}
+    CliInfo(void): t0(0),t1(0),t2(0),inControl(true),cliProp(NULL){}
 };
 
 
@@ -49,7 +50,7 @@ public:
 public:
     // 别名引用相关的操作
     int addChild( HEpBase* chd );
-    int addChild( CliBase* child );
+    int addChild( CliBase* child, bool inCtrl = true );
     int addAlias2Child( const string& asname, CliBase* ptr );
 
     void removeAliasChild( const string& asname );
@@ -73,6 +74,8 @@ public:
 
     // 退出处理
     int progExitHanele( int flg );
+    // 获取当前对象状态
+    string selfStat( bool incAliasDetail );
 
     int onChildEvent( int evtype, va_list ap );
 

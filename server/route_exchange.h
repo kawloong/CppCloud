@@ -8,7 +8,7 @@ Modification :
 -------------------------------------------------------------------------*/
 #ifndef _ROUTE_EXCHANGE_H_
 #define _ROUTE_EXCHANGE_H_
-#include "clibase.h"
+#include "comm/hep_base.h"
 
 
 class RouteExchage: public HEpBase

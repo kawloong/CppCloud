@@ -1,5 +1,7 @@
 #include "outer_serv.h"
 #include "comm/strparse.h"
+#include "iohand.h"
+#include "climanage.h"
 
 
 HEPMUTICLASS_IMPL(OuterServ, OuterServ, CliBase)

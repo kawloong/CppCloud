@@ -14,6 +14,7 @@ Modification :
 #include "clibase.h"
 
 using namespace std;
+class IOHand;
 
 class OuterServ: public CliBase
 {
@@ -32,7 +33,7 @@ public:
     
     void init( int svrid );
     int setRoutePath( const string& rp );
-
+    IOHand* getNearSendServ( void );
 
 protected: // interface IEPollRun
 	//virtual int onEvent( int evtype, va_list ap );

@@ -6,6 +6,7 @@
 #include "remote_serv.h"
 #include "remote_cli.h"
 #include "climanage.h"
+#include "broadcastcli.h"
 
 RemoteMgr::RemoteMgr()
 {
@@ -39,9 +40,14 @@ int RemoteMgr::init( int epfd )
 		BindSon(this, ptr); // 使得onEvent()可以接收关闭通知
 		m_rSvrs[ptr] = 0;
 
-		ret = SwitchHand::Instance()->appendQTask(ptr, m_mysvrid*1000); // 在$[m_mysvrid]秒后触发主动连接
+		ret = SwitchHand::Instance()->appendQTask(ptr, m_mysvrid*2000); // 在$[m_mysvrid]秒后触发主动连接
 		IFBREAK(ret);
     }
+
+	if (0 == ret && !vhost.empty())
+	{
+		//ret = BroadCastCli::Instance()->init();
+	}
 
 	return ret;
 }
@@ -82,7 +88,7 @@ void RemoteMgr::uninit( void )
 	for (; itr != m_rSvrs.end(); )
 	{
 		itr_ = itr++;
-		itr_->first->driveClose();
+		itr_->first->driveClose("program shutdown");
 		// delete itr->first; // 上一句会调用到this->ononEvent() HEPNTF_SOCK_CLOSE
 	}
 

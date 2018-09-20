@@ -9,9 +9,10 @@ Modification :
 #ifndef _BROADCAST_CLI_H_
 #define _BROADCAST_CLI_H_
 #include "comm/hep_base.h"
+#include "rapidjson/json.hpp"
 
 class CliBase;
-
+class IOHand;
 
 class BroadCastCli: public HEpBase
 {
@@ -21,6 +22,7 @@ public:
     BroadCastCli();
 
     static int OnBroadCMD( void* ptr, unsigned cmdid, void* param );
+    static int on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsigned seqid );
 
     void init( void );
 
@@ -28,7 +30,7 @@ protected: // interface IEPollRun
 	virtual int run(int p1, long p2);
     virtual int qrun( int flag, long p2 );
 
-
+    int toWorld( int svrid, int era, int ttl, const string &excludeSvrid, const string &route );
 
 protected:
     static int s_my_svrid;

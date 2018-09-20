@@ -116,9 +116,20 @@ int RemoteServ::taskRun( int flag, long p2 )
 	CliMgr::AliasCursor finder(alias_beg, alias_end);
 	CliBase* serv = NULL;
 
+	LOGDEBUG("REMOTESRUN| %s", CliMgr::Instance()->selfStat(true).c_str());
 	if ( (serv = finder.pop()) )
 	{
-		LOGDEBUG("REMOTES_RUN| msg=remote serv aliving| svr=%s", serv->m_idProfile.c_str());
+		if (s_my_svrid < m_svrid)
+		{
+			CliBase* more_serv = finder.pop();
+			IOHand* more_ioh = dynamic_cast<IOHand*>(more_serv);
+			if (more_ioh)
+			{
+				more_ioh->driveClose("close more tcplink"); // 关闭多余的一个连接
+				LOGINFO("REMOTSERVRUN| msg=remove more tcplink| svrid=%d", m_svrid);
+			}
+		}
+		//LOGDEBUG("REMOTES_RUN| msg=remote serv aliving| svr=%s", serv->m_idProfile.c_str());
 	}
 	else
 	{
@@ -137,6 +148,7 @@ int RemoteServ::taskRun( int flag, long p2 )
 			if (0 == ret)
 			{
 				m_cliName = Sock::peer_name(m_cliFd, true);
+				setIntProperty("fd", m_cliFd);
 				m_idProfile = m_cliName;
 			}
 

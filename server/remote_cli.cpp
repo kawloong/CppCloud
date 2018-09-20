@@ -125,7 +125,7 @@ int RemoteCli::on_CMD_IAMSERV_RSP( const Value* doc, unsigned seqid )
     // 添加到climanage中管理(主动方)
     strsvrid += "_S"; // 标识来自主动方和被动的serv分开
     string servAlias = string(REMOTESERV_ALIAS_PREFIX) + strsvrid;
-    ret = CliMgr::Instance()->addChild(m_iohand);
+    ret = CliMgr::Instance()->addChild(m_iohand, false);
     ret |= CliMgr::Instance()->addAlias2Child(strsvrid, m_iohand);
     ret |= CliMgr::Instance()->addAlias2Child(servAlias, m_iohand);
     NormalExceptionOff_IFTRUE(ret, 400, CMD_IAMSERV_RSP, seqid, 

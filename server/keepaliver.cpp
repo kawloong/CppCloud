@@ -33,12 +33,14 @@ int KeepAliver::qrun( int flag, long p2 )
     string expire_kaliv_key = StrParse::Format("%s%ld", CLI_PREFIX_KEY_TIMEOUT, atime_kaliv);
     string expire_dead_key = StrParse::Format("%s%ld", CLI_PREFIX_KEY_TIMEOUT, atime_dead);
 
+    LOGDEBUG("KEEPALIVRUN| %s", CliMgr::Instance()->selfStat(false).c_str());
     CliMgr::AliasCursor alcur(CLI_PREFIX_KEY_TIMEOUT);
     while ( (cli = alcur.pop()) )
     {
         if (expire_dead_key.compare(alcur.iter_range.retKey) > 0) // 需清理
         {
             closeCli(cli);
+            LOGDEBUG("KEEPALIVRUN| %s", CliMgr::Instance()->selfStat(false).c_str());
         }
         else if (expire_kaliv_key.compare(alcur.iter_range.retKey) > 0) // 需keepalive
         {
@@ -76,7 +78,8 @@ void KeepAliver::closeCli( CliBase* cli )
     IOHand* ioh = dynamic_cast<IOHand*>(cli);
     string mi = ioh->m_idProfile;
     int atime = ioh->getIntProperty("atime");
+    int dt = (int)time(NULL)-atime;
 
-    int ret = ioh->driveClose();
-    LOGINFO("KEEPALIVECLOSE| msg=close zombie connect| ret=%d| cli=%s| dt=%ds", ret, mi.c_str(), (int)time(NULL)-atime);
+    int ret = ioh->driveClose(StrParse::Format("atime up %dsec", dt));
+    LOGINFO("KEEPALIVECLOSE| msg=close zombie connect| ret=%d| cli=%s| dt=%ds", ret, mi.c_str(), dt);
 }

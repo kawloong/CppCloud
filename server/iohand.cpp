@@ -274,6 +274,7 @@ int IOHand::onEvent( int evtype, va_list ap )
 		m_cliFd = clifd;
 		m_cliName = Sock::peer_name(m_cliFd, true);
 		m_idProfile = m_cliName;
+		setIntProperty("fd", clifd);
 		ret = m_epCtrl.setEvt(EPOLLIN, this);
 
 		LOGINFO("IOHAND_INIT| msg=a client accept| fd=%d| mi=%s", m_cliFd, m_cliName.c_str());
@@ -375,8 +376,9 @@ int IOHand::Json2Map( const Value* objnode )
     return ret;
 }
 
-int IOHand::driveClose( void )
+int IOHand::driveClose( const string& reason )
 {
+	m_closeReason = reason;
 	return onClose(0, 0);
 }
 
@@ -407,6 +409,7 @@ int IOHand::onClose( int p1, long p2 )
 int IOHand::interceptorProcess( IOBuffItem*& iBufItem )
 {
 	int ret = 1; // 1 is continue
+	head_t* hdr = iBufItem->head();
 	map<unsigned,string>::iterator it;
 
 	it = s_cmdid2interceptor.find(hdr->cmdid);

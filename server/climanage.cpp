@@ -30,6 +30,14 @@ CliMgr::CliMgr(void)
 CliMgr::~CliMgr(void)
 {
 	IFDELETE(m_waitRmPtr);
+ 	map<CliBase*, CliInfo>::iterator it = m_children.begin();
+	for (; it != m_children.end(); ++it)
+	{
+		delete it->first;
+	}
+
+	m_children.clear();
+	m_aliName2Child.clear();
 }
 
 int CliMgr::addChild( HEpBase* chd )
@@ -38,11 +46,12 @@ int CliMgr::addChild( HEpBase* chd )
 	return child? addChild(child) : -22;
 }
 
-int CliMgr::addChild( CliBase* child )
+int CliMgr::addChild( CliBase* child, bool inCtrl )
 {
 	CliInfo& cliinfo = m_children[child];
 	ERRLOG_IF1(cliinfo.t0 > 0, "ADDCLICHILD| msg=child has exist| newchild=%p| t0=%d", child, (int)cliinfo.t0);
 	cliinfo.t0 = time(NULL);
+	cliinfo.inControl = inCtrl;
 	cliinfo.cliProp = &child->m_cliProp;
 	return 0;
 }
@@ -117,7 +126,7 @@ void CliMgr::removeAliasChild( CliBase* ptr, bool rmAll )
 			}
 
 			LOGINFO("CliMgr_CHILDRM| msg=a iohand close| dt=%ds| asname=%s", int(time(NULL)-cliinfo.t0), asnamestr.c_str());
-			if (!ptr->isLocal())
+			if (it->second.inControl)
 			{
 				m_waitRmPtr = static_cast<IOHand*>(ptr);
 			}
@@ -161,22 +170,23 @@ void CliMgr::updateCliTime( CliBase* child )
 {
 	CliInfo* clif = getCliInfo(child);
 	ERRLOG_IF1RET(NULL==clif, "UPDATECLITIM| msg=null pointer at %p", child);
-	string svrid = child->getProperty(CONNTERID_KEY);
+	string strfd = child->getProperty("fd");
 	time_t now = time(NULL);
 
+	if (strfd.empty()) return;
 	if (now < clif->t1 + 20) return; // 超20sec才刷新
 
 	if (clif->t1 >= clif->t0)
 	{
 		string atimkey = StrParse::Format("%s%ld@", CLI_PREFIX_KEY_TIMEOUT, clif->t1);
-		atimkey += svrid;
+		atimkey += strfd;
 		removeAliasChild(atimkey);
 	}
 
 	clif->t1 = now;
 	child->setIntProperty("atime", now);
 	string atimkey = StrParse::Format("%s%ld@", CLI_PREFIX_KEY_TIMEOUT, clif->t1);
-	atimkey += svrid;
+	atimkey += strfd;
 	int ret = addAlias2Child(atimkey, child);
 	ERRLOG_IF1(ret, "UPDATECLITIM| msg=add alias atimkey fail| ret=%d| mi=%s", ret, child->m_idProfile.c_str());
 }
@@ -222,6 +232,7 @@ int CliMgr::onChildEvent( int evtype, va_list ap )
 // ep线程调用此方法通知各子对象退出
 int CliMgr::progExitHanele( int flg )
 {
+	LOGDEBUG("CLIMGREXIT| %s", selfStat(true).c_str());
 	map<CliBase*, CliInfo>::iterator it = m_children.begin();
 	for (; it != m_children.end(); )
 	{
@@ -230,8 +241,28 @@ int CliMgr::progExitHanele( int flg )
 		if (preit->first->isLocal())
 		{
 			preit->first->run(HEFG_PEXIT, 2); /// #PROG_EXITFLOW(5)
+			delete preit->first;
 		}
 	}
 
+	LOGDEBUG("CLIMGREXIT| %s", selfStat(true).c_str());
 	return 0;
 }
+
+string CliMgr::selfStat( bool incAliasDetail )
+{
+	string adetail;
+
+	if (incAliasDetail)
+	{
+		map<string, CliBase*>::const_iterator it = m_aliName2Child.begin();
+		for (; it != m_aliName2Child.end(); ++it)
+		{
+			adetail += it->first;
+			StrParse::AppendFormat(adetail, "->%p ", it->second);
+		}
+	}
+
+	return StrParse::Format("child_num=%zu| era=%d| wptr=%p| alias_num=%zu(%s)", 
+		m_children.size(), m_localEra, m_waitRmPtr, m_aliName2Child.size(), adetail.c_str());
+}	
