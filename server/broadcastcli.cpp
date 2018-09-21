@@ -17,10 +17,11 @@ BroadCastCli::BroadCastCli()
 
 }
 
-void BroadCastCli::init( void )
+void BroadCastCli::init( int my_svrid )
 {
     m_seqid = 0;
-    SwitchHand::Instance()->appendQTask(this, BROADCASTCLI_INTERVAL_SEC*1000);
+    s_my_svrid = my_svrid;
+    SwitchHand::Instance()->appendQTask(this, my_svrid*1000);
 }
 
 int BroadCastCli::run(int p1, long p2)
@@ -36,7 +37,12 @@ int BroadCastCli::qrun( int flag, long p2 )
         string reqbody;
         int localEra = CliMgr::Instance()->getLocalClisEra(); // 获取本地cli的当前版本
 
-        ret = toWorld(s_my_svrid, localEra, 1, "", "");
+        if (localEra > 0)
+        {
+            ret = toWorld(s_my_svrid, localEra, 1, "", "");
+        }
+
+        SwitchHand::Instance()->appendQTask(this, BROADCASTCLI_INTERVAL_SEC*1000);
     }
     
     return ret;
@@ -56,10 +62,10 @@ int BroadCastCli::toWorld( int svrid, int era, int ttl, const string &excludeSvr
     {
         WARNLOG_IF1BRK(cli->getCliType() != SERV_CLITYPE_ID && !cli->isLocal(), -23,
                        "BROADCASTRUN| msg=flow unexception| cli=%s", cli->m_idProfile.c_str());
-        string svrid = cli->getProperty(CONNTERID_KEY);
-        if (link_svrid_arr.find(svrid + ",") == string::npos)
+        string svridstr = cli->getProperty(CONNTERID_KEY);
+        if (link_svrid_arr.find(svridstr + ",") == string::npos)
         {
-            link_svrid_arr += svrid + ",";
+            link_svrid_arr += svridstr + ",";
             vecCli.push_back(cli);
         }
     }
@@ -84,8 +90,9 @@ int BroadCastCli::toWorld( int svrid, int era, int ttl, const string &excludeSvr
 int BroadCastCli::OnBroadCMD( void* ptr, unsigned cmdid, void* param )
 {
     CMDID2FUNCALL_BEGIN
+    LOGDEBUG("BROADCMD| seqid=%u| cmd=%u| body=%s", seqid, cmdid, body);
     CMDID2FUNCALL_CALL(CMD_BROADCAST_REQ)
-    //CMDID2FUNCALL_CALL(CMD_BROADCAST_RSP)
+    //CMDID2FUNCALL_CALL(CMD_BROADCAST_RSP) 
 
     return -5;
 }

@@ -16,7 +16,11 @@ static map<unsigned, string> s_cmdid2clsname; // 事件处理器，滞后于拦�
 // static
 int IOHand::Init( void )
 {
-	// 预定义好的消息->处理类
+	// 前置拦截器
+	s_cmdid2interceptor[CMD_ERAALL_REQ] = "RouteExchage::TransMsg";
+	s_cmdid2interceptor[CMD_ERAALL_RSP] = "RouteExchage::TransMsg";
+
+	// 消息->处理类
 	s_cmdid2clsname[CMD_WHOAMI_REQ] = "BegnHand::ProcessOne"; // ->BegnHand
 	s_cmdid2clsname[CMD_GETCLI_REQ] = "QueryHand::ProcessOne";
 	s_cmdid2clsname[CMD_HUNGUP_REQ] = "BegnHand::ProcessOne";
@@ -32,7 +36,7 @@ int IOHand::Init( void )
 	s_cmdid2clsname[CMD_IAMSERV_RSP] = "RemoteCli";
 
 	s_cmdid2clsname[CMD_BROADCAST_REQ] = "BroadCastCli::OnBroadCMD"; // 中心端报告身份
-	s_cmdid2clsname[CMD_BROADCAST_RSP] = "BroadCastCli::OnBroadCMD";
+	s_cmdid2clsname[CMD_BROADCAST_RSP] = "BegnHand::DisplayMsg";
 
 	s_cmdid2clsname[0] = "BegnHand::ProcessOne"; // default handle class
 
@@ -40,7 +44,7 @@ int IOHand::Init( void )
 }
 
 IOHand::IOHand(void): m_cliFd(INVALID_FD), m_closeFlag(0),
-	  m_iBufItem(NULL), m_oBufItem(NULL)
+	  m_authFlag(0), m_iBufItem(NULL), m_oBufItem(NULL)
 {
     
 }
@@ -139,6 +143,7 @@ int IOHand::onRead( int p1, long p2 )
 
 		if (m_iBufItem->ioFinish()) // 报文接收完毕
 		{
+			IFBREAK(authCheck(m_iBufItem)); // 权限检查
 			ret = interceptorProcess(m_iBufItem);
 			IFBREAK_N(1 != ret, 0);
 
@@ -228,6 +233,13 @@ int IOHand::run( int p1, long p2 )
 		sendData(exp.cmdid, exp.seqid, rsp.c_str(), rsp.length(), true);
 		IFDELETE(m_iBufItem);
 	}
+	catch ( NormalExceptionOn& exp )
+	{
+		string rsp = StrParse::Format("{ \"code\": %d, \"desc\": \"%s\" }", exp.code, exp.desc.c_str());
+		LOGERROR("NormalExceptionOn| reson=%s | mi=%s", exp.desc.c_str(), m_idProfile.c_str());
+		sendData(exp.cmdid, exp.seqid, rsp.c_str(), rsp.length(), true);
+		IFDELETE(m_iBufItem);
+	}
 	catch( OffConnException& exp )
 	{
 		LOGERROR("OffConnException| reson=%s | mi=%s", exp.reson.c_str(), m_idProfile.c_str());
@@ -240,11 +252,12 @@ int IOHand::run( int p1, long p2 )
 				"{ \"from\": %u, \"to\": %u, \"refer_path\":\"%s\", \"act_path\":\"%u>\" }", 
 				exp.from, exp.to, exp.rpath.c_str(), exp.from);
 		LOGERROR("RouteExException| reson=%s | mi=%s| rsp=%s", 
-				exp.desc.c_str(), m_idProfile.c_str(), rsp.c_str());
+				exp.reson.c_str(), m_idProfile.c_str(), rsp.c_str());
 		if (exp.reqcmd < CMDID_MID)
 		{
 			sendData(exp.reqcmd|CMDID_MID, exp.seqid, rsp.c_str(), rsp.length(), true);
 		}
+		IFDELETE(m_iBufItem);
 	}
 		
 	if (EPOLLOUT & p1) // 可写
@@ -325,6 +338,11 @@ int IOHand::onEvent( int evtype, va_list ap )
 	}
 	
 	return ret;
+}
+
+void IOHand::setAuthFlag( int auth )
+{
+	m_authFlag = auth;
 }
 
 int IOHand::sendData( unsigned int cmdid, unsigned int seqid, const char* body, unsigned int bodylen, bool setOutAtonce )
@@ -416,6 +434,20 @@ int IOHand::onClose( int p1, long p2 )
 	clearBuf();
 	m_closeFlag = 3;
 	return ret;
+}
+
+// 权限拦截器
+int IOHand::authCheck( IOBuffItem*& iBufItem )
+{
+	head_t* hdr = iBufItem->head();
+	if (CMD_WHOAMI_REQ == hdr->cmdid || CMD_WHOAMI_RSP == hdr->cmdid ||
+		CMD_IAMSERV_REQ == hdr->cmdid ||CMD_IAMSERV_RSP == hdr->cmdid)
+	{
+		return 0;
+	}
+
+	NormalExceptionOff_IFTRUE(0 == m_authFlag, 401, hdr->cmdid|CMDID_MID, hdr->seqid, "Not Auth");
+	return 0;
 }
 
 int IOHand::interceptorProcess( IOBuffItem*& iBufItem )

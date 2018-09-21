@@ -21,10 +21,11 @@ public:
     SINGLETON_CLASS2(BroadCastCli)
     BroadCastCli();
 
+public:
     static int OnBroadCMD( void* ptr, unsigned cmdid, void* param );
     static int on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsigned seqid );
 
-    void init( void );
+    void init( int my_svrid );
 
 protected: // interface IEPollRun
 	virtual int run(int p1, long p2);

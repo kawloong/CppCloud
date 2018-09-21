@@ -9,7 +9,8 @@
 #define CMDID2FUNCALL_CALL(CMDID)                                                         \
     if(CMDID==cmdid) { Document doc;                                                      \
         if (doc.ParseInsitu(body).HasParseError()) {                                      \
-            throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "body json invalid"); }  \
+            LOGERROR("MSGJSON| body=%s", body);                                           \
+            throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "body json invalid " __FILE__  ); }  \
         return on_##CMDID(iohand, &doc, seqid);  }
 
 

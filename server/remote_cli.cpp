@@ -82,6 +82,7 @@ int RemoteCli::on_CMD_IAMSERV_REQ( const Value* doc, unsigned seqid )
     CliMgr::Instance()->addAlias2Child(strsvrid, m_iohand);
     CliMgr::Instance()->addAlias2Child(servAlias, m_iohand);
     m_iohand->m_idProfile = strsvrid + m_iohand->getCliSockName();
+    m_iohand->setAuthFlag(1);
 
     // 响应回复
     string whoIamJson;

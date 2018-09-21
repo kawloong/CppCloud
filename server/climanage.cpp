@@ -241,7 +241,7 @@ int CliMgr::progExitHanele( int flg )
 		if (preit->first->isLocal())
 		{
 			preit->first->run(HEFG_PEXIT, 2); /// #PROG_EXITFLOW(5)
-			delete preit->first;
+
 		}
 	}
 

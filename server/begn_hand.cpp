@@ -13,6 +13,7 @@
 
 HEPCLASS_IMPL_FUNC_BEG(BegnHand)
 HEPCLASS_IMPL_FUNC_MORE(BegnHand, ProcessOne)
+HEPCLASS_IMPL_FUNC_MORE(BegnHand, DisplayMsg)
 HEPCLASS_IMPL_FUNC_MORE(BegnHand, on_CMD_KEEPALIVE_REQ)
 HEPCLASS_IMPL_FUNC_MORE(BegnHand, on_CMD_KEEPALIVE_RSP)
 HEPCLASS_IMPL_FUNC_END
@@ -50,6 +51,13 @@ int BegnHand::onEvent( int evtype, va_list ap )
 	return ret;
 }
 
+int BegnHand::DisplayMsg( void* ptr, unsigned cmdid, void* param )
+{
+	CMDID2FUNCALL_BEGIN
+	LOGDEBUG("DISPLAYMSG| from=%s| cmd=%u| seq=%u| body=%s",
+		iohand->m_idProfile.c_str(), cmdid, seqid, body);
+	return 0;
+}
 
 int BegnHand::on_CMD_KEEPALIVE_REQ( void* ptr, unsigned cmdid, void* param )
 {
@@ -75,7 +83,7 @@ int BegnHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 	{
 		Document doc;
         if (doc.ParseInsitu(body).HasParseError())
-			throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "body json invalid"); 
+			throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "body json invalid " ); 
 		
 		return on_ExchangeMsg(iohand, &doc, cmdid, seqid);
 	}
@@ -143,6 +151,7 @@ int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqi
 		// 通知获取客户信息完成
 		ret = Notify(iohand, HEPNTF_INIT_FINISH);
 		Rjson::ToString(str, doc);
+		iohand->setAuthFlag(1);
 
 
 		Actmgr::Instance()->setCloseLog(svrid, ""); // clean warn message

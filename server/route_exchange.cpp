@@ -4,15 +4,16 @@
 #include "comm/strparse.h"
 #include "climanage.h"
 #include "homacro.h"
+#include "outer_serv.h"
 
 
 HEPCLASS_IMPL_FUNC_BEG(RouteExchage)
-HEPCLASS_IMPL_FUNC_MORE(RouteExchage, on_CMD_ERAALL_REQ)
+HEPCLASS_IMPL_FUNC_MORE(RouteExchage, TransMsg)
 HEPCLASS_IMPL_FUNC_END
 
 int RouteExchage::s_my_svrid = 0;
 #define RouteExException_IFTRUE_EASY(cond, resonstr) \
-    RouteExException_IFTRUE(cond, cmdid, seqid, to, from, resonstr, actpath)
+    RouteExException_IFTRUE(cond, cmdid, seqid, s_my_svrid, from, resonstr, actpath)
 
 RouteExchage::RouteExchage( void )
 {
@@ -30,14 +31,14 @@ int setJsonObj( const string& key, const string& val, Document* node )
     return 0;
 }
 
-int RouteExchage::on_CMD_ERAALL_REQ( void* ptr, unsigned cmdid, void* param )
+int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
 {
 	CMDID2FUNCALL_BEGIN
 	Document doc;
 
     if (doc.Parse(body).HasParseError()) 
     {
-        throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "body json invalid");
+        throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "body json invalid @");
     }
 
     int ret = 0;
@@ -78,9 +79,10 @@ int RouteExchage::on_CMD_ERAALL_REQ( void* ptr, unsigned cmdid, void* param )
         if (cliptr->isLocal())
         {
             ioh = dynamic_cast<IOHand*>(cliptr);
+            RouteExException_IFTRUE_EASY(iohand==ioh, string("dead loop ")+Rjson::ToString(&doc));
         }
         // 发往外围的Serv的情况
-        else if (1 == cliptr.getCliType())
+        else if (1 == cliptr->getCliType())
         {
             OuterServ* oserv = dynamic_cast<OuterServ*>(cliptr);
             RouteExException_IFTRUE_EASY(NULL==oserv, 

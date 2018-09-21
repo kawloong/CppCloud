@@ -35,6 +35,7 @@ public: // interface HEpBase
 	int getCliType(void) {return m_cliType; }
 
 	int driveClose( const string& reason );
+	void setAuthFlag( int auth );
 	int sendData( unsigned int cmdid, unsigned int seqid, const char* body, 
 		unsigned int bodylen, bool setOutAtonce );
 
@@ -44,6 +45,7 @@ protected:
 	virtual int onClose( int p1, long p2 );
 	void clearBuf( void );
 
+	int authCheck( IOBuffItem*& iBufItem );
 	int interceptorProcess( IOBuffItem*& iBufItem );
 	int cmdProcess( IOBuffItem*& iBufItem );
 
@@ -52,6 +54,7 @@ protected:
 	HEpEvFlag m_epCtrl;
 	string m_closeReason; // 关掉原因
 	unsigned char m_closeFlag; // 结束标记: 0连接中, 1等待发完后关闭; 2立即要关; 3关闭
+	int m_authFlag; // 权限标识
 
 	IOBuffItem* m_iBufItem;
 	IOBuffItem* m_oBufItem;

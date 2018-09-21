@@ -56,7 +56,7 @@ struct RouteExException
 
     RouteExException(unsigned req_cmd, unsigned seq, unsigned fmid, unsigned toid, 
         const string& ds, const string& path): 
-        reqcmd(cmd), seqid(seq), from(fmid), to(toid), reson(ds), rpath(path){}
+        reqcmd(req_cmd), seqid(seq), from(fmid), to(toid), reson(ds), rpath(path){}
 };
 
 #define NormalExceptionOn_IFTRUE(cond, co, cmd, seq, ds) \

@@ -19,7 +19,7 @@ public:
     RouteExchage(void);
     void init( void );
 
-    static int on_CMD_ERAALL_REQ( void* ptr, unsigned cmdid, void* param );
+    static int TransMsg( void* ptr, unsigned cmdid, void* param );
 
 protected: // interface IEPollRun
 	//virtual int onEvent( int evtype, va_list ap );

@@ -68,7 +68,7 @@ IOHand* OuterServ::getNearSendServ( void )
             IOHand* tmpptr = dynamic_cast<IOHand*>(servptr);
             if (!servptr->isLocal() || NULL==tmpptr)
             {
-                "GETNEARSERV| msg=logic error| servptr=%s", servptr->m_idProfile.c_str());
+                LOGERROR("GETNEARSERV| msg=logic error| servptr=%s", servptr->m_idProfile.c_str());
                 m_routpath.erase(it0);
                 continue;
             }

@@ -24,6 +24,7 @@ public:
 
     // 简单命令用函数处理
     static int ProcessOne( void* iohand, unsigned cmdid, void* param );
+    static int DisplayMsg( void* ptr, unsigned cmdid, void* param );
     static int on_CMD_KEEPALIVE_REQ( void* ptr, unsigned cmdid, void* param );
     static int on_CMD_KEEPALIVE_RSP( void* ptr, unsigned cmdid, void* param );
     

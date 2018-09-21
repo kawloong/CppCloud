@@ -46,7 +46,7 @@ int RemoteMgr::init( int epfd )
 
 	if (0 == ret && !vhost.empty())
 	{
-		//ret = BroadCastCli::Instance()->init();
+		BroadCastCli::Instance()->init(m_mysvrid);
 	}
 
 	return ret;

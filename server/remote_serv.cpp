@@ -145,10 +145,12 @@ int RemoteServ::taskRun( int flag, long p2 )
 		{
 			m_epCtrl.setActFd(m_cliFd);
 			m_stage = 1; // connecting
+			setIntProperty("fd", m_cliFd);
+			m_idProfile = StrParse::Format("conneting to %s:%d", m_rhost.c_str(), m_port);
+
 			if (0 == ret)
 			{
 				m_cliName = Sock::peer_name(m_cliFd, true);
-				setIntProperty("fd", m_cliFd);
 				m_idProfile = m_cliName;
 			}
 
