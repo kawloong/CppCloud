@@ -11,6 +11,7 @@ Modification :
 #include <arpa/inet.h>
 #include "comm/hep_base.h"
 #include "comm/queue.h"
+#include "rapidjson/json.hpp"
 #include "iobuff.h"
 
 class CliBase: public HEpBase
@@ -27,6 +28,7 @@ public: // interface HEpBase
 	virtual int onEvent( int evtype, va_list ap );
 
 	// 自定义属性的操作
+	int Json2Map( const Value* objnode );
     void setProperty( const string& key, const string& val );
     string getProperty( const string& key );
     void setIntProperty( const string& key, int val );
@@ -34,20 +36,23 @@ public: // interface HEpBase
 	void setCliType(int tp) { m_cliType=tp; }
 
 
-	int getCliType(void) const {return m_cliType; }
+	int getCliType(void) const { return m_cliType; }
 	string getCliSockName() const { return m_cliName; }
-	bool isLocal(void) const {return m_isLocal; }
-	bool isOutObj(void) const {return m_outObj; }
+	bool isLocal(void) const { return m_isLocal; }
+	//bool isOutObj(void) const { return m_outObj; }
 
+	int serialize( string& outstr );
+	int unserialize( void* rpJsonValue );
 
 protected:
 	string m_cliName;
 	int m_cliType; // 何种类型的客户应用: 1 sevr端服务; 10 监控进程; 20 web serv; 30 观察进程; 40
 	bool m_isLocal; // 直连为true(有socket connect); 间接的为false;
-	bool m_outObj; // 外部对象,不交给climgr释放;
+	//bool m_outObj; // 外部对象,不交给climgr释放;
 
 public:
 	map<string, string> m_cliProp; // 客户属性
+	int m_era; // 属性改变，版本递增
 };
 
 #endif

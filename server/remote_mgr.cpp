@@ -69,7 +69,7 @@ int RemoteMgr::onEvent( int evtype, va_list ap )
 
 		if (isExit)
 		{
-			delete ptr; // m_outObj = true
+			delete ptr;
 			m_rSvrs.erase(ptr);
 		}
 		else

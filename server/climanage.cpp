@@ -166,6 +166,60 @@ CliInfo* CliMgr::getCliInfo( CliBase* child )
 	return (itr!=m_children.end() ? &itr->second : NULL);
 }
 
+/**
+ * era格式: svrid:atime:era = 10:15412341234:2,
+ */
+string CliMgr::getLocalClisEraJson( void )
+{
+	string ret;
+	map<CliBase*, CliInfo>::iterator it = m_children.begin();
+	for (; it != m_children.end(); ++it)
+	{
+		CliBase* ptr = it->first;
+		if (ptr->isLocal() && ptr->getCliType() > 1)
+		{
+			StrParse::AppendFormat(ret, "%s:%d:%d ", 
+				ptr->getProperty(CONNTERID_KEY).c_str(), ptr->m_era, it->second.t1);
+		}
+	}
+
+	return ret;
+}
+
+// @summery: 比较外面广播过来的erastr和本地outerCli，返回不同的cli编号
+string CliMgr::diffOuterCliEra( const string& erastr )
+{
+	string ret;
+	return ret;
+}
+
+int CliMgr::getLocalAllCliJson( string& jstr )
+{
+	int ret;
+
+	jstr += "[";
+	map<CliBase*, CliInfo>::iterator it = m_children.begin();
+	for (int i = 0; it != m_children.end(); ++it)
+	{
+		CliBase* ptr = it->first;
+		if (ptr->isLocal() && ptr->getCliType() > 1)
+		{
+			if (i > 0) jstr += ","
+			jstr += "{"
+			ptr->serialize(jstr);
+			StrParse::PutOneJson(jstr, "ERA", 
+			StrParse::Format("%s:%d:%d ", 
+				ptr->getProperty(CONNTERID_KEY).c_str(), 
+				ptr->m_era, it->second.t1), false); // 无逗号结束
+			jstr += "}"
+			++i;
+		}
+	}
+	jstr += "]";
+
+	return ret;
+}
+
 void CliMgr::updateCliTime( CliBase* child )
 {
 	CliInfo* clif = getCliInfo(child);

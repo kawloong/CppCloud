@@ -16,7 +16,7 @@ RemoteServ::RemoteServ(void): m_stage(0), m_seqid(0), m_svrid(0), m_epfd(INVALID
 {
  	m_cliType = SERV_CLITYPE_ID;
 	m_isLocal = true;
-	m_outObj = true;
+	//m_outObj = true;
 	m_inqueue = false;
 }
 

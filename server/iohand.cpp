@@ -383,28 +383,6 @@ string IOHand::getProperty( const string& key )
 	return "";
 }
 
-int IOHand::Json2Map( const Value* objnode )
-{
-	IFRETURN_N(!objnode->IsObject(), -1);
-	int ret = 0;
-    Value::ConstMemberIterator itr = objnode->MemberBegin();
-    for (; itr != objnode->MemberEnd(); ++itr)
-    {
-        const char* key = itr->name.GetString();
-        if (itr->value.IsString())
-        {
-        	const char* val = itr->value.GetString();
-			setProperty(key, val);
-        }
-		else if (itr->value.IsInt())
-		{
-			string val = StrParse::Itoa(itr->value.GetInt());
-			setProperty(key, val);
-		}
-    }
-
-    return ret;
-}
 
 int IOHand::driveClose( const string& reason )
 {

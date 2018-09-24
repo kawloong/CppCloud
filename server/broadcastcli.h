@@ -31,7 +31,7 @@ protected: // interface IEPollRun
 	virtual int run(int p1, long p2);
     virtual int qrun( int flag, long p2 );
 
-    int toWorld( int svrid, int era, int ttl, const string &excludeSvrid, const string &route );
+    int toWorld( int svrid, int ttl, const string& era, const string &excludeSvrid, const string &route );
 
 protected:
     static int s_my_svrid;

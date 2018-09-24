@@ -5,6 +5,7 @@
 #include <sys/epoll.h>
 #include <cstring>
 #include <cerrno>
+#include "rapidjson/json.hpp"
 
 HEPCLASS_IMPL(CliBase, CliBase)
 
@@ -15,7 +16,7 @@ int CliBase::Init( void )
 	return 0;
 }
 
-CliBase::CliBase(void): m_cliType(0), m_isLocal(true), m_outObj(false)
+CliBase::CliBase(void): m_cliType(0), m_isLocal(true), m_era(0)
 {
     
 }
@@ -53,6 +54,30 @@ string CliBase::getProperty( const string& key )
 	return "";
 }
 
+
+int CliBase::Json2Map( const Value* objnode )
+{
+	IFRETURN_N(!objnode->IsObject(), -1);
+	int ret = 0;
+    Value::ConstMemberIterator itr = objnode->MemberBegin();
+    for (; itr != objnode->MemberEnd(); ++itr)
+    {
+        const char* key = itr->name.GetString();
+        if (itr->value.IsString())
+        {
+        	const char* val = itr->value.GetString();
+			setProperty(key, val);
+        }
+		else if (itr->value.IsInt())
+		{
+			string val = StrParse::Itoa(itr->value.GetInt());
+			setProperty(key, val);
+		}
+    }
+
+    return ret;
+}
+
 void CliBase::setIntProperty( const string& key, int val )
 {
 	m_cliProp[key] = StrParse::Itoa(val);
@@ -61,4 +86,22 @@ void CliBase::setIntProperty( const string& key, int val )
 int CliBase::getIntProperty( const string& key )
 {
 	return atoi(getProperty(key).c_str());
+}
+
+int CliBase::serialize( string& outstr )
+{
+	map<string, string>::const_iterator it = m_cliProp.begin();
+	for (; it != m_cliProp.end(); ++it)
+	{
+		StrParse::PutOneJson(outstr, it->first, it->second, true);
+	}
+
+	return 0;
+}
+
+int CliBase::unserialize( const Value* rpJsonValue )
+{
+	int ret = Json2Map(rpJsonValue);
+	m_era = getProperty("era");
+	return ret;
 }

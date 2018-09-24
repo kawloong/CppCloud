@@ -60,7 +60,8 @@ public:
     CliBase* getChildBySvrid( int svrid );
     CliInfo* getCliInfo( CliBase* child );
     map<CliBase*, CliInfo>* getAllChild() { return &m_children; }
-    int getLocalClisEra( void ) { return m_localEra; }
+    string getLocalClisEraJson( void );
+    string diffOuterCliEra( const string& erastr );
 
 
     void updateCliTime( CliBase* child );
