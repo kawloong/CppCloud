@@ -4,6 +4,7 @@
 #include "comm/strparse.h"
 #include "climanage.h"
 #include "homacro.h"
+#include "cloud/const.h"
 #include "outer_serv.h"
 
 
@@ -53,13 +54,13 @@ int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
      * to: 目的Serv编号
      * from: 发源的Serv编号
      * refer_path：参考的传输路径 no use（可以反向）, 格式 1>2>7>9>
-     * act_path: 实际走过的路径，格式同上
+     * act_path: 实际走过的路径，格式同上, 转发时仅修改此值
      */
 
     ret |= Rjson::GetInt(to, "to", &doc);
     ret |= Rjson::GetInt(from, "from", &doc);
     ret |= Rjson::GetStr(refpath, "refer_path", &doc);
-    ret |= Rjson::GetStr(actpath, "act_path", &doc);
+    ret |= Rjson::GetStr(actpath, ROUTE_PATH, &doc);
     actpath += StrParse::Format("%d>", s_my_svrid);
 
     RouteExException_IFTRUE_EASY(ret, string("leak of param ")+Rjson::ToString(&doc));

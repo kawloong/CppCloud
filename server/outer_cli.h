@@ -17,14 +17,14 @@ public:
     HEPCLASS_DECL(OuterCli, OuterCli);
 
     OuterCli(void);
-    void init( void );
+    void init( int inServ );
 
 protected: // interface IEPollRun
 	//virtual int onEvent( int evtype, va_list ap );
     //virtual int qrun( int flag, long p2 );
 
 protected:
-
+    int m_inServ; // 直接连接到哪个Serv
 };
 
 #endif

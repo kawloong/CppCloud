@@ -42,7 +42,7 @@ public: // interface HEpBase
 	//bool isOutObj(void) const { return m_outObj; }
 
 	int serialize( string& outstr );
-	int unserialize( void* rpJsonValue );
+	int unserialize( const Value* rpJsonValue );
 
 protected:
 	string m_cliName;

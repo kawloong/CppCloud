@@ -17,8 +17,8 @@ static map<unsigned, string> s_cmdid2clsname; // 事件处理器，滞后于拦�
 int IOHand::Init( void )
 {
 	// 前置拦截器
-	s_cmdid2interceptor[CMD_ERAALL_REQ] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_ERAALL_RSP] = "RouteExchage::TransMsg";
+	s_cmdid2interceptor[CMD_CLIERA_REQ] = "RouteExchage::TransMsg";
+	s_cmdid2interceptor[CMD_CLIERA_RSP] = "RouteExchage::TransMsg";
 
 	// 消息->处理类
 	s_cmdid2clsname[CMD_WHOAMI_REQ] = "BegnHand::ProcessOne"; // ->BegnHand
@@ -37,6 +37,8 @@ int IOHand::Init( void )
 
 	s_cmdid2clsname[CMD_BROADCAST_REQ] = "BroadCastCli::OnBroadCMD"; // 中心端报告身份
 	s_cmdid2clsname[CMD_BROADCAST_RSP] = "BegnHand::DisplayMsg";
+	s_cmdid2clsname[CMD_CLIERA_REQ] = "BroadCastCli::OnBroadCMD"; 
+	s_cmdid2clsname[CMD_CLIERA_RSP] = "BroadCastCli::OnBroadCMD"; 
 
 	s_cmdid2clsname[0] = "BegnHand::ProcessOne"; // default handle class
 

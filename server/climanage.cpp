@@ -167,9 +167,9 @@ CliInfo* CliMgr::getCliInfo( CliBase* child )
 }
 
 /**
- * era格式: svrid:atime:era = 10:15412341234:2,
+ * era格式: svrid:atime:era = 10:15412341234:2 
  */
-string CliMgr::getLocalClisEraJson( void )
+string CliMgr::getLocalClisEraString( void )
 {
 	string ret;
 	map<CliBase*, CliInfo>::iterator it = m_children.begin();
@@ -190,7 +190,67 @@ string CliMgr::getLocalClisEraJson( void )
 string CliMgr::diffOuterCliEra( const string& erastr )
 {
 	string ret;
+	vector<string> vecitem;
+	StrParse::SpliteStr(vecitem, erastr, ' ');
+	for (vector<string>::iterator itim = vecitem.begin(); itim != vecitem.end(); ++itim)
+	{
+		vector<string> vecsvr;
+		StrParse::SpliteStr(vecsvr, *itim, ':');
+		if (3 == vecsvr.size())
+		{
+			string& svrid = vecsvr[0];
+			int svrera = atoi(vecsvr[1].c_str());
+			int svratime = atoi(vecsvr[2].c_str());
+
+			CliBase* outcli = getChildByName(svrid+"_c");
+			if (outcli && outcli->m_era >= svrera)
+			{
+				continue;
+			}
+
+			ret += *itim + " ";
+		}
+	}
+
 	return ret;
+}
+
+int CliMgr::getLocalCliJsonByDiffera( string& jstr, const string& differa )
+{
+	int ret = 0;
+	int i = 0;
+
+	jstr += "[";
+	
+	vector<string> vecitem;
+	StrParse::SpliteStr(vecitem, differa, ' ');
+	for (vector<string>::iterator itim = vecitem.begin(); itim != vecitem.end(); ++itim)
+	{
+		vector<string> vecsvr;
+		StrParse::SpliteStr(vecsvr, *itim, ':');
+		if (3 == vecsvr.size())
+		{
+			string& svrid = vecsvr[0];
+			//int svrera = atoi(vecsvr[1].c_str());
+			//int svratime = atoi(vecsvr[2].c_str());
+
+			CliBase* ptr = getChildByName(svrid+"_c");
+			if (ptr)
+			{
+				if (i > 0) jstr += ",";
+				jstr += "{";
+				ptr->serialize(jstr);
+				StrParse::PutOneJson(jstr, "ERA", 
+				StrParse::Format("%s:%d:%d ", ptr->getProperty(CONNTERID_KEY).c_str(), 
+					ptr->m_era, ptr->getProperty("atime").c_str()), false); // 无逗号结束
+				jstr += "}";
+				++i;
+			}
+		}
+	}
+
+	jstr += "]";
+	return ret;	
 }
 
 int CliMgr::getLocalAllCliJson( string& jstr )
@@ -204,14 +264,14 @@ int CliMgr::getLocalAllCliJson( string& jstr )
 		CliBase* ptr = it->first;
 		if (ptr->isLocal() && ptr->getCliType() > 1)
 		{
-			if (i > 0) jstr += ","
-			jstr += "{"
+			if (i > 0) jstr += ",";
+			jstr += "{";
 			ptr->serialize(jstr);
 			StrParse::PutOneJson(jstr, "ERA", 
 			StrParse::Format("%s:%d:%d ", 
 				ptr->getProperty(CONNTERID_KEY).c_str(), 
 				ptr->m_era, it->second.t1), false); // 无逗号结束
-			jstr += "}"
+			jstr += "}";
 			++i;
 		}
 	}

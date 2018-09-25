@@ -60,7 +60,11 @@ public:
     CliBase* getChildBySvrid( int svrid );
     CliInfo* getCliInfo( CliBase* child );
     map<CliBase*, CliInfo>* getAllChild() { return &m_children; }
-    string getLocalClisEraJson( void );
+
+    // era相关
+    string getLocalClisEraString( void );
+    int getLocalAllCliJson( string& jstr );
+    int getLocalCliJsonByDiffera( string& jstr, const string& differa );
     string diffOuterCliEra( const string& erastr );
 
 
