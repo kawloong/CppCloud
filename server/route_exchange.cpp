@@ -50,6 +50,7 @@ int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
     int ret = 0;
 
     int to = 0;
+    int bto = 0; // 所属的Servid, 当to是OuterCli时，可借助bto得知其直属serv
     int from = 0;
     string refpath;
     string actpath;
@@ -66,11 +67,11 @@ int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
     ret |= Rjson::GetInt(from, "from", &doc);
     ret |= Rjson::GetStr(refpath, "refer_path", &doc);
     ret |= Rjson::GetStr(actpath, ROUTE_PATH, &doc);
-    actpath += StrParse::Format("%d>", s_my_svrid);
+    Rjson::GetInt(bto, "bto", &doc); // 可选
 
     RouteExException_IFTRUE_EASY(ret, string("leak of param ")+Rjson::ToString(&doc));
     
-    do
+    for (char i=0, loop=true; i<2 && loop; ++i)
     {
         IFBREAK_N(s_my_svrid==to, 1); // continue to cmdfunc
 
@@ -78,8 +79,15 @@ int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
         CliMgr::AliasCursor finder(searchKey);
         CliBase* cliptr = finder.pop();
 
+        if (NULL == cliptr && bto > 0)
+        {
+            CliMgr::AliasCursor finder2(StrParse::Itoa(bto) + "_");
+            cliptr = finder2.pop();
+        }
+
         RouteExException_IFTRUE_EASY(NULL==cliptr, string("maybe path broken ")+Rjson::ToString(&doc));
         
+        loop = false;
         IOHand* ioh = NULL;
         // 查看是否属于直连的cli(isLocal=1)
         if (cliptr->isLocal())
@@ -92,22 +100,31 @@ int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
         {
             OuterServ* oserv = dynamic_cast<OuterServ*>(cliptr);
             RouteExException_IFTRUE_EASY(NULL==oserv, 
-                string("clitype=1 not OuterServ class ")+cliptr->m_idProfile);
+                string("clitype=1 but not OuterServ class ")+cliptr->m_idProfile);
             ioh = oserv->getNearSendServ();
             RouteExException_IFTRUE_EASY(NULL==ioh, string("no valid path to ")+cliptr->m_idProfile);
+            RouteExException_IFTRUE_EASY( // 走过的路径不能再走，免得死循环
+                    actpath.find(string(">")+ioh->getProperty(CONNTERID_KEY)+">") != string::npos, 
+                    string("dead loop ")+cliptr->m_idProfile);
         }
         else // 发往外围App的情况
         {
-            
+            OuterCli* ocli = dynamic_cast<OuterCli*>(cliptr);
+            RouteExException_IFTRUE_EASY(NULL==ocli, 
+                string("clitype!=1 but not OuterCli class ")+cliptr->m_idProfile);
+            to = ocli->getBelongServ();
+            RouteExException_IFTRUE_EASY(to==s_my_svrid || 1==i, 
+                StrParse::Format("logic err%d OuterCli obj-%d catnot belongto self %s", 
+                i, to, cliptr->m_idProfile.c_str());
+            loop = true; // 配合上面的for(),使得只可最多循环2次；
         }
-
-        setJsonObj("act_path", actpath, &doc);
-
-        string msg = Rjson::ToString(&doc);
-        ioh->sendData(cmdid, seqid, msg.c_str(), msg.length(), true);
-        ret = 0;
     }
-    while(0);
+
+    actpath += StrParse::Format("%d>", s_my_svrid);
+    setJsonObj(ROUTE_PATH, actpath, &doc);
+
+    string msg = Rjson::ToString(&doc);
+    ret = ioh->sendData(cmdid, seqid, msg.c_str(), msg.length(), true);
 
     return ret;
 }

@@ -19,6 +19,8 @@ public:
     OuterCli(void);
     void init( int inServ );
 
+    int getBelongServ(void) { return m_inServ; }
+
 protected: // interface IEPollRun
 	//virtual int onEvent( int evtype, va_list ap );
     //virtual int qrun( int flag, long p2 );

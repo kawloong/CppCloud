@@ -53,7 +53,7 @@ int BroadCastCli::qrun( int flag, long p2 )
         DEBUG_TRACE("2. broadcast self cliera out, era=%s", localEra.c_str());
         if (!localEra.empty())
         {
-            ret = toWorld(s_my_svrid, 1, localEra, "", "");
+            ret = toWorld(s_my_svrid, 1, localEra, " ", "");
         }
 
         SwitchHand::Instance()->appendQTask(this, BROADCASTCLI_INTERVAL_SEC*1000);
@@ -70,7 +70,7 @@ int BroadCastCli::toWorld( int svrid, int ttl, const string& era, const string& 
     CliBase *cli = NULL;
     string link_svrid_arr(excludeSvrid);
     string routepath = route + StrParse::Itoa(s_my_svrid) + ">";
-    link_svrid_arr += StrParse::Itoa(s_my_svrid) + ",";
+    link_svrid_arr += StrParse::Itoa(s_my_svrid) + " ";
 
     vector<CliBase*> vecCli;
     while ((cli = alcr.pop()))
@@ -78,9 +78,9 @@ int BroadCastCli::toWorld( int svrid, int ttl, const string& era, const string& 
         WARNLOG_IF1BRK(cli->getCliType() != SERV_CLITYPE_ID && !cli->isLocal(), -23,
                        "BROADCASTRUN| msg=flow unexception| cli=%s", cli->m_idProfile.c_str());
         string svridstr = cli->getProperty(CONNTERID_KEY);
-        if (link_svrid_arr.find(svridstr + ",") == string::npos)
+        if (link_svrid_arr.find(string(" ") + svridstr + " ") == string::npos)
         {
-            link_svrid_arr += svridstr + ",";
+            link_svrid_arr += svridstr + " ";
             vecCli.push_back(cli);
         }
     }
