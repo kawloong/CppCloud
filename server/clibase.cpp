@@ -83,6 +83,11 @@ void CliBase::setIntProperty( const string& key, int val )
 	m_cliProp[key] = StrParse::Itoa(val);
 }
 
+void CliBase::updateEra( void )
+{
+	m_era = 1 + m_era;
+}
+
 int CliBase::getIntProperty( const string& key )
 {
 	return atoi(getProperty(key).c_str());
@@ -102,6 +107,6 @@ int CliBase::serialize( string& outstr )
 int CliBase::unserialize( const Value* rpJsonValue )
 {
 	int ret = Json2Map(rpJsonValue);
-	m_era = getIntProperty("era");
+	m_era = getIntProperty("ERA");
 	return ret;
 }

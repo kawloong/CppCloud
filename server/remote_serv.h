@@ -14,7 +14,6 @@ Modification :
 using namespace std;
 
 
-const int REMOTESERV_EXIST_CHKTIME = 20*1000; // ms unit
 
 class RemoteServ: public IOHand
 {
@@ -50,6 +49,7 @@ protected:
 	int m_epfd;
 	int m_port;
 	bool m_inqueue;
+	bool m_existLink; // 是否已连接中
 	string m_rhost;
 };
 

@@ -232,6 +232,7 @@ int IOHand::run( int p1, long p2 )
 		string rsp = StrParse::Format("{ \"code\": %d, \"desc\": \"%s\" }", exp.code, exp.desc.c_str());
 		m_closeFlag = 1; // 待发送完后close
 		LOGERROR("NormalExceptionOff| reson=%s | mi=%s", exp.desc.c_str(), m_idProfile.c_str());
+		m_closeReason = exp.desc;
 		sendData(exp.cmdid, exp.seqid, rsp.c_str(), rsp.length(), true);
 		IFDELETE(m_iBufItem);
 	}
@@ -246,6 +247,7 @@ int IOHand::run( int p1, long p2 )
 	{
 		LOGERROR("OffConnException| reson=%s | mi=%s", exp.reson.c_str(), m_idProfile.c_str());
 		m_closeFlag = 2;
+		m_closeReason = exp.reson;
 		IFDELETE(m_iBufItem);
 	}
 	catch( RouteExException& exp )
@@ -329,8 +331,10 @@ int IOHand::onEvent( int evtype, va_list ap )
 			  "IOHAND_INIT_FIN| msg=clitype not match first| cliType0=%d| cliType1=%d| mi=%s", 
 			   m_cliType, clity, m_idProfile.c_str());
 
+			m_cliType = clity;
+			updateEra();
 			m_idProfile = StrParse::Format("%s@%s-%d@%s", m_cliName.c_str(), 
-				m_cliProp[CONNTERID_KEY].c_str(), m_cliType, m_cliProp["name"].c_str());
+				m_cliProp[CONNTERID_KEY].c_str(), m_cliType, m_cliProp["svrname"].c_str());
 		}
 
 	}
@@ -426,7 +430,8 @@ int IOHand::authCheck( IOBuffItem*& iBufItem )
 		return 0;
 	}
 
-	NormalExceptionOff_IFTRUE(0 == m_authFlag, 401, hdr->cmdid|CMDID_MID, hdr->seqid, "Not Auth");
+	NormalExceptionOff_IFTRUE(0 == m_authFlag, 401, hdr->cmdid|CMDID_MID, hdr->seqid, 
+			StrParse::Format("Not Auth(0x%X-%d)", hdr->cmdid, hdr->seqid));
 	return 0;
 }
 

@@ -38,6 +38,7 @@ protected: // interface IEPollRun
 protected:
     static int s_my_svrid;
     int m_seqid;
+    static string s_debugTrace;
 };
 
 #endif

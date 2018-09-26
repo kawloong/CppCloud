@@ -239,7 +239,7 @@ int BegnHand::on_CMD_SETARGS_REQ( IOHand* iohand, const Value* doc, unsigned seq
 		}
 	}
 
-	
+	iohand->updateEra();
 	SendMsgEasy(iohand, CMD_SETARGS_RSP, seqid, 0, "success");
 	return ret;
 }

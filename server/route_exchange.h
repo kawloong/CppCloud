@@ -17,7 +17,7 @@ public:
     HEPCLASS_DECL(RouteExchage, RouteExchage);
 
     RouteExchage(void);
-    void init( void );
+    static void Init( int my_svrid );
 
     static int TransMsg( void* ptr, unsigned cmdid, void* param );
 

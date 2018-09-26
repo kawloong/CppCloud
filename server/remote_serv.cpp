@@ -18,6 +18,7 @@ RemoteServ::RemoteServ(void): m_stage(0), m_seqid(0), m_svrid(0), m_epfd(INVALID
 	m_isLocal = true;
 	//m_outObj = true;
 	m_inqueue = false;
+	m_existLink = false;
 }
 
 RemoteServ::~RemoteServ(void)
@@ -89,6 +90,7 @@ void RemoteServ::reset( void )
 	m_stage = 0;
 	m_closeReason.clear();
 	m_closeFlag = 0;
+	m_existLink = false;
 	IFCLOSEFD(m_cliFd);
 }
 
@@ -97,7 +99,9 @@ int RemoteServ::appendTimerq( void )
 	int ret = 0;
 	if (!m_inqueue)
 	{
-		ret = SwitchHand::Instance()->appendQTask(this, REMOTESERV_EXIST_CHKTIME + s_my_svrid*1000);
+		// 连接正常时 下次检查就延长些; 连接不正常时,下次检查就频繁此
+		int wait_time_sec = m_existLink? REMOTESERV_EXIST_CHKTIME: REMOTESERV_NOEXIST_CHKTIME;
+		ret = SwitchHand::Instance()->appendQTask(this, wait_time_sec + s_my_svrid*200);
 		m_inqueue = (0 == ret);
 		ERRLOG_IF1(ret, "APPENDQTASK| msg=append fail| ret=%d", ret);
 	}
@@ -109,8 +113,8 @@ int RemoteServ::taskRun( int flag, long p2 )
 	// 向远端serv发起连接
 	// 先检查是否已有同一ID的远端serv,有则无需发起
 	string rsvrid = StrParse::Itoa(m_svrid);
-	string alias_beg = string(REMOTESERV_ALIAS_PREFIX) + rsvrid + "A"; // "A"是排除serv11进入serv1的范围
-	string alias_end = string(REMOTESERV_ALIAS_PREFIX) + rsvrid + "z"; // serv1C serv1S
+	string alias_beg = string(SERV_IN_ALIAS_PREFIX) + rsvrid + "A"; // "A"是排除serv11进入serv1的范围
+	string alias_end = string(SERV_IN_ALIAS_PREFIX) + rsvrid + "z"; // serv1C serv1S
 	int ret = 0;
 
 	CliMgr::AliasCursor finder(alias_beg, alias_end);
@@ -125,9 +129,11 @@ int RemoteServ::taskRun( int flag, long p2 )
 			IOHand* more_ioh = dynamic_cast<IOHand*>(more_serv);
 			if (more_ioh)
 			{
-				more_ioh->driveClose("close more tcplink"); // 关闭多余的一个连接
-				LOGINFO("REMOTSERVRUN| msg=remove more tcplink| svrid=%d", m_svrid);
+				more_ioh->driveClose("close surplus tcplink"); // 关闭多余的一个连接
+				LOGINFO("REMOTSERVRUN| msg=remove surplus tcplink| svrid=%d", m_svrid);
 			}
+
+			m_existLink = true;
 		}
 		//LOGDEBUG("REMOTES_RUN| msg=remote serv aliving| svr=%s", serv->m_idProfile.c_str());
 	}

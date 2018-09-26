@@ -39,12 +39,26 @@ int KeepAliver::qrun( int flag, long p2 )
     {
         if (expire_dead_key.compare(alcur.iter_range.retKey) > 0) // 需清理
         {
-            closeCli(cli);
+            LOGDEBUG("KEEPALIVRUN| msg=remove %s", CliMgr::Instance()->selfStat(false).c_str());
+            if (cli->isLocal())
+            {
+                closeCli(cli);
+            }
+            else
+            {
+                int atime = cli->getIntProperty("atime");
+                int dt = (int)time(NULL)-atime;
+                LOGINFO("KEEPALIVECLOSE| msg=remove zombie obj| cli=%s| dt=%ds", cli->m_idProfile.c_str(), dt);
+                CliMgr::Instance()->removeAliasChild(cli, true);
+            }
             LOGDEBUG("KEEPALIVRUN| %s", CliMgr::Instance()->selfStat(false).c_str());
         }
         else if (expire_kaliv_key.compare(alcur.iter_range.retKey) > 0) // 需keepalive
         {
-            sendReq(cli);
+            if (cli->isLocal())
+            {
+                sendReq(cli);
+            }
         }
         else
         {
@@ -74,8 +88,8 @@ int KeepAliver::sendReq( CliBase* cli )
 
 void KeepAliver::closeCli( CliBase* cli )
 {
-    ERRLOG_IF1RET(NULL==cli||!cli->isLocal(), "KEEPALIVEREQ| msg=invalid cli %p", cli);
     IOHand* ioh = dynamic_cast<IOHand*>(cli);
+    ERRLOG_IF1RET(NULL==ioh, "KEEPALIVEREQ| msg=invalid cli %p| cli=%s", cli, cli->m_idProfile.c_str());
     string mi = ioh->m_idProfile;
     int atime = ioh->getIntProperty("atime");
     int dt = (int)time(NULL)-atime;

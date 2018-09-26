@@ -34,6 +34,7 @@ public: // interface HEpBase
     void setIntProperty( const string& key, int val );
     int getIntProperty( const string& key );
 	void setCliType(int tp) { m_cliType=tp; }
+	void updateEra( void );
 
 
 	int getCliType(void) const { return m_cliType; }

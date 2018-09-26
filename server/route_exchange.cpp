@@ -21,6 +21,11 @@ RouteExchage::RouteExchage( void )
 
 }
 
+void RouteExchage::Init( int my_svrid )
+{
+    s_my_svrid = my_svrid;
+}
+
 int setJsonObj( const string& key, const string& val, Document* node )
 {
     node->RemoveMember(key.c_str());

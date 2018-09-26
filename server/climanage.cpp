@@ -200,12 +200,13 @@ string CliMgr::diffOuterCliEra( const string& erastr )
 		{
 			string& svrid = vecsvr[0];
 			int svrera = atoi(vecsvr[1].c_str());
-			int svratime = atoi(vecsvr[2].c_str());
+			//int svratime = atoi(vecsvr[2].c_str());
 
 			CliBase* outcli = getChildByName(svrid+"_c");
-			if (outcli && outcli->m_era >= svrera)
+			if (outcli)
 			{
-				continue;
+				updateCliTime(outcli);
+				if (outcli->m_era == svrera) continue;
 			}
 
 			ret += *itim + " ";
@@ -245,6 +246,7 @@ int CliMgr::getLocalCliJsonByDiffera( string& jstr, const string& differa )
 					ptr->m_era, ptr->getProperty("atime").c_str()), false); // 无逗号结束
 				jstr += "}";
 				++i;
+				++ret;
 			}
 		}
 	}
@@ -255,7 +257,7 @@ int CliMgr::getLocalCliJsonByDiffera( string& jstr, const string& differa )
 
 int CliMgr::getLocalAllCliJson( string& jstr )
 {
-	int ret;
+	int ret = 0;
 
 	jstr += "[";
 	map<CliBase*, CliInfo>::iterator it = m_children.begin();
@@ -273,6 +275,7 @@ int CliMgr::getLocalAllCliJson( string& jstr )
 				ptr->m_era, it->second.t1), false); // 无逗号结束
 			jstr += "}";
 			++i;
+			++ret;
 		}
 	}
 	jstr += "]";
@@ -284,23 +287,23 @@ void CliMgr::updateCliTime( CliBase* child )
 {
 	CliInfo* clif = getCliInfo(child);
 	ERRLOG_IF1RET(NULL==clif, "UPDATECLITIM| msg=null pointer at %p", child);
-	string strfd = child->getProperty("fd");
+	string uniqstr = child->isLocal()? child->getProperty("fd"): StrParse::Format("%p",child);
 	time_t now = time(NULL);
 
-	if (strfd.empty()) return;
+	if (uniqstr.empty()) return;
 	if (now < clif->t1 + 20) return; // 超20sec才刷新
 
 	if (clif->t1 >= clif->t0)
 	{
 		string atimkey = StrParse::Format("%s%ld@", CLI_PREFIX_KEY_TIMEOUT, clif->t1);
-		atimkey += strfd;
+		atimkey += uniqstr;
 		removeAliasChild(atimkey);
 	}
 
 	clif->t1 = now;
 	child->setIntProperty("atime", now);
 	string atimkey = StrParse::Format("%s%ld@", CLI_PREFIX_KEY_TIMEOUT, clif->t1);
-	atimkey += strfd;
+	atimkey += uniqstr;
 	int ret = addAlias2Child(atimkey, child);
 	ERRLOG_IF1(ret, "UPDATECLITIM| msg=add alias atimkey fail| ret=%d| mi=%s", ret, child->m_idProfile.c_str());
 }
