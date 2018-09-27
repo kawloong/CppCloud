@@ -28,11 +28,13 @@ public:
     static int on_CMD_CLIERA_RSP( IOHand* iohand, const Value* doc, unsigned seqid );
 
     void init( int my_svrid );
+    static string GetDebugTrace( void );
 
 protected: // interface IEPollRun
 	virtual int run(int p1, long p2);
     virtual int qrun( int flag, long p2 );
 
+    static string diffOuterCliEra( int servid, const string& erastr );
     int toWorld( int svrid, int ttl, const string& era, const string &excludeSvrid, const string &route );
 
 protected:

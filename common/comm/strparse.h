@@ -43,5 +43,7 @@ public:
     static string Itoa(int n);
 };
 
+#define _F StrParse::Format
+#define _N StrParse::Itoa
 
 #endif

@@ -107,6 +107,6 @@ int CliBase::serialize( string& outstr )
 int CliBase::unserialize( const Value* rpJsonValue )
 {
 	int ret = Json2Map(rpJsonValue);
-	m_era = getIntProperty("ERA");
+	m_era = getIntProperty("ERAN");
 	return ret;
 }

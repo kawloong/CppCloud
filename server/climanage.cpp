@@ -21,6 +21,11 @@ CliBase* CliMgr::AliasCursor::pop(void)
 	return iter_range.pop();
 }
 
+bool CliMgr::AliasCursor::empty(void)
+{
+	return iter_range.empty();
+}
+
 
 CliMgr::CliMgr(void)
 {
@@ -63,7 +68,7 @@ int CliMgr::addAlias2Child( const string& asname, CliBase* ptr )
 	map<CliBase*, CliInfo>::iterator it = m_children.find(ptr);
 	if (m_children.end() == it) // 非直接子对象，暂时不处理
 	{
-		LOGWARN("ADDALIASCHILD| msg=ptr isnot listen's child| name=%s", asname.c_str());
+		LOGWARN("ADDALIASCHILD| msg=ptr isnot listen's child| name=%s| ptr=%p", asname.c_str(), ptr);
 		return -11;
 	}
 
@@ -186,35 +191,6 @@ string CliMgr::getLocalClisEraString( void )
 	return ret;
 }
 
-// @summery: 比较外面广播过来的erastr和本地outerCli，返回不同的cli编号
-string CliMgr::diffOuterCliEra( const string& erastr )
-{
-	string ret;
-	vector<string> vecitem;
-	StrParse::SpliteStr(vecitem, erastr, ' ');
-	for (vector<string>::iterator itim = vecitem.begin(); itim != vecitem.end(); ++itim)
-	{
-		vector<string> vecsvr;
-		StrParse::SpliteStr(vecsvr, *itim, ':');
-		if (3 == vecsvr.size())
-		{
-			string& svrid = vecsvr[0];
-			int svrera = atoi(vecsvr[1].c_str());
-			//int svratime = atoi(vecsvr[2].c_str());
-
-			CliBase* outcli = getChildByName(svrid+"_c");
-			if (outcli)
-			{
-				updateCliTime(outcli);
-				if (outcli->m_era == svrera) continue;
-			}
-
-			ret += *itim + " ";
-		}
-	}
-
-	return ret;
-}
 
 int CliMgr::getLocalCliJsonByDiffera( string& jstr, const string& differa )
 {
@@ -235,7 +211,7 @@ int CliMgr::getLocalCliJsonByDiffera( string& jstr, const string& differa )
 			//int svrera = atoi(vecsvr[1].c_str());
 			//int svratime = atoi(vecsvr[2].c_str());
 
-			CliBase* ptr = getChildByName(svrid+"_c");
+			CliBase* ptr = getChildByName(svrid+"_I");
 			if (ptr)
 			{
 				if (i > 0) jstr += ",";
@@ -269,10 +245,11 @@ int CliMgr::getLocalAllCliJson( string& jstr )
 			if (i > 0) jstr += ",";
 			jstr += "{";
 			ptr->serialize(jstr);
-			StrParse::PutOneJson(jstr, "ERA", 
-			StrParse::Format("%s:%d:%d ", 
-				ptr->getProperty(CONNTERID_KEY).c_str(), 
-				ptr->m_era, it->second.t1), false); // 无逗号结束
+			StrParse::PutOneJson(jstr, "ERAN", ptr->m_era, false);
+			//StrParse::PutOneJson(jstr, "ERAN", 
+			//StrParse::Format("%s:%d:%d ", 
+			//	ptr->getProperty(CONNTERID_KEY).c_str(), 
+			//	ptr->m_era, it->second.t1), false); // 无逗号结束
 			jstr += "}";
 			++i;
 			++ret;

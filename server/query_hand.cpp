@@ -8,6 +8,7 @@
 #include "iohand.h"
 #include "homacro.h"
 #include "exception.h"
+#include "broadcastcli.h"
 
 HEPCLASS_IMPL_FUNC(QueryHand, ProcessOne)
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
@@ -47,6 +48,7 @@ int QueryHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 	CMDID2FUNCALL_CALL(CMD_GETCLI_REQ);
 	CMDID2FUNCALL_CALL(CMD_GETLOGR_REQ);
 	CMDID2FUNCALL_CALL(CMD_GETWARN_REQ);
+	CMDID2FUNCALL_CALL(CMD_TESTING_REQ);
 	
 	return 0;
 }
@@ -118,4 +120,17 @@ int QueryHand::on_CMD_GETWARN_REQ( IOHand* parent, const Value* doc, unsigned se
 	
 	int ret = parent->sendData(CMD_GETWARN_RSP, seqid, outstr.c_str(), outstr.length(), true);
 	return ret;
+}
+
+int QueryHand::on_CMD_TESTING_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
+{
+	string cmd;
+	Rjson::GetStr(cmd, "cmd", doc);
+	if (cmd == "broadshow")
+	{
+		string rsp = BroadCastCli::GetDebugTrace();
+		iohand->sendData(CMD_TESTING_RSP, seqid, rsp.c_str(), rsp.length(), true);
+	}
+
+	return 0;
 }

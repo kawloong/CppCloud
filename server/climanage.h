@@ -45,6 +45,7 @@ public:
         AliasCursor(const string& key_beg);
         AliasCursor(const string& key_beg, const string& key_end);
         CliBase* pop(void);
+        bool empty(void);
     };
 
 public:

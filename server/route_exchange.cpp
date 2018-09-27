@@ -6,6 +6,7 @@
 #include "homacro.h"
 #include "cloud/const.h"
 #include "outer_serv.h"
+#include "outer_cli.h"
 
 
 HEPCLASS_IMPL_FUNC_BEG(RouteExchage)
@@ -71,6 +72,7 @@ int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
 
     RouteExException_IFTRUE_EASY(ret, string("leak of param ")+Rjson::ToString(&doc));
     
+    IOHand* ioh = NULL;
     for (char i=0, loop=true; i<2 && loop; ++i)
     {
         IFBREAK_N(s_my_svrid==to, 1); // continue to cmdfunc
@@ -88,7 +90,6 @@ int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
         RouteExException_IFTRUE_EASY(NULL==cliptr, string("maybe path broken ")+Rjson::ToString(&doc));
         
         loop = false;
-        IOHand* ioh = NULL;
         // 查看是否属于直连的cli(isLocal=1)
         if (cliptr->isLocal())
         {
@@ -115,16 +116,19 @@ int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
             to = ocli->getBelongServ();
             RouteExException_IFTRUE_EASY(to==s_my_svrid || 1==i, 
                 StrParse::Format("logic err%d OuterCli obj-%d catnot belongto self %s", 
-                i, to, cliptr->m_idProfile.c_str());
+                i, to, cliptr->m_idProfile.c_str()));
             loop = true; // 配合上面的for(),使得只可最多循环2次；
         }
     }
 
-    actpath += StrParse::Format("%d>", s_my_svrid);
-    setJsonObj(ROUTE_PATH, actpath, &doc);
+    if (ioh)
+    {
+        actpath += StrParse::Format("%d>", s_my_svrid);
+        setJsonObj(ROUTE_PATH, actpath, &doc);
 
-    string msg = Rjson::ToString(&doc);
-    ret = ioh->sendData(cmdid, seqid, msg.c_str(), msg.length(), true);
+        string msg = Rjson::ToString(&doc);
+        ret = ioh->sendData(cmdid, seqid, msg.c_str(), msg.length(), true);
+    }
 
     return ret;
 }

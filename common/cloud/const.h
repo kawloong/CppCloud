@@ -14,6 +14,7 @@ const char OBJECT_TYPE_KEY[] = "objtype";
 const char SERV_ALIAS_PREFIX[] = "serv_";
 const char SERV_IN_ALIAS_PREFIX[] = "serv_i";
 const char SERV_OUT_ALIAS_PREFIX[] = "serv_o";
+const char OUTERCLI_ALIAS_PREFIX[] = "oc"; // oc_[servid]_[appid]
 const char LAST_REQ_SERVMTIME[] = "lastreqall_mtime";
 
 const char CLI_PREFIX_KEY_TIMEOUT[] = "atime_";
