@@ -14,6 +14,8 @@ Modification :
 #include "iobuff.h"
 #include "clibase.h"
 
+typedef long long datasize_t;
+
 class IOHand: public CliBase
 {
 public:
@@ -53,6 +55,14 @@ protected:
 	string m_closeReason; // 关掉原因
 	unsigned char m_closeFlag; // 结束标记: 0连接中, 1等待发完后关闭; 2立即要关; 3关闭
 	int m_authFlag; // 权限标识
+	datasize_t m_recv_bytes;
+	datasize_t m_send_bytes;
+	static datasize_t serv_recv_bytes;
+	static datasize_t serv_send_bytes;
+	int m_recvpkg_num;
+	int m_sendpkg_num;
+	static int serv_recvpkg_num;
+	static int serv_sendpkg_num;
 
 	IOBuffItem* m_iBufItem;
 	IOBuffItem* m_oBufItem;

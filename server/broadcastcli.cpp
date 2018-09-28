@@ -10,13 +10,16 @@
 #include "outer_serv.h"
 #include "exception.h"
 
-HEPCLASS_IMPL_FUNC(BroadCastCli, OnBroadCMD)
+HEPCLASS_IMPL_FUNC_BEG(BroadCastCli)
+HEPCLASS_IMPL_FUNC_MORE(BroadCastCli, TransToAll)
+HEPCLASS_IMPL_FUNC_MORE(BroadCastCli, OnBroadCMD)
+HEPCLASS_IMPL_FUNC_END
 
 #define RouteExException_IFTRUE_EASY(cond, resonstr) \
     RouteExException_IFTRUE(cond, cmdid, seqid, s_my_svrid, from, resonstr, actpath)
 #ifdef DEBUG
-#define DEBUG_TRACE(fmt, ...) StrParse::AppendFormat(s_debugTrace, fmt , ##__VA_ARGS__);s_debugTrace+="\n"; printf(">>> " fmt, ##__VA_ARGS__)
-#define DEBUG_PRINT printf(s_debugTrace.c_str());
+#define DEBUG_TRACE(fmt, ...) StrParse::AppendFormat(s_debugTrace, fmt , ##__VA_ARGS__);s_debugTrace+="\n"; printf(">>> \n" fmt, ##__VA_ARGS__)
+#define DEBUG_PRINT printf(s_debugTrace.c_str()); s_debugTrace.clear()
 #else
 #define DEBUG_TRACE(fmt, ...) do{}while(0);
 #define DEBUG_PRINT
@@ -48,13 +51,16 @@ int BroadCastCli::qrun( int flag, long p2 )
     int ret = 0;
     if (HEFG_PEXIT != flag)
     {
-        string reqbody;
         string localEra = CliMgr::Instance()->getLocalClisEraString(); // 获取本地cli的当前版本
 
         DEBUG_TRACE("2. broadcast self cliera out, era=%s", localEra.c_str());
         //if (!localEra.empty())
         {
-            ret = toWorld(s_my_svrid, 1, localEra, " ", "");
+            //ret = toWorld(s_my_svrid, 1, localEra, " ", "");
+            string reqmsg("{");
+            StrParse::PutOneJson(reqmsg, "ERA", localEra);
+            reqmsg += "}";
+            ret = toWorld(reqmsg, CMD_BROADCAST_REQ, ++m_seqid);
         }
 
         SwitchHand::Instance()->appendQTask(this, BROADCASTCLI_INTERVAL_SEC*1000);
@@ -63,6 +69,129 @@ int BroadCastCli::qrun( int flag, long p2 )
     return ret;
 }
 
+// 设备json字符串,object里的键值数据; {"key": "val"}
+int BroadCastCli::setJsonMember( const string& key, const string& val, Document* node )
+{
+    node->RemoveMember(key.c_str());
+    Value tmpkey(kStringType);
+    Value tmpstr(kStringType);
+    tmpkey.SetString(key.c_str(), node->GetAllocator()); 
+    tmpstr.SetString(val.c_str(), node->GetAllocator()); 
+    node->AddMember(tmpkey, tmpstr, node->GetAllocator());
+    return 0;
+}
+
+
+int BroadCastCli::TransToAll( void* ptr, unsigned cmdid, void* param )
+{
+	CMDID2FUNCALL_BEGIN
+	Document doc;
+    int ret = 0;
+
+    if (doc.Parse(body).HasParseError())  throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, iohand->m_idProfile+" body json invalid");
+
+    ret = 0==BroadCastCli::Instance()->toWorld(doc, cmdid, seqid)? 1: 0;
+    return ret;
+}
+
+/**
+ * @summery: 包体为json的消息广播
+ * @desc: 必须包含的字段 {"from": 123, "pass": " 2 3 ", "path": "1>3>", "jump": 1}
+ */
+int BroadCastCli::toWorld( Document& doc, unsigned cmdid, unsigned seqid )
+{
+    int ret = 0;
+    int ntmp = 0;
+    static const string str_my_svrid = _N(s_my_svrid);
+    static const string str_my_svrid1 = _F("%d ", s_my_svrid);
+    static const string str_my_svrid2 = _F(" %d ", s_my_svrid);
+
+    if (!doc.IsObject()) throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "msgbody must be Object{}");
+    // 处理发出源from的svrid
+    int ofrom = 0;
+    if (Rjson::GetInt(ofrom, BROARDCAST_KEY_FROM, &doc))
+    {
+        ofrom = s_my_svrid;
+        doc.AddMember(BROARDCAST_KEY_FROM, s_my_svrid, doc.GetAllocator());
+    }
+
+    // 处理"已经走过的节点"
+    string haspass;
+    Rjson::GetStr(haspass, BROARDCAST_KEY_PASS, &doc);
+    if (haspass.empty())
+    {
+        haspass = str_my_svrid2;
+    }
+    else
+    {
+        if (haspass.find(str_my_svrid2) == string::npos)
+        {
+            haspass += str_my_svrid1;
+        }
+    }
+
+    CliMgr::AliasCursor alcr(SERV_IN_ALIAS_PREFIX); // 查找出所有直连的Serv节点
+    CliBase *cli = NULL;
+    vector<CliBase*> vecCli;
+    while ((cli = alcr.pop()))
+    {
+        WARNLOG_IF1BRK(cli->getCliType() != SERV_CLITYPE_ID && !cli->isLocal(), -23,
+                       "BROADCASTRUN| msg=flow unexception| cli=%s", cli->m_idProfile.c_str());
+        string svridstr = cli->getProperty(CONNTERID_KEY);
+        if (haspass.find(string(" ") + svridstr + " ") == string::npos) // 未经过才需要
+        {
+            haspass += svridstr + " ";
+            vecCli.push_back(cli);
+        }
+    }
+
+    IFRETURN_N(vecCli.empty(), 0);
+    setJsonMember(BROARDCAST_KEY_PASS, haspass, &doc);
+
+    // 处理实际走过的点
+    string actpath;
+    Rjson::GetStr(actpath, BROARDCAST_KEY_TRAIL, &doc);
+    actpath += str_my_svrid + ">";
+    setJsonMember(BROARDCAST_KEY_TRAIL, actpath, &doc);
+
+    // 跳数处理
+    ntmp = 0;
+    Rjson::GetInt(ntmp, BROARDCAST_KEY_JUMP, &doc);
+    doc.AddMember(BROARDCAST_KEY_JUMP, ++ntmp, doc.GetAllocator());
+
+    string reqbody(Rjson::ToString(&doc));
+    for (unsigned i = 0; i < vecCli.size(); ++i)
+    {
+        IOHand* cli = dynamic_cast<IOHand *>(vecCli[i]);
+        if (cli)
+        {
+            cli->sendData(cmdid, seqid, reqbody.c_str(), reqbody.length(), true);
+            DEBUG_TRACE("3/b. base-%d sendto pass [%s] body is %s", ofrom, cli->m_idProfile.c_str(), reqbody.c_str());
+        }
+        else
+        {
+            LOGERROR("BROADCASTWORLD| msg=alias unmatch| cli=%p", vecCli[i]);
+        }
+    }
+
+    return ret;
+}
+
+int BroadCastCli::toWorld( const string& jsonmsg, unsigned cmdid, unsigned seqid )
+{
+    Document doc;
+    if (doc.Parse(jsonmsg.c_str()).HasParseError()) 
+    {
+        throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "jsonmsg json invalid");
+    }
+
+    return toWorld(doc, cmdid, seqid);
+}
+
+/**
+ * @summery: 将消息广播到所有直连的Serv上,除excludSvrid外
+ * @param: ttl+1 haspass+dservs routepath+my_svrid
+ */ 
 int BroadCastCli::toWorld( int svrid, int ttl, const string& era, const string& excludeSvrid, const string& route )
 {
     // 获取所有直连的Serv
@@ -206,19 +335,16 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
     string excludeSvrid;
     string routepath;
     
-    ret = Rjson::GetInt(osvrid, CONNTERID_KEY, doc);
+    ret = Rjson::GetInt(osvrid, BROARDCAST_KEY_FROM, doc);
     ret |= Rjson::GetStr(era, "ERA", doc);
-    ret |= Rjson::GetInt(ttl, "ttl", doc);
-    ret |= Rjson::GetStr(excludeSvrid, EXCLUDE_SVRID_LIST, doc);
-    ret |= Rjson::GetStr(routepath, ROUTE_PATH, doc);
+    ret |= Rjson::GetStr(routepath, BROARDCAST_KEY_TRAIL, doc);
     str_osvrid = StrParse::Itoa(osvrid);
 
     NormalExceptionOn_IFTRUE(ret||osvrid<=0, 409, CMD_BROADCAST_RSP, seqid, 
         string("invalid CMD_BROADCAST_REQ body ")+Rjson::ToString(doc));
     
     DEBUG_TRACE("a. recv svrid=%d broadcast pass by %s, msg=%s", osvrid, iohand->m_idProfile.c_str(), Rjson::ToString(doc).c_str());
-    ret = BroadCastCli::Instance()->toWorld(osvrid, ++ttl, era, excludeSvrid, routepath); // 将消息广播出去
-    routepath += StrParse::Itoa(s_my_svrid) + ">";
+    routepath += StrParse::Itoa(s_my_svrid);
 
     // 自身处理
     // 1. 本Serv是否存在编号为osvrid的对象

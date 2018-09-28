@@ -13,12 +13,20 @@ HEPMUTICLASS_IMPL(IOHand, IOHand, CliBase)
 static map<unsigned, string> s_cmdid2interceptor; // 消息拦截器
 static map<unsigned, string> s_cmdid2clsname; // 事件处理器，滞后于拦截器
 
+datasize_t IOHand::serv_recv_bytes = 0;
+datasize_t IOHand::serv_send_bytes = 0;
+int IOHand::serv_recvpkg_num = 0;
+int IOHand::serv_sendpkg_num = 0;
+
 // static
 int IOHand::Init( void )
 {
 	// 前置拦截器
+	s_cmdid2interceptor[CMD_BROADCAST_REQ] = "BroadCastCli::TransToAll";
+
 	s_cmdid2interceptor[CMD_CLIERA_REQ] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_CLIERA_RSP] = "RouteExchage::TransMsg";
+
 
 	// 消息->处理类
 	s_cmdid2clsname[CMD_WHOAMI_REQ] = "BegnHand::ProcessOne"; // ->BegnHand
@@ -47,7 +55,8 @@ int IOHand::Init( void )
 }
 
 IOHand::IOHand(void): m_cliFd(INVALID_FD), m_closeFlag(0),
-	  m_authFlag(0), m_iBufItem(NULL), m_oBufItem(NULL)
+		m_authFlag(0), m_recv_bytes(0), m_send_bytes(0), 
+		m_recvpkg_num(0), m_sendpkg_num(0), m_iBufItem(NULL), m_oBufItem(NULL)
 {
     
 }
@@ -112,6 +121,8 @@ int IOHand::onRead( int p1, long p2 )
 			}
 			
 			IFBREAK(m_iBufItem->len < HEADER_LEN); // 头部未完整,wait again
+			m_recv_bytes += m_iBufItem->len;
+			serv_recv_bytes += m_iBufItem->len;
 			m_iBufItem->buff.append(buff, m_iBufItem->len); // binary data
 
 			m_iBufItem->ntoh();
@@ -142,10 +153,14 @@ int IOHand::onRead( int p1, long p2 )
 				m_closeReason = (0==ret? "recv body closed": strerror(errno));
 				break;
 			}
+			m_recv_bytes += ret;
+			serv_recv_bytes += ret;
 		}
 
 		if (m_iBufItem->ioFinish()) // 报文接收完毕
 		{
+			m_recvpkg_num++;
+			serv_recvpkg_num++;
 			IFBREAK(authCheck(m_iBufItem)); // 权限检查
 			ret = interceptorProcess(m_iBufItem);
 			IFBREAK_N(1 != ret, 0);
@@ -163,10 +178,15 @@ int IOHand::onRead( int p1, long p2 )
 			}
 			
 			CliMgr::Instance()->updateCliTime(this);
-			IFDELETE(m_iBufItem);
 		}
 	}
 	while (0);
+
+	if (m_iBufItem && m_iBufItem->ioFinish())
+	{
+		IFDELETE(m_iBufItem);
+	}
+
 	return ret;
 }
 
@@ -191,12 +211,16 @@ int IOHand::onWrite( int p1, long p2 )
 			break;
 		}
 		
+		m_send_bytes += ret;
+		serv_send_bytes += ret;
 		if (m_oBufItem->len < m_oBufItem->totalLen)
 		{
-			LOGDEBUG("IOHAND_WRITE| msg=obuf send wait| mi=%s", m_cliName.c_str());
+			LOGDEBUG("IOHAND_WRITE| msg=obuf send wait again| mi=%s", m_cliName.c_str());
 			break;
 		}
 
+		m_sendpkg_num++;
+		serv_sendpkg_num++;
 		IFDELETE(m_oBufItem);
 		if (m_oBuffq.size() <= 0)
 		{

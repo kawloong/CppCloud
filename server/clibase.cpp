@@ -6,6 +6,7 @@
 #include <cstring>
 #include <cerrno>
 #include "rapidjson/json.hpp"
+#include "cloud/const.h"
 
 HEPCLASS_IMPL(CliBase, CliBase)
 
@@ -108,5 +109,14 @@ int CliBase::unserialize( const Value* rpJsonValue )
 {
 	int ret = Json2Map(rpJsonValue);
 	m_era = getIntProperty("ERAN");
+	if (0 == m_cliType)
+	{
+		m_cliType = getIntProperty(CLIENT_TYPE_KEY);
+		if (1 == m_cliType)
+		{
+			LOGERROR("CLIUNSERIALIZE| msg=%s cannot set to clitype=1", m_idProfile.c_str());
+			m_cliType = 99999999;
+		}
+	}
 	return ret;
 }

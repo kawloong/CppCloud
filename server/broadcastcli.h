@@ -23,12 +23,16 @@ public:
 
 public:
     static int OnBroadCMD( void* ptr, unsigned cmdid, void* param );
+    static int TransToAll( void* ptr, unsigned cmdid, void* param );
     static int on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsigned seqid );
     static int on_CMD_CLIERA_REQ( IOHand* iohand, const Value* doc, unsigned seqid );
     static int on_CMD_CLIERA_RSP( IOHand* iohand, const Value* doc, unsigned seqid );
 
     void init( int my_svrid );
     static string GetDebugTrace( void );
+    static int setJsonMember( const string& key, const string& val, Document* node );
+    int toWorld( Document& doc, unsigned cmdid, unsigned seqid );
+    int toWorld( const string& jsonmsg, unsigned cmdid, unsigned seqid );
 
 protected: // interface IEPollRun
 	virtual int run(int p1, long p2);

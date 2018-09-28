@@ -78,4 +78,9 @@ public:
 
         return ret;
     }
+
+    bool empty(void)
+    {
+        return !(it0 != contn.end() && it0 != it1);
+    }
 };
