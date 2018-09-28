@@ -21,6 +21,9 @@ public:
 
     static int TransMsg( void* ptr, unsigned cmdid, void* param );
 
+    static int postToCli( const string& jobj, unsigned cmdid, unsigned seqid,
+        int toSvr = 0, int fromSvr = 0, int bto = 0 );
+
 protected: // interface IEPollRun
 	//virtual int onEvent( int evtype, va_list ap );
     //virtual int qrun( int flag, long p2 );

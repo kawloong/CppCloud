@@ -27,6 +27,12 @@ const char BROARDCAST_KEY_PASS[] = "pass";
 const char BROARDCAST_KEY_TRAIL[] = "path";
 const char BROARDCAST_KEY_JUMP[] = "jump";
 
+const char ROUTE_MSG_KEY_FROM[] = "from";
+const char ROUTE_MSG_KEY_TO[] = "to";
+const char ROUTE_MSG_KEY_BEGORETO[] = "bto";
+const char ROUTE_MSG_KEY_REFPATH[] = "refer_path";
+const char ROUTE_MSG_KEY_TRAIL[] = "path";
+
 const int SERV_CLITYPE_ID = 1;
 const int CLI_KEEPALIVE_TIME_SEC = 60*10;
 const int CLI_DEAD_TIME_SEC = 60*20;

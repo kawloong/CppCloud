@@ -157,6 +157,7 @@ int BroadCastCli::toWorld( Document& doc, unsigned cmdid, unsigned seqid )
     // 跳数处理
     ntmp = 0;
     Rjson::GetInt(ntmp, BROARDCAST_KEY_JUMP, &doc);
+    doc.RemoveMember(BROARDCAST_KEY_JUMP);
     doc.AddMember(BROARDCAST_KEY_JUMP, ++ntmp, doc.GetAllocator());
 
     string reqbody(Rjson::ToString(&doc));
@@ -423,12 +424,12 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
         string msgbody;
 
         msgbody += "{";
-        StrParse::PutOneJson(msgbody, "to", osvrid, true);
-        StrParse::PutOneJson(msgbody, "from", s_my_svrid, true);
+        StrParse::PutOneJson(msgbody, ROUTE_MSG_KEY_TO, osvrid, true);
+        StrParse::PutOneJson(msgbody, ROUTE_MSG_KEY_FROM, s_my_svrid, true);
         StrParse::PutOneJson(msgbody, "differa", differa, true);
         //StrParse::PutOneJson(msgbody, "newera", era, true);
-        StrParse::PutOneJson(msgbody, "refer_path", routepath, true); // 参考路线
-        StrParse::PutOneJson(msgbody, ROUTE_PATH, StrParse::Itoa(s_my_svrid)+">", false); // 已经过的路线
+        StrParse::PutOneJson(msgbody, ROUTE_MSG_KEY_REFPATH, routepath, true); // 参考路线
+        StrParse::PutOneJson(msgbody, ROUTE_MSG_KEY_TRAIL, StrParse::Itoa(s_my_svrid)+">", false); // 已经过的路线
         msgbody += "}";
 
         ret = iohand->sendData(CMD_CLIERA_REQ, seqid, msgbody.c_str(), msgbody.size(), true);
@@ -456,11 +457,11 @@ int BroadCastCli::on_CMD_CLIERA_REQ( IOHand* iohand, const Value* doc, unsigned 
     string refpath;
     string actpath;
 
-    ret |= Rjson::GetInt(to, "to", doc);
-    ret |= Rjson::GetInt(from, "from", doc);
+    ret |= Rjson::GetInt(to, ROUTE_MSG_KEY_TO, doc);
+    ret |= Rjson::GetInt(from, ROUTE_MSG_KEY_FROM, doc);
     ret |= Rjson::GetStr(differa, "differa", doc);
-    ret |= Rjson::GetStr(refpath, "refer_path", doc);
-    ret |= Rjson::GetStr(actpath, ROUTE_PATH, doc);
+    ret |= Rjson::GetStr(refpath, ROUTE_MSG_KEY_REFPATH, doc);
+    ret |= Rjson::GetStr(actpath, ROUTE_MSG_KEY_TRAIL, doc);
 
     RouteExException_IFTRUE_EASY(ret, string("leak of param ")+Rjson::ToString(doc));
     RouteExException_IFTRUE_EASY(to!=s_my_svrid, string("dst svrid notmatch ")+Rjson::ToString(doc));
@@ -469,10 +470,10 @@ int BroadCastCli::on_CMD_CLIERA_REQ( IOHand* iohand, const Value* doc, unsigned 
 
     bool bAll = (0 == differa.compare("all"));
     string rspbody = "{";
-    StrParse::PutOneJson(rspbody, "to", from, true);
-    StrParse::PutOneJson(rspbody, "from", s_my_svrid, true);
-    StrParse::PutOneJson(rspbody, "refer_path", refpath, true);
-    StrParse::PutOneJson(rspbody, ROUTE_PATH, StrParse::Format("%d>", s_my_svrid), true);
+    StrParse::PutOneJson(rspbody, ROUTE_MSG_KEY_TO, from, true);
+    StrParse::PutOneJson(rspbody, ROUTE_MSG_KEY_FROM, s_my_svrid, true);
+    StrParse::PutOneJson(rspbody, ROUTE_MSG_KEY_REFPATH, refpath, true);
+    StrParse::PutOneJson(rspbody, ROUTE_MSG_KEY_TRAIL, StrParse::Format("%d>", s_my_svrid), true);
     StrParse::PutOneJson(rspbody, "all", bAll?1:0, true);
 
     rspbody += "\"data\":";
@@ -506,7 +507,7 @@ int BroadCastCli::on_CMD_CLIERA_RSP( IOHand* iohand, const Value* doc, unsigned 
     const Value* pdatas = NULL;
 
     ret = Rjson::GetArray(&pdatas, "data", doc);
-    ret |= Rjson::GetInt(from, "from", doc);
+    ret |= Rjson::GetInt(from, ROUTE_MSG_KEY_FROM, doc);
     ERRLOG_IF1RET_N(ret || NULL==pdatas || from <= 0, -30, "CLIERA_RSP| msg=no data(%s)| my_svrid=%d", Rjson::ToString(doc).c_str(), s_my_svrid);
     DEBUG_TRACE("e. get cliera resp: %s", Rjson::ToString(doc).c_str());
 

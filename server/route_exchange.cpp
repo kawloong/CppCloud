@@ -38,39 +38,100 @@ int setJsonObj( const string& key, const string& val, Document* node )
     return 0;
 }
 
+int setJsonObj( const char* key, int val, Document* node )
+{
+    node->RemoveMember(key);
+    node->AddMember(key, val, node->GetAllocator());
+    return 0;
+}
+
+int RouteExchage::AjustRoutMsg( Document& doc, int fromSvr, int* toSvr, int* bto )
+{
+    int ret = 0;
+    int ntmp = 0;
+
+    do
+    {
+        if (Rjson::GetInt(ntmp, ROUTE_MSG_KEY_TO, &doc))
+        { // 无
+            IFBREAK_N(NULL==toSvr, -101);
+            setJsonObj(ROUTE_MSG_KEY_TO, *toSvr, &doc);
+        }
+        else
+        {
+            if (toSvr) *toSvr = ntmp;
+        }
+
+        if (Rjson::GetInt(ntmp, ROUTE_MSG_KEY_FROM, &doc))
+        {
+            if (0 == fromSvr) fromSvr = s_my_svrid;
+            setJsonObj(ROUTE_MSG_KEY_FROM, fromSvr, &doc);
+        }
+        else
+        {
+            fromSvr = ntmp;
+        }
+
+        // Rjson::GetStr(refpath, ROUTE_MSG_KEY_REFPATH, &doc);
+        Rjson::GetStr(actpath, ROUTE_MSG_KEY_TRAIL, &doc);
+        string fromInPath = _F("%d>", fromSvr);
+        string curServInPath = _F("%d>", s_my_svrid);
+        if (actpath.find(fromInPath) == string::npos) // 可能会来自app作源的包
+        {
+            actpath = fromInPath + actpath;
+        }
+        if (actpath.find(curServInPath) == string::npos)
+        {
+            actpath += curServInPath;
+        }
+        setJsonObj(ROUTE_MSG_KEY_TRAIL, actpath, &doc);
+
+        if (bto)
+        {
+            if (*bto > 0)
+            {
+                setJsonObj(ROUTE_MSG_KEY_BEGORETO, *bto, &doc);
+            }
+            else
+            {
+                ntmp = 0;
+                Rjson::GetInt(ntmp, ROUTE_MSG_KEY_BEGORETO, &doc); // 可选
+                *bto = ntmp;
+            }
+        }
+        ret = 0;
+    }
+    while(0);
+
+    return ret;
+}
+
 int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
 {
 	CMDID2FUNCALL_BEGIN
 	Document doc;
+    if (doc.Parse(body).HasParseError()) throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "body json invalid @");
 
-    if (doc.Parse(body).HasParseError()) 
-    {
-        throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "body json invalid @");
-    }
+    RouteExException_IFTRUE_EASY(!doc.IsObject(), string("doc isnot jsonobject ")+Rjson::ToString(&doc));
+    return TransMsg(doc, cmdid, seqid, 0, 0, 0);
+}
 
-    int ret = 0;
+/**
+ * 路由转发功能属性说明（约定）
+ * to: 目的Serv编号
+ * from: 发源的Serv编号
+ * refer_path：参考的传输路径 no use（可以反向）, 格式 1>2>7>9>
+ * act_path: 实际走过的路径，格式同上, 转发时仅修改此值
+ */
+int RouteExchage::TransMsg( Document& doc, unsigned cmdid, unsigned seqid, int fromSvr, int toSvr, int bto )
+{
+    int ret;
+    int to = toSvr;
+    int belongTo = bto;
 
-    int to = 0;
-    int bto = 0; // 所属的Servid, 当to是OuterCli时，可借助bto得知其直属serv
-    int from = 0;
-    string refpath;
-    string actpath;
-
-    /**
-     * 路由转发功能属性说明（约定）
-     * to: 目的Serv编号
-     * from: 发源的Serv编号
-     * refer_path：参考的传输路径 no use（可以反向）, 格式 1>2>7>9>
-     * act_path: 实际走过的路径，格式同上, 转发时仅修改此值
-     */
-
-    ret |= Rjson::GetInt(to, "to", &doc);
-    ret |= Rjson::GetInt(from, "from", &doc);
-    ret |= Rjson::GetStr(refpath, "refer_path", &doc);
-    ret |= Rjson::GetStr(actpath, ROUTE_PATH, &doc);
-    Rjson::GetInt(bto, "bto", &doc); // 可选
-
-    RouteExException_IFTRUE_EASY(ret, string("leak of param ")+Rjson::ToString(&doc));
+    ret = AjustRoutMsg(doc, fromSvr, &to, &belongTo);
+    RouteExException_IFTRUE_EASY(ret, 
+        _F("msg invalid %d-%d-%d ", from, toSvr, bto)+Rjson::ToString(&doc));
     
     IOHand* ioh = NULL;
     for (char i=0, loop=true; i<2 && loop; ++i)
@@ -81,9 +142,9 @@ int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
         CliMgr::AliasCursor finder(searchKey);
         CliBase* cliptr = finder.pop();
 
-        if (NULL == cliptr && bto > 0)
+        if (NULL == cliptr && belongTo > 0)
         {
-            CliMgr::AliasCursor finder2(StrParse::Itoa(bto) + "_");
+            CliMgr::AliasCursor finder2(StrParse::Itoa(belongTo) + "_");
             cliptr = finder2.pop();
         }
 
@@ -124,11 +185,19 @@ int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
     if (ioh)
     {
         actpath += StrParse::Format("%d>", s_my_svrid);
-        setJsonObj(ROUTE_PATH, actpath, &doc);
+        setJsonObj(ROUTE_MSG_KEY_TRAIL, actpath, &doc);
 
         string msg = Rjson::ToString(&doc);
         ret = ioh->sendData(cmdid, seqid, msg.c_str(), msg.length(), true);
     }
 
     return ret;
+}
+
+int RouteExchage::postToCli( const string& jobj, unsigned cmdid, unsigned seqid, int toSvr, int fromSvr, int bto )
+{
+    Document doc;
+    if (doc.Parse(jobj.c_str()).HasParseError()) return -111;
+    
+    return TransMsg(doc, cmdid, seqid, fromSvr, toSvr, bto);
 }
