@@ -1,5 +1,4 @@
 #include "route_exchange.h"
-#include "rapidjson/json.hpp"
 #include "exception.h"
 #include "comm/strparse.h"
 #include "climanage.h"
@@ -15,7 +14,7 @@ HEPCLASS_IMPL_FUNC_END
 
 int RouteExchage::s_my_svrid = 0;
 #define RouteExException_IFTRUE_EASY(cond, resonstr) \
-    RouteExException_IFTRUE(cond, cmdid, seqid, s_my_svrid, from, resonstr, actpath)
+    RouteExException_IFTRUE(cond, cmdid, seqid, s_my_svrid, 0, resonstr, "")
 
 RouteExchage::RouteExchage( void )
 {
@@ -27,70 +26,63 @@ void RouteExchage::Init( int my_svrid )
     s_my_svrid = my_svrid;
 }
 
-int setJsonObj( const string& key, const string& val, Document* node )
-{
-    node->RemoveMember(key.c_str());
-    Value tmpkey(kStringType);
-    Value tmpstr(kStringType);
-    tmpkey.SetString(key.c_str(), node->GetAllocator()); 
-    tmpstr.SetString(val.c_str(), node->GetAllocator()); 
-    node->AddMember(tmpkey, tmpstr, node->GetAllocator());
-    return 0;
-}
-
-int setJsonObj( const char* key, int val, Document* node )
-{
-    node->RemoveMember(key);
-    node->AddMember(key, val, node->GetAllocator());
-    return 0;
-}
-
-int RouteExchage::AjustRoutMsg( Document& doc, int fromSvr, int* toSvr, int* bto )
+/**
+ * 注意fromSvr参数: >=0时, 是创建最先发出源,0使用s_my_svrid; <0时不改动from键值
+ */
+int RouteExchage::AdjustRoutMsg( Document& doc, int fromSvr, int* toSvr, int* bto )
 {
     int ret = 0;
     int ntmp = 0;
 
     do
     {
-        if (Rjson::GetInt(ntmp, ROUTE_MSG_KEY_TO, &doc))
-        { // 无
-            IFBREAK_N(NULL==toSvr, -101);
-            setJsonObj(ROUTE_MSG_KEY_TO, *toSvr, &doc);
-        }
-        else
+        if (toSvr)
         {
-            if (toSvr) *toSvr = ntmp;
+            if (*toSvr > 0)
+            {
+                Rjson::SetObjMember(ROUTE_MSG_KEY_TO, *toSvr, &doc);
+            }
+            else
+            {
+                Rjson::GetInt(ntmp, ROUTE_MSG_KEY_TO, &doc);
+                IFBREAK_N(ntmp<=0, -101);
+                *toSvr = ntmp;
+            }
         }
-
-        if (Rjson::GetInt(ntmp, ROUTE_MSG_KEY_FROM, &doc))
+        
+        string actpath;
+        fromSvr = (0==fromSvr?s_my_svrid: fromSvr);
+        if (fromSvr > 0) // 用本地id // 最原先开始
         {
-            if (0 == fromSvr) fromSvr = s_my_svrid;
-            setJsonObj(ROUTE_MSG_KEY_FROM, fromSvr, &doc);
+            IFBREAK_N(toSvr&&*toSvr==fromSvr, -104); // src==dst error
+            Rjson::SetObjMember(ROUTE_MSG_KEY_FROM, fromSvr, &doc);
+            actpath = _F("%d>", fromSvr);
+            Rjson::SetObjMember(ROUTE_MSG_KEY_JUMP, 1, &doc);
         }
-        else
+        else // 保持不变
         {
-            fromSvr = ntmp;
+            Rjson::GetInt(fromSvr, ROUTE_MSG_KEY_FROM, &doc);
+            IFBREAK_N(fromSvr<=0, -103);
+            Rjson::GetStr(actpath, ROUTE_MSG_KEY_TRAIL, &doc);
+            ntmp = 0;
+            Rjson::GetInt(ntmp, ROUTE_MSG_KEY_JUMP, &doc);
+            Rjson::SetObjMember(ROUTE_MSG_KEY_JUMP, ++ntmp, &doc);
         }
 
         // Rjson::GetStr(refpath, ROUTE_MSG_KEY_REFPATH, &doc);
-        Rjson::GetStr(actpath, ROUTE_MSG_KEY_TRAIL, &doc);
-        string fromInPath = _F("%d>", fromSvr);
+
         string curServInPath = _F("%d>", s_my_svrid);
-        if (actpath.find(fromInPath) == string::npos) // 可能会来自app作源的包
-        {
-            actpath = fromInPath + actpath;
-        }
         if (actpath.find(curServInPath) == string::npos)
         {
             actpath += curServInPath;
         }
-        setJsonObj(ROUTE_MSG_KEY_TRAIL, actpath, &doc);
+        Rjson::SetObjMember(ROUTE_MSG_KEY_TRAIL, actpath, &doc);
 
         if (bto)
         {
             if (*bto > 0)
             {
-                setJsonObj(ROUTE_MSG_KEY_BEGORETO, *bto, &doc);
+                Rjson::SetObjMember(ROUTE_MSG_KEY_BEGORETO, *bto, &doc);
             }
             else
             {
@@ -99,6 +91,7 @@ int RouteExchage::AjustRoutMsg( Document& doc, int fromSvr, int* toSvr, int* bto
                 *bto = ntmp;
             }
         }
+
         ret = 0;
     }
     while(0);
@@ -112,8 +105,30 @@ int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
 	Document doc;
     if (doc.Parse(body).HasParseError()) throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "body json invalid @");
 
-    RouteExException_IFTRUE_EASY(!doc.IsObject(), string("doc isnot jsonobject ")+Rjson::ToString(&doc));
-    return TransMsg(doc, cmdid, seqid, 0, 0, 0);
+    int ret;
+    try 
+    {
+        IFRETURN_N(!doc.HasMember(ROUTE_MSG_KEY_FROM) && !doc.HasMember(ROUTE_MSG_KEY_TO), 1); // 如果无from+to则直接本机处理
+        ret = TransMsg(doc, cmdid, seqid, -1, 0, 0, iohand);
+    }
+    catch ( RouteExException& exp )
+    {
+        int from = 0;
+        Rjson::GetInt(from, ROUTE_MSG_KEY_FROM, &doc);
+        if (0 == exp.to && 0 == from)
+        {
+            LOGERROR("ROUTEEX_EXCPTION| reqcmd=0x%X reason=%s", exp.reqcmd, exp.reson.c_str());
+            ret = 0;
+        }
+        else
+        {
+            exp.to = 0==exp.to? from: exp.to;
+            Rjson::GetStr(exp.rpath, ROUTE_MSG_KEY_TRAIL, &doc);
+            throw exp;
+        }
+    }
+
+    return ret;
 }
 
 /**
@@ -123,15 +138,21 @@ int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
  * refer_path：参考的传输路径 no use（可以反向）, 格式 1>2>7>9>
  * act_path: 实际走过的路径，格式同上, 转发时仅修改此值
  */
-int RouteExchage::TransMsg( Document& doc, unsigned cmdid, unsigned seqid, int fromSvr, int toSvr, int bto )
+int RouteExchage::TransMsg( Document& doc, unsigned cmdid, unsigned seqid, int fromSvr, int toSvr, int bto, IOHand* iohand )
 {
     int ret;
+    int& from = fromSvr;
     int to = toSvr;
     int belongTo = bto;
 
-    ret = AjustRoutMsg(doc, fromSvr, &to, &belongTo);
+    RouteExException_IFTRUE_EASY(!doc.IsObject(), string("doc isnot jsonobject ")+Rjson::ToString(&doc));
+    ret = AdjustRoutMsg(doc, fromSvr, &to, &belongTo);
     RouteExException_IFTRUE_EASY(ret, 
         _F("msg invalid %d-%d-%d ", from, toSvr, bto)+Rjson::ToString(&doc));
+    toSvr = to;
+    
+    string actpath;
+    Rjson::GetStr(actpath, ROUTE_MSG_KEY_TRAIL, &doc);
     
     IOHand* ioh = NULL;
     for (char i=0, loop=true; i<2 && loop; ++i)
@@ -184,20 +205,20 @@ int RouteExchage::TransMsg( Document& doc, unsigned cmdid, unsigned seqid, int f
 
     if (ioh)
     {
-        actpath += StrParse::Format("%d>", s_my_svrid);
-        setJsonObj(ROUTE_MSG_KEY_TRAIL, actpath, &doc);
-
         string msg = Rjson::ToString(&doc);
         ret = ioh->sendData(cmdid, seqid, msg.c_str(), msg.length(), true);
+        LOGDEBUG("ROUTEXCHMSG| msg=exch [0x%X] -> %d -> %d| %s",
+            cmdid, ioh->getIntProperty(CONNTERID_KEY), toSvr, msg.c_str());
     }
 
     return ret;
 }
 
-int RouteExchage::postToCli( const string& jobj, unsigned cmdid, unsigned seqid, int toSvr, int fromSvr, int bto )
+int RouteExchage::PostToCli( const string& jobj, unsigned cmdid, unsigned seqid, 
+        int toSvr /*=0*/, int fromSvr /*=0*/, int bto /*=0*/ )
 {
     Document doc;
     if (doc.Parse(jobj.c_str()).HasParseError()) return -111;
     
-    return TransMsg(doc, cmdid, seqid, fromSvr, toSvr, bto);
+    return TransMsg(doc, cmdid, seqid, fromSvr, toSvr, bto, NULL);
 }

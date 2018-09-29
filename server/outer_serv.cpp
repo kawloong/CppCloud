@@ -35,11 +35,29 @@ int OuterServ::setRoutePath( const string& strpath )
         ERRLOG_IF1RET_N(m_svrid!=routpath.path[0], -37, 
             "SETROUTPATH| msg=invalid path| path=%s| servid=%d", strpath.c_str(), m_svrid);
         
-        routpath.next_svrid = *routpath.path.rbegin();
-        routpath.mtime = time(NULL);
-        string key = StrParse::Format("P%d_%s", pathn, strpath.c_str());
+        bool valid = false;
+        vector<int>::reverse_iterator itrNxt = routpath.path.rbegin();
+        for (; itrNxt != routpath.path.rend(); ++itrNxt)
+        {
+            if (*itrNxt != s_my_svrid)
+            {
+                routpath.next_svrid = *itrNxt;
+                valid = true;
+                break;
+            }
+        }
 
-        m_routpath[key] = routpath;
+        if (valid)
+        {
+            routpath.mtime = time(NULL);
+            string key = StrParse::Format("P%d_%s", pathn, strpath.c_str());
+            m_routpath[key] = routpath;           
+        }
+        else
+        {
+            LOGERROR("SETROUTPATH| msg=invalid nextsvrid in path| path=%s(%d->%d)", strpath.c_str(), m_svrid, s_my_svrid);
+            ret = -38;
+        }
     }
 
     return ret;

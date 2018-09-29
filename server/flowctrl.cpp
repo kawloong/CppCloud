@@ -42,6 +42,7 @@ int FlowCtrl::init(int tskqNum)
         m_hepo = new HEpoll;
         m_tskq = new TaskPoolEx<HEpBase, &HEpBase::qrun>[tskqNum];
         m_tskqNum = tskqNum; 
+        CliBase::Init(CloudConf::CppCloudServID());
         IOHand::Init();
 
         ret = m_hepo->init();

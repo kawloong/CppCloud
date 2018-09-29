@@ -9,7 +9,9 @@ Modification :
 #ifndef _ROUTE_EXCHANGE_H_
 #define _ROUTE_EXCHANGE_H_
 #include "comm/hep_base.h"
+#include "rapidjson/json.hpp"
 
+class IOHand;
 
 class RouteExchage: public HEpBase
 {
@@ -21,12 +23,14 @@ public:
 
     static int TransMsg( void* ptr, unsigned cmdid, void* param );
 
-    static int postToCli( const string& jobj, unsigned cmdid, unsigned seqid,
+    static int PostToCli( const string& jobj, unsigned cmdid, unsigned seqid,
         int toSvr = 0, int fromSvr = 0, int bto = 0 );
 
 protected: // interface IEPollRun
 	//virtual int onEvent( int evtype, va_list ap );
     //virtual int qrun( int flag, long p2 );
+    static int TransMsg( Document& doc, unsigned cmdid, unsigned seqid, int fromSvr, int toSvr, int bto, IOHand* iohand );
+    static int AdjustRoutMsg( Document& doc, int fromSvr, int* toSvr, int* bto );
 
 protected:
     static int s_my_svrid;

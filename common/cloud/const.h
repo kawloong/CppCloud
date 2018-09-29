@@ -22,16 +22,19 @@ const char CLI_PREFIX_KEY_SERV[] = "dserv";
 const char EXCLUDE_SVRID_LIST[] = "haspass";
 const char ROUTE_PATH[] = "act_path";
 
+// 广播消息json控制Key
 const char BROARDCAST_KEY_FROM[] = "from";
 const char BROARDCAST_KEY_PASS[] = "pass";
 const char BROARDCAST_KEY_TRAIL[] = "path";
 const char BROARDCAST_KEY_JUMP[] = "jump";
 
+// 单播消息json控制Key
 const char ROUTE_MSG_KEY_FROM[] = "from";
 const char ROUTE_MSG_KEY_TO[] = "to";
 const char ROUTE_MSG_KEY_BEGORETO[] = "bto";
 const char ROUTE_MSG_KEY_REFPATH[] = "refer_path";
 const char ROUTE_MSG_KEY_TRAIL[] = "path";
+const char ROUTE_MSG_KEY_JUMP[] = "jump";
 
 const int SERV_CLITYPE_ID = 1;
 const int CLI_KEEPALIVE_TIME_SEC = 60*10;

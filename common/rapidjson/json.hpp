@@ -185,6 +185,44 @@ static int GetInt(int& n, T1 t1, T2 t2, const Value* parent)
 	return -1;
 }
 
+/////////////////// 修改 //////////////////////
+static int SetObjMember( const string& key, int val, Document* node )
+{
+    int ret = -1;
+    if (node && node->IsObject())
+    {
+        if (node->HasMember(key.c_str()))
+        {
+            node->RemoveMember(key.c_str());
+        }
+        Value tmpkey(kStringType);
+        tmpkey.SetString(key.c_str(), node->GetAllocator()); 
+        node->AddMember(tmpkey, val, node->GetAllocator());
+        ret = 0;
+    }
+    return ret;
+}
+
+static int SetObjMember( const string& key, const string& val, Document* node )
+{
+	int ret = -1;
+    if (node && node->IsObject())
+    {
+        if (node->HasMember(key.c_str()))
+        {
+            node->RemoveMember(key.c_str());
+        }
+        Value tmpkey(kStringType);
+        Value tmpstr(kStringType);
+        tmpkey.SetString(key.c_str(), node->GetAllocator()); 
+        tmpstr.SetString(val.c_str(), node->GetAllocator()); 
+        node->AddMember(tmpkey, tmpstr, node->GetAllocator());
+        ret = 0;
+    }
+
+    return ret;
+}
+
 ///////////////////////////////////////////////
 
 static int ToString(string& str, const Value* node)

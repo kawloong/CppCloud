@@ -23,7 +23,8 @@ app = Flask(__name__)
 @app.route('/test')
 def tset():
     cmd = request.args.get("cmd")
-    resp = gScommCli.request(CMD_TESTING_REQ, {"cmd": cmd})
+    resp = gScommCli.request(CMD_TESTING_REQ, {
+        "cmd": cmd, "toSvr": 3, "fromSvr": 990})
     return resp
 
 if __name__ == '__main__':

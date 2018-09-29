@@ -39,7 +39,6 @@ protected: // interface IEPollRun
     virtual int qrun( int flag, long p2 );
 
     static string diffOuterCliEra( int servid, const string& erastr );
-    int toWorld( int svrid, int ttl, const string& era, const string &excludeSvrid, const string &route );
 
 protected:
     static int s_my_svrid;

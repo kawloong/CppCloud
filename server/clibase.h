@@ -21,7 +21,7 @@ public:
     CliBase(void);
     virtual ~CliBase(void);
 
-	static int Init( void );
+	static int Init( int mysvrid );
 
 public: // interface HEpBase
     virtual int run( int flag, long p2 );
@@ -50,6 +50,7 @@ protected:
 	int m_cliType; // 何种类型的客户应用: 1 sevr端服务; 10 监控进程; 20 web serv; 30 观察进程; 40
 	bool m_isLocal; // 直连为true(有socket connect); 间接的为false;
 	//bool m_outObj; // 外部对象,不交给climgr释放;
+	static int s_my_svrid;
 
 public:
 	map<string, string> m_cliProp; // 客户属性

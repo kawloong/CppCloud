@@ -18,7 +18,7 @@ HEPCLASS_IMPL_FUNC_END
 #define RouteExException_IFTRUE_EASY(cond, resonstr) \
     RouteExException_IFTRUE(cond, cmdid, seqid, s_my_svrid, from, resonstr, actpath)
 #ifdef DEBUG
-#define DEBUG_TRACE(fmt, ...) StrParse::AppendFormat(s_debugTrace, fmt , ##__VA_ARGS__);s_debugTrace+="\n"; printf(">>> \n" fmt, ##__VA_ARGS__)
+#define DEBUG_TRACE(fmt, ...) StrParse::AppendFormat(s_debugTrace, fmt , ##__VA_ARGS__);s_debugTrace+="\n"; printf(">>> " fmt "\n", ##__VA_ARGS__)
 #define DEBUG_PRINT printf(s_debugTrace.c_str()); s_debugTrace.clear()
 #else
 #define DEBUG_TRACE(fmt, ...) do{}while(0);
@@ -35,9 +35,11 @@ BroadCastCli::BroadCastCli()
 
 void BroadCastCli::init( int my_svrid )
 {
+    const int broadcast_delay_s = 5+rand()%20;
     m_seqid = 0;
     s_my_svrid = my_svrid;
-    SwitchHand::Instance()->appendQTask(this, my_svrid*1000);
+    
+    SwitchHand::Instance()->appendQTask(this, broadcast_delay_s*1000);
     DEBUG_TRACE("1. init at Servid=%d", my_svrid);
 }
 
@@ -68,19 +70,6 @@ int BroadCastCli::qrun( int flag, long p2 )
     
     return ret;
 }
-
-// 设备json字符串,object里的键值数据; {"key": "val"}
-int BroadCastCli::setJsonMember( const string& key, const string& val, Document* node )
-{
-    node->RemoveMember(key.c_str());
-    Value tmpkey(kStringType);
-    Value tmpstr(kStringType);
-    tmpkey.SetString(key.c_str(), node->GetAllocator()); 
-    tmpstr.SetString(val.c_str(), node->GetAllocator()); 
-    node->AddMember(tmpkey, tmpstr, node->GetAllocator());
-    return 0;
-}
-
 
 int BroadCastCli::TransToAll( void* ptr, unsigned cmdid, void* param )
 {
@@ -146,13 +135,13 @@ int BroadCastCli::toWorld( Document& doc, unsigned cmdid, unsigned seqid )
     }
 
     IFRETURN_N(vecCli.empty(), 0);
-    setJsonMember(BROARDCAST_KEY_PASS, haspass, &doc);
+    Rjson::SetObjMember(BROARDCAST_KEY_PASS, haspass, &doc);
 
     // 处理实际走过的点
     string actpath;
     Rjson::GetStr(actpath, BROARDCAST_KEY_TRAIL, &doc);
     actpath += str_my_svrid + ">";
-    setJsonMember(BROARDCAST_KEY_TRAIL, actpath, &doc);
+    Rjson::SetObjMember(BROARDCAST_KEY_TRAIL, actpath, &doc);
 
     // 跳数处理
     ntmp = 0;
@@ -189,62 +178,6 @@ int BroadCastCli::toWorld( const string& jsonmsg, unsigned cmdid, unsigned seqid
     return toWorld(doc, cmdid, seqid);
 }
 
-/**
- * @summery: 将消息广播到所有直连的Serv上,除excludSvrid外
- * @param: ttl+1 haspass+dservs routepath+my_svrid
- */ 
-int BroadCastCli::toWorld( int svrid, int ttl, const string& era, const string& excludeSvrid, const string& route )
-{
-    // 获取所有直连的Serv
-    int ret = 0;
-    CliMgr::AliasCursor alcr(SERV_IN_ALIAS_PREFIX);
-    CliBase *cli = NULL;
-    string link_svrid_arr(excludeSvrid);
-    const string str_my_srcid = StrParse::Itoa(s_my_svrid);
-    string routepath = route + str_my_srcid + ">";
-
-    if (link_svrid_arr.find(string(" ") + str_my_srcid + " ") == string::npos)
-    {
-        link_svrid_arr += str_my_srcid + " ";
-    }
-
-    vector<CliBase*> vecCli;
-    while ((cli = alcr.pop()))
-    {
-        WARNLOG_IF1BRK(cli->getCliType() != SERV_CLITYPE_ID && !cli->isLocal(), -23,
-                       "BROADCASTRUN| msg=flow unexception| cli=%s", cli->m_idProfile.c_str());
-        string svridstr = cli->getProperty(CONNTERID_KEY);
-        if (link_svrid_arr.find(string(" ") + svridstr + " ") == string::npos)
-        {
-            link_svrid_arr += svridstr + " ";
-            vecCli.push_back(cli);
-        }
-    }
-
-    string reqbody = "{";
-    StrParse::PutOneJson(reqbody, CONNTERID_KEY, svrid, true);
-    StrParse::PutOneJson(reqbody, "ERA", era, true);
-    StrParse::PutOneJson(reqbody, "ttl", ttl, true);
-    StrParse::PutOneJson(reqbody, EXCLUDE_SVRID_LIST, link_svrid_arr, true);
-    StrParse::PutOneJson(reqbody, ROUTE_PATH, routepath, false);
-    reqbody += "}";
-
-    for (unsigned i = 0; i < vecCli.size(); ++i)
-    {
-        IOHand* cli = dynamic_cast<IOHand *>(vecCli[i]);
-        if (cli)
-        {
-            cli->sendData(CMD_BROADCAST_REQ, ++m_seqid, reqbody.c_str(), reqbody.length(), true);
-            DEBUG_TRACE("3/b. sendto %d pass [%s] data is %s", svrid, cli->m_idProfile.c_str(), reqbody.c_str());
-        }
-        else
-        {
-            LOGERROR("BROADCASTWORLD| msg=alias unmatch| cli=%p", vecCli[i]);
-        }
-    }
-
-    return ret;
-}
 
 int BroadCastCli::OnBroadCMD( void* ptr, unsigned cmdid, void* param )
 {
@@ -427,7 +360,7 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
         StrParse::PutOneJson(msgbody, ROUTE_MSG_KEY_TO, osvrid, true);
         StrParse::PutOneJson(msgbody, ROUTE_MSG_KEY_FROM, s_my_svrid, true);
         StrParse::PutOneJson(msgbody, "differa", differa, true);
-        //StrParse::PutOneJson(msgbody, "newera", era, true);
+        StrParse::PutOneJson(msgbody, ROUTE_MSG_KEY_JUMP, 1, true);
         StrParse::PutOneJson(msgbody, ROUTE_MSG_KEY_REFPATH, routepath, true); // 参考路线
         StrParse::PutOneJson(msgbody, ROUTE_MSG_KEY_TRAIL, StrParse::Itoa(s_my_svrid)+">", false); // 已经过的路线
         msgbody += "}";
@@ -488,7 +421,7 @@ int BroadCastCli::on_CMD_CLIERA_REQ( IOHand* iohand, const Value* doc, unsigned 
 
     rspbody += ",";
     StrParse::PutOneJson(rspbody, "datalen", ret, true);
-    StrParse::PutOneJson(rspbody, "ttl", 1, false);
+    StrParse::PutOneJson(rspbody, ROUTE_MSG_KEY_JUMP, 1, false);
     rspbody += "}";
     iohand->sendData(CMD_CLIERA_RSP, seqid, rspbody.c_str(), rspbody.size(), true);
     DEBUG_TRACE("5. resp to %s: %s", iohand->m_idProfile.c_str(), rspbody.c_str());

@@ -9,11 +9,12 @@
 #include "cloud/const.h"
 
 HEPCLASS_IMPL(CliBase, CliBase)
-
+int CliBase::s_my_svrid = 0;
 
 // static
-int CliBase::Init( void )
+int CliBase::Init( int mysvrid )
 {
+	s_my_svrid = mysvrid;
 	return 0;
 }
 

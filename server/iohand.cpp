@@ -23,7 +23,8 @@ int IOHand::Init( void )
 {
 	// 前置拦截器
 	s_cmdid2interceptor[CMD_BROADCAST_REQ] = "BroadCastCli::TransToAll";
-
+	s_cmdid2interceptor[CMD_TESTING_REQ] = "RouteExchage::TransMsg";
+	s_cmdid2interceptor[CMD_TESTING_RSP] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_CLIERA_REQ] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_CLIERA_RSP] = "RouteExchage::TransMsg";
 

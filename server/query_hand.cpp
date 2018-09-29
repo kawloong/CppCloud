@@ -9,6 +9,7 @@
 #include "homacro.h"
 #include "exception.h"
 #include "broadcastcli.h"
+#include "route_exchange.h"
 
 HEPCLASS_IMPL_FUNC(QueryHand, ProcessOne)
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
@@ -122,6 +123,9 @@ int QueryHand::on_CMD_GETWARN_REQ( IOHand* parent, const Value* doc, unsigned se
 	return ret;
 }
 
+/**
+ * 调试接口
+*/
 int QueryHand::on_CMD_TESTING_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
 {
 	string cmd;
@@ -130,6 +134,27 @@ int QueryHand::on_CMD_TESTING_REQ( IOHand* iohand, const Value* doc, unsigned se
 	{
 		string rsp = BroadCastCli::GetDebugTrace();
 		iohand->sendData(CMD_TESTING_RSP, seqid, rsp.c_str(), rsp.length(), true);
+	}
+	else if (cmd == "routeto")
+	{
+		#define RJSON_GETINT(keyname, node) Rjson::GetInt(keyname, #keyname, node)
+		#define RJSON_GETINT_D(keyname, node) int keyname=0; Rjson::GetInt(keyname, #keyname, node)
+		RJSON_GETINT_D(cmdid, doc);
+		RJSON_GETINT_D(toSvr, doc);
+		RJSON_GETINT_D(fromSvr, doc);
+		RJSON_GETINT_D(bto, doc);
+		fromSvr = iohand->getIntProperty(CONNTERID_KEY);
+		
+		int ret = RouteExchage::PostToCli("{\"cmd\": \"dbg\" }", CMD_TESTING_REQ, seqid, toSvr, fromSvr, bto);
+		LOGDEBUG("TESTING_REQ| msg=test PostToCli %d->%d| ret=%d", fromSvr, toSvr, ret);
+	}
+	else if (cmd == "dbg")
+	{
+		RJSON_GETINT_D(from, doc);
+		
+		LOGDEBUG("TESTING_REQ| msg=dbg show| %s", Rjson::ToString(doc).c_str());
+		int ret = RouteExchage::PostToCli("{\"cmd\": \"dbg-resp\" }", CMD_TESTING_RSP, seqid, from, 0, 0);
+		LOGDEBUG("TESTING_REQ| msg=test PostToCli ?->%d| ret=%d", from, ret);
 	}
 
 	return 0;
