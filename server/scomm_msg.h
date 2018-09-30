@@ -26,6 +26,7 @@ enum command_id_t
     CMD_BROADCAST_REQ = 0x000A,
     CMD_CLIERA_REQ = 0x000B,
     CMD_TESTING_REQ = 0x000C,
+    CMD_UPDATEERA_REQ = 0x000D,
 
     CMDID_MID = 0x1000,
 
@@ -41,6 +42,7 @@ enum command_id_t
     CMD_BROADCAST_RSP = 0x100A,
     CMD_CLIERA_RSP = 0x100B,
     CMD_TESTING_RSP = 0x100C,
+    CMD_UPDATEERA_RSP = 0x100D,
 };
 
 static const unsigned char g_msg_ver = 1;

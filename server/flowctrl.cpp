@@ -3,12 +3,12 @@
 #include "comm/hep_base.h"
 #include "climanage.h"
 #include "cppcloud_config.h"
-#include "remote_mgr.h"
+#include "peer_mgr.h"
 #include "switchhand.h"
 #include "keepaliver.h"
 #include "route_exchange.h"
 
-HEPCLASS_IMPL(RemoteMgr, RemoteMgr);
+HEPCLASS_IMPL(PeerMgr, PeerMgr);
 
 FlowCtrl* FlowCtrl::Instance(void)
 {
@@ -52,7 +52,7 @@ int FlowCtrl::init(int tskqNum)
             SwitchHand::Instance()->init(m_hepo->getEPfd());
             KeepAliver::Instance()->init();
             RouteExchage::Init(CloudConf::CppCloudServID());
-            ret = RemoteMgr::Instance()->init(m_hepo->getEPfd());
+            ret = PeerMgr::Instance()->init(m_hepo->getEPfd());
         }
     }
 
@@ -111,7 +111,7 @@ int FlowCtrl::run( bool& bexit )
         m_tskq[i].unInit();
     }
 
-    RemoteMgr::Instance()->uninit();
+    PeerMgr::Instance()->uninit();
     SwitchHand::Instance()->join();
 	CliMgr::Instance()->progExitHanele(0);
     m_hepo->unInit();

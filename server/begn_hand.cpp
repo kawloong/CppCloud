@@ -9,6 +9,7 @@
 #include "climanage.h"
 #include "act_mgr.h"
 #include "homacro.h"
+#include "broadcastcli.h"
 
 
 HEPCLASS_IMPL_FUNC_BEG(BegnHand)
@@ -174,10 +175,15 @@ int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqi
 	return ret;
 }
 
-// 自报身份完毕.
+// 自报身份完毕. -> 广播给其他Serv
 int BegnHand::whoamiFinish( IOHand* ioh, bool first )
 {
+	string msgbody = _F("{\"%s\":[{", UPDATE_CLIPROP_UPKEY);
+	ioh->serialize(msgbody);
+	StrParse::PutOneJson(msgbody, "ERAN", ioh->m_era, false); // 无逗号结束
+	msgbody += "}]}";
 
+	return BroadCastCli::Instance()->toWorld(msgbody, CMD_UPDATEERA_REQ, 0);
 }
 
 int BegnHand::on_CMD_HUNGUP_REQ( IOHand* iohand, const Value* doc, unsigned seqid )

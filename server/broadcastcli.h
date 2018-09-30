@@ -27,6 +27,7 @@ public:
     static int on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsigned seqid );
     static int on_CMD_CLIERA_REQ( IOHand* iohand, const Value* doc, unsigned seqid );
     static int on_CMD_CLIERA_RSP( IOHand* iohand, const Value* doc, unsigned seqid );
+    static int on_CMD_UPDATEERA_REQ( IOHand* iohand, const Value* doc, unsigned seqid );
 
     void init( int my_svrid );
     static string GetDebugTrace( void );
@@ -39,6 +40,7 @@ protected: // interface IEPollRun
     virtual int qrun( int flag, long p2 );
 
     static string diffOuterCliEra( int servid, const string& erastr );
+    static int UpdateCliProps( const Value* pdatas, int from );
 
 protected:
     static int s_my_svrid;

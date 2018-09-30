@@ -2,6 +2,7 @@
 #include "comm/strparse.h"
 #include "comm/timef.h"
 #include "act_mgr.h"
+#include "broadcastcli.h"
 #include "cloud/const.h"
 
 const char g_jsonconf_file[] = ".scomm_svrid.txt";
@@ -142,7 +143,7 @@ void CliMgr::removeAliasChild( CliBase* ptr, bool rmAll )
 // 分布式的情况下cli有多种对象，所以以不同后缀区别
 CliBase* CliMgr::getChildBySvrid( int svrid )
 {
-	static const char* svr_subfix[] = {"_C", "_S", "_I", "_s", NULL};
+	static const char* svr_subfix[] = {"_C", "_S", "_I", "_s", "_i", NULL};
 	CliBase* ret = NULL;
 	string strsvrid = StrParse::Itoa(svrid);
 
@@ -217,9 +218,9 @@ int CliMgr::getLocalCliJsonByDiffera( string& jstr, const string& differa )
 				if (i > 0) jstr += ",";
 				jstr += "{";
 				ptr->serialize(jstr);
-				StrParse::PutOneJson(jstr, "ERA", 
-				StrParse::Format("%s:%d:%d ", ptr->getProperty(CONNTERID_KEY).c_str(), 
-					ptr->m_era, ptr->getProperty("atime").c_str()), false); // 无逗号结束
+				StrParse::PutOneJson(jstr, "ERAN", ptr->m_era,false);
+				//StrParse::Format("%s:%d:%d ", ptr->getProperty(CONNTERID_KEY).c_str(), 
+				//	ptr->m_era, ptr->getProperty("atime").c_str()), false); // 无逗号结束
 				jstr += "}";
 				++i;
 				++ret;
@@ -298,7 +299,7 @@ string CliMgr::getProperty( CliBase* dst, const string& key )
 int CliMgr::onChildEvent( int evtype, va_list ap )
 {
 	int ret = -100;
-	if (HEPNTF_SOCK_CLOSE == evtype)
+	if (HEPNTF_SOCK_CLOSE == evtype) // 删除时要注意避免递归
 	{
 		IOHand* son = va_arg(ap, IOHand*);
 		int clitype = va_arg(ap, int);
@@ -309,6 +310,10 @@ int CliMgr::onChildEvent( int evtype, va_list ap )
 		CliInfo& cliinfo = m_children[son];
 		cliinfo.t2 = time(NULL);
 		Actmgr::Instance()->appCloseFound(son, clitype, cliinfo);
+
+		// 广播通知其他Serv某一cli下线
+		string broadcast_msg = _F("{\"%s\":[%d]}", UPDATE_CLIPROP_DOWNKEY, son->getIntProperty(CONNTERID_KEY));
+		BroadCastCli::Instance()->toWorld(broadcast_msg, CMD_UPDATEERA_REQ, 0);
 
 		removeAliasChild(son, true);
 		ret = 0;

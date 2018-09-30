@@ -33,6 +33,7 @@ public: // interface HEpBase
     void setProperty( const string& key, const string& val );
     string getProperty( const string& key );
 	int getCliType(void) {return m_cliType; }
+	string getERAstr( void );
 
 	int driveClose( const string& reason );
 	void setAuthFlag( int auth );

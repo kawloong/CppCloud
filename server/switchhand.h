@@ -42,8 +42,8 @@ private:
     int m_pipe[2];
     
     static std::thread* s_thread;
-    Queue<ITaskRun2*, true> tskwaitq; // 未到触发点的等待任务
-    Queue<ITaskRun2*, true> tskioq; // 队列中的对象将会在io-epoll线程执行.qrun()方法
+    Queue<ITaskRun2*, false> tskwaitq; // 未到触发点的等待任务
+    Queue<ITaskRun2*, false> tskioq; // 队列中的对象将会在io-epoll线程执行.qrun()方法
     bool bexit;
 };
 

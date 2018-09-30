@@ -1,24 +1,24 @@
 /*-------------------------------------------------------------------------
-FileName     : remote_cli.h
+FileName     : peer_cli.h
 Description  : 远中心端的客户数据管理
 remark       : 
 Modification :
 --------------------------------------------------------------------------
    1、Date  2018-09-11       create     hejl 
 -------------------------------------------------------------------------*/
-#ifndef _REMOTE_CLI_H_
-#define _REMOTE_CLI_H_
+#ifndef _PEER_CLI_H_
+#define _PEER_CLI_H_
 #include "comm/hep_base.h"
 #include "rapidjson/json.hpp"
 
 class IOHand;
 
-class RemoteCli: public HEpBase
+class PeerCli: public HEpBase
 {
 public:
-    HEPCLASS_DECL(RemoteCli, RemoteCli)
-    RemoteCli(void);
-    virtual ~RemoteCli(void);
+    HEPCLASS_DECL(PeerCli, PeerCli)
+    PeerCli(void);
+    virtual ~PeerCli(void);
 
     static void Init( int mysid );
 

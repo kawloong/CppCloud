@@ -1,5 +1,5 @@
 #include <sys/epoll.h>
-#include "remote_serv.h"
+#include "peer_serv.h"
 #include "comm/strparse.h"
 #include "comm/sock.h"
 #include "cloud/const.h"
@@ -8,11 +8,11 @@
 #include "switchhand.h"
 
 
-HEPMUTICLASS_IMPL(RemoteServ, RemoteServ, IOHand)
+HEPMUTICLASS_IMPL(PeerServ, PeerServ, IOHand)
 
-int RemoteServ::s_my_svrid = 0;
+int PeerServ::s_my_svrid = 0;
 
-RemoteServ::RemoteServ(void): m_stage(0), m_seqid(0), m_svrid(0), m_epfd(INVALID_FD), m_port(0)
+PeerServ::PeerServ(void): m_stage(0), m_seqid(0), m_svrid(0), m_epfd(INVALID_FD), m_port(0)
 {
  	m_cliType = SERV_CLITYPE_ID;
 	m_isLocal = true;
@@ -21,17 +21,17 @@ RemoteServ::RemoteServ(void): m_stage(0), m_seqid(0), m_svrid(0), m_epfd(INVALID
 	m_existLink = false;
 }
 
-RemoteServ::~RemoteServ(void)
+PeerServ::~PeerServ(void)
 {
 	
 }
 
-void RemoteServ::Init( int mysvrid )
+void PeerServ::Init( int mysvrid )
 {
 	s_my_svrid = mysvrid;
 }
 
-int RemoteServ::init( const string& rhost, int port, int epfd )
+int PeerServ::init( const string& rhost, int port, int epfd )
 {
 	m_rhost = rhost;
 	m_epfd = epfd;
@@ -42,18 +42,18 @@ int RemoteServ::init( const string& rhost, int port, int epfd )
 	return 0;
 }
 
-void RemoteServ::setSvrid( int svrid )
+void PeerServ::setSvrid( int svrid )
 {
 	m_svrid = svrid;
 }
 
-int RemoteServ::onEvent( int evtype, va_list ap )
+int PeerServ::onEvent( int evtype, va_list ap )
 {
 	return 0;
 }
 
 
-int RemoteServ::qrun( int flag, long p2 )
+int PeerServ::qrun( int flag, long p2 )
 {
 	int  ret = 0;
 	m_inqueue = false;
@@ -64,7 +64,7 @@ int RemoteServ::qrun( int flag, long p2 )
 		}
 		catch(OffConnException& exp)
 		{
-			LOGERROR("REMOTES_TASKRUN| msg=exception| reson=%s| mi=%s", exp.reson.c_str(), m_idProfile.c_str());
+			LOGERROR("PEERS_TASKRUN| msg=exception| reson=%s| mi=%s", exp.reson.c_str(), m_idProfile.c_str());
 			IOHand::onClose(flag, p2);
 			m_stage = 0;
 		}
@@ -80,12 +80,12 @@ int RemoteServ::qrun( int flag, long p2 )
 }
 
 // 连接不上或断开连接时到达
-int RemoteServ::onClose( int p1, long p2 )
+int PeerServ::onClose( int p1, long p2 )
 {
 	return IOHand::onClose(p1, p2);
 }
 
-void RemoteServ::reset( void )
+void PeerServ::reset( void )
 {
 	m_stage = 0;
 	m_closeReason.clear();
@@ -94,13 +94,13 @@ void RemoteServ::reset( void )
 	IFCLOSEFD(m_cliFd);
 }
 
-int RemoteServ::appendTimerq( void )
+int PeerServ::appendTimerq( void )
 {
 	int ret = 0;
 	if (!m_inqueue)
 	{
 		// 连接正常时 下次检查就延长些; 连接不正常时,下次检查就频繁此
-		int wait_time_sec = m_existLink? REMOTESERV_EXIST_CHKTIME: REMOTESERV_NOEXIST_CHKTIME;
+		int wait_time_sec = m_existLink? PEERSERV_EXIST_CHKTIME: PEERSERV_NOEXIST_CHKTIME;
 		ret = SwitchHand::Instance()->appendQTask(this, wait_time_sec + s_my_svrid*200);
 		m_inqueue = (0 == ret);
 		ERRLOG_IF1(ret, "APPENDQTASK| msg=append fail| ret=%d", ret);
@@ -108,7 +108,7 @@ int RemoteServ::appendTimerq( void )
 	return ret;
 }
 
-int RemoteServ::taskRun( int flag, long p2 )
+int PeerServ::taskRun( int flag, long p2 )
 {
 	// 向远端serv发起连接
 	// 先检查是否已有同一ID的远端serv,有则无需发起
@@ -120,7 +120,7 @@ int RemoteServ::taskRun( int flag, long p2 )
 	CliMgr::AliasCursor finder(alias_beg, alias_end);
 	CliBase* serv = NULL;
 
-	LOGDEBUG("REMOTESRUN| %s", CliMgr::Instance()->selfStat(true).c_str());
+	LOGDEBUG("PEERSRUN| %s", CliMgr::Instance()->selfStat(true).c_str());
 	if ( (serv = finder.pop()) )
 	{
 		if (s_my_svrid < m_svrid)
@@ -135,13 +135,13 @@ int RemoteServ::taskRun( int flag, long p2 )
 
 			m_existLink = true;
 		}
-		//LOGDEBUG("REMOTES_RUN| msg=remote serv aliving| svr=%s", serv->m_idProfile.c_str());
+		//LOGDEBUG("PEERS_RUN| msg=remote serv aliving| svr=%s", serv->m_idProfile.c_str());
 	}
 	else
 	{
 		if (0 == m_stage && INVALID_FD != m_cliFd)
 		{
-			LOGERROR("REMOTES_RUN| msg=unexcepct flow| sock=%d| mi=%s", Sock::geterrno(m_cliFd), m_idProfile.c_str());
+			LOGERROR("PEERS_RUN| msg=unexcepct flow| sock=%d| mi=%s", Sock::geterrno(m_cliFd), m_idProfile.c_str());
 			throw OffConnException("cliFd not null at stage0");
 		}
 
@@ -173,7 +173,7 @@ int RemoteServ::taskRun( int flag, long p2 )
 }
 
 // 准备好发送的包,等连接OK后发出
-int RemoteServ::prepareWhoIam( void )
+int PeerServ::prepareWhoIam( void )
 {
 	string whoIamJson;
 
@@ -192,11 +192,11 @@ int RemoteServ::prepareWhoIam( void )
 	obf->setData(CMD_IAMSERV_REQ, ++m_seqid, whoIamJson.c_str(), whoIamJson.length());
 	if (!m_oBuffq.append(obf))
 	{
-		LOGERROR("REMOTES_WAI| msg=append to oBuffq fail| len=%d| mi=%s", m_oBuffq.size(), m_cliName.c_str());
+		LOGERROR("PEERS_WAI| msg=append to oBuffq fail| len=%d| mi=%s", m_oBuffq.size(), m_cliName.c_str());
 		delete obf;
 		throw OffConnException("oBuffq.append fail");
 	}
-	LOGDEBUG("REMOTES_WAI| msg=send iamserv req| mi=%s", m_cliName.c_str());
+	LOGDEBUG("PEERS_WAI| msg=send iamserv req| mi=%s", m_cliName.c_str());
 
 	return 0;
 }

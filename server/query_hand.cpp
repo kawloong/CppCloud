@@ -137,8 +137,6 @@ int QueryHand::on_CMD_TESTING_REQ( IOHand* iohand, const Value* doc, unsigned se
 	}
 	else if (cmd == "routeto")
 	{
-		#define RJSON_GETINT(keyname, node) Rjson::GetInt(keyname, #keyname, node)
-		#define RJSON_GETINT_D(keyname, node) int keyname=0; Rjson::GetInt(keyname, #keyname, node)
 		RJSON_GETINT_D(cmdid, doc);
 		RJSON_GETINT_D(toSvr, doc);
 		RJSON_GETINT_D(fromSvr, doc);

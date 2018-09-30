@@ -170,11 +170,13 @@ int BroadCastCli::toWorld( Document& doc, unsigned cmdid, unsigned seqid )
 int BroadCastCli::toWorld( const string& jsonmsg, unsigned cmdid, unsigned seqid )
 {
     Document doc;
+
     if (doc.Parse(jsonmsg.c_str()).HasParseError()) 
     {
         throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, "jsonmsg json invalid");
     }
 
+    if (0 == seqid) seqid = ++m_seqid;
     return toWorld(doc, cmdid, seqid);
 }
 
@@ -186,6 +188,7 @@ int BroadCastCli::OnBroadCMD( void* ptr, unsigned cmdid, void* param )
     CMDID2FUNCALL_CALL(CMD_BROADCAST_REQ)
     CMDID2FUNCALL_CALL(CMD_CLIERA_REQ)
     CMDID2FUNCALL_CALL(CMD_CLIERA_RSP)
+    CMDID2FUNCALL_CALL(CMD_UPDATEERA_REQ)
 
     return -5;
 }
@@ -375,6 +378,7 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
     return ret;
 }
 
+
 /**
  * 协议格式:
  * {"to": 123, "from": 234, "differa": "xxx", "refer_path": "xxx", "act_path": "xx"}
@@ -444,8 +448,14 @@ int BroadCastCli::on_CMD_CLIERA_RSP( IOHand* iohand, const Value* doc, unsigned 
     ERRLOG_IF1RET_N(ret || NULL==pdatas || from <= 0, -30, "CLIERA_RSP| msg=no data(%s)| my_svrid=%d", Rjson::ToString(doc).c_str(), s_my_svrid);
     DEBUG_TRACE("e. get cliera resp: %s", Rjson::ToString(doc).c_str());
 
+    return UpdateCliProps(pdatas, from);
+}
+
+int BroadCastCli::UpdateCliProps( const Value* pdatas, int from )
+{
     string strappid;
     const Value* item = NULL;
+    int ret = 0;
     for (int i = 0; 0 == Rjson::GetObject(&item, i, pdatas); ++i)
     {
         if (!item) break;
@@ -458,8 +468,6 @@ int BroadCastCli::on_CMD_CLIERA_RSP( IOHand* iohand, const Value* doc, unsigned 
             }
             else
             {
-                LOGWARN("CLIERA_RSP| msg=more cli than broadcast report| appid=%s| servid=%d", strappid.c_str(), from);
-
                 OuterCli* outcli = new OuterCli;
                 outcli->init(from);
                 outcli->unserialize(item);
@@ -483,3 +491,38 @@ string BroadCastCli::GetDebugTrace( void )
 {
     return s_debugTrace;
 }
+
+/**
+ * @summery: 主动广播推送本Serv内的Cli实时变化
+ * @format: { from:12, to:23, path:"12>34>", jump: 2,
+ *            down:[..], // 下线的svrid
+ *            up:[..] }  // 在线的svrid
+ **/
+int BroadCastCli::on_CMD_UPDATEERA_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
+{
+    int ret = 0;
+    int tmpsvr = 0;
+    const Value* downlist = NULL;
+    const Value* uplist = NULL;
+
+    if (0 == Rjson::GetArray(&downlist, UPDATE_CLIPROP_DOWNKEY, doc))
+    {
+        for (int i = 0; 0 == Rjson::GetInt(tmpsvr, i, downlist); ++i)
+        {
+            CliBase* cliptr = CliMgr::Instance()->getChildBySvrid(tmpsvr);
+            if (cliptr && !cliptr->isLocal())
+            {
+                CliMgr::Instance()->removeAliasChild(cliptr, true);
+            }
+        }
+    }
+
+    if (0 == Rjson::GetArray(&uplist, UPDATE_CLIPROP_UPKEY, doc))
+    {
+        RJSON_GETINT_D(from, doc);
+        ret = UpdateCliProps(uplist, from);
+    }
+
+    return ret;
+}
+

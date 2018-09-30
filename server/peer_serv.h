@@ -1,13 +1,13 @@
 /*-------------------------------------------------------------------------
-FileName     : remote_serv.h
+FileName     : peer_serv.h
 Description  : 分布式的除自身外的服务端
 remark       : 远端serv的别名引用是serv_nnn
 Modification :
 --------------------------------------------------------------------------
    1、Date  2018-09-10       create     hejl 
 -------------------------------------------------------------------------*/
-#ifndef _REMOTE_SERV_H_
-#define _REMOTE_SERV_H_
+#ifndef _PEER_SERV_H_
+#define _PEER_SERV_H_
 #include "iohand.h"
 #include <string>
 
@@ -15,12 +15,12 @@ using namespace std;
 
 
 
-class RemoteServ: public IOHand
+class PeerServ: public IOHand
 {
 public:
-    HEPCLASS_DECL(RemoteServ, RemoteServ);
-    RemoteServ(void);
-    virtual ~RemoteServ(void);
+    HEPCLASS_DECL(PeerServ, PeerServ);
+    PeerServ(void);
+    virtual ~PeerServ(void);
 
 	static void Init( int mysvrid );
 	int init( const string& rhost, int port, int epfd );

@@ -46,6 +46,13 @@ class ScommCli2(ScommCli):
                 self.svrid = rspmsg["svrid"]
                 print('svrid setto %d'%self.svrid)
                 continue
+            if 0 == rspcmd: # 断开,重连
+                if self.checkConn() <=0:
+                    time.sleep(5)
+                else:
+                    self.sndQ.put( self.whoami_str() )
+                continue
+
             if rspcmd > CMDID_MID:
                 cQ = self.waitRspQMap.pop(seqid)
             elif CMD_EXCHANG_REQ == rspcmd:

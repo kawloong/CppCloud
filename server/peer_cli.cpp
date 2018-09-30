@@ -2,30 +2,30 @@
 #include "comm/strparse.h"
 #include "climanage.h"
 #include "exception.h"
-#include "remote_cli.h"
+#include "peer_cli.h"
 #include "iohand.h"
-#include "remote_serv.h"
+#include "peer_serv.h"
 
-HEPMUTICLASS_IMPL(RemoteCli, RemoteCli, HEpBase)
+HEPMUTICLASS_IMPL(PeerCli, PeerCli, HEpBase)
 
-int RemoteCli::s_my_svrid = 0;
-RemoteCli::RemoteCli(void): m_iohand(NULL)
+int PeerCli::s_my_svrid = 0;
+PeerCli::PeerCli(void): m_iohand(NULL)
 {
 
 }
 
-RemoteCli::~RemoteCli(void)
+PeerCli::~PeerCli(void)
 {
     m_iohand = NULL;
     // 删除各cli .. wait实现
 }
 
-void RemoteCli::Init( int mysid )
+void PeerCli::Init( int mysid )
 {
     s_my_svrid = mysid;
 }
 
-int RemoteCli::onEvent( int evtype, va_list ap )
+int PeerCli::onEvent( int evtype, va_list ap )
 {
 	int ret = 0;
 	if (HEPNTF_INIT_PARAM == evtype)
@@ -47,7 +47,7 @@ int RemoteCli::onEvent( int evtype, va_list ap )
 
 // return 1 上层IOHand将会继续调用IOHand::cmdProcess()处理
 // 注意: 如返回1,则body应该只读,不能改写.
-int RemoteCli::cmdHandle( unsigned cmdid, unsigned seqid, char* body )
+int PeerCli::cmdHandle( unsigned cmdid, unsigned seqid, char* body )
 {
 #define CMDID2FUNCALL1(CMDID)                                                              \
     if(CMDID==cmdid) { Document doc;                                                      \
@@ -62,7 +62,7 @@ int RemoteCli::cmdHandle( unsigned cmdid, unsigned seqid, char* body )
     return 1;
 }
 
-int RemoteCli::on_CMD_IAMSERV_REQ( const Value* doc, unsigned seqid )
+int PeerCli::on_CMD_IAMSERV_REQ( const Value* doc, unsigned seqid )
 {
     int ret;
 
@@ -103,14 +103,14 @@ int RemoteCli::on_CMD_IAMSERV_REQ( const Value* doc, unsigned seqid )
     return 0;
 }
 
-int RemoteCli::on_CMD_IAMSERV_RSP( const Value* doc, unsigned seqid )
+int PeerCli::on_CMD_IAMSERV_RSP( const Value* doc, unsigned seqid )
 {
     int ret;
     int nsvrid = 0;
 
-    RemoteServ* rsev = dynamic_cast<RemoteServ*>(m_iohand);
+    PeerServ* rsev = dynamic_cast<PeerServ*>(m_iohand);
     NormalExceptionOff_IFTRUE(NULL==rsev, 400, CMD_IAMSERV_RSP, seqid, 
-            "iohand type must RemoteServ class");
+            "iohand type must PeerServ class");
 
     string strsvrid0 = m_iohand->getProperty(CONNTERID_KEY); // 假如此消息发生多次,svrid要一样
     ret = m_iohand->Json2Map(doc);

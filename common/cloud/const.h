@@ -36,11 +36,14 @@ const char ROUTE_MSG_KEY_REFPATH[] = "refer_path";
 const char ROUTE_MSG_KEY_TRAIL[] = "path";
 const char ROUTE_MSG_KEY_JUMP[] = "jump";
 
+const char UPDATE_CLIPROP_UPKEY[] = "up";
+const char UPDATE_CLIPROP_DOWNKEY[] = "down";
+
 const int SERV_CLITYPE_ID = 1;
 const int CLI_KEEPALIVE_TIME_SEC = 60*10;
 const int CLI_DEAD_TIME_SEC = 60*20;
 const int BROADCASTCLI_INTERVAL_SEC = 60*2;
-const int REMOTESERV_EXIST_CHKTIME = 500*1000; // ms unit
-const int REMOTESERV_NOEXIST_CHKTIME = 20*1000; // ms unit
+const int PEERSERV_EXIST_CHKTIME = 500*1000; // ms unit
+const int PEERSERV_NOEXIST_CHKTIME = 20*1000; // ms unit
 
 #endif

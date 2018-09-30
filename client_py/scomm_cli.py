@@ -38,7 +38,7 @@ class ScommCli(object):
                 ret = self.cli.connect(self.svraddr)
                 print('connect tcp to %s, result %s'% (self.svraddr,ret) )
             except socket.error, e:
-                print('connect %s fail: %s', (self.svraddr,e))
+                print('connect %s fail: %s'%(str(self.svraddr),e))
                 return 0
             
             self.step = 1
@@ -75,15 +75,16 @@ class ScommCli(object):
             return 0, 0, ''
 
         try:
-            headstr = self.cli.recv(g_headlen)
+            headstr = '' # self.cli.recv(g_headlen)
             while len(headstr) < g_headlen: # 在慢网环境
-                headstr += self.cli.recv(g_headlen - len(headstr))
+                recvmsg = self.cli.recv(g_headlen - len(headstr))
+                headstr += recvmsg
+                # 当收到空时,可能tcp连接已断开
+                if len(recvmsg) <= 0:
+                    self.close();
+                    return 0,0,0                    
             
             ver, headlen, bodylen, cmdid, seqid = struct.unpack("!bbIHH", headstr)
-            #bodylen = socket.ntohs(bodylen)
-            #cmdid = socket.ntohs(cmdid)
-            #seqid = socket.ntohs(seqid)
-
             if ver != g_version or headlen != g_headlen or bodylen > 1024*1024*5:
                 print("Recv Large Package| ver=%d headlen=%d bodylen=%d cmdid=0x%X"%(ver, headlen, bodylen, cmdid))
 
@@ -93,9 +94,7 @@ class ScommCli(object):
 
         except socket.error, e:
             print('except happen ', e)
-            self.cli.close()
-            self.cli = None
-            self.step = 0
+            self.close()
             return 0, 0, ('sockerr %s' % e)
         
         if (tomap):

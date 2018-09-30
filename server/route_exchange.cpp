@@ -14,7 +14,7 @@ HEPCLASS_IMPL_FUNC_END
 
 int RouteExchage::s_my_svrid = 0;
 #define RouteExException_IFTRUE_EASY(cond, resonstr) \
-    RouteExException_IFTRUE(cond, cmdid, seqid, s_my_svrid, 0, resonstr, "")
+    RouteExException_IFTRUE(cond, cmdid, seqid, s_my_svrid, from, resonstr, "")
 
 RouteExchage::RouteExchage( void )
 {

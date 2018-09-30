@@ -23,6 +23,7 @@ int IOHand::Init( void )
 {
 	// 前置拦截器
 	s_cmdid2interceptor[CMD_BROADCAST_REQ] = "BroadCastCli::TransToAll";
+	s_cmdid2interceptor[CMD_UPDATEERA_REQ] = "BroadCastCli::TransToAll";
 	s_cmdid2interceptor[CMD_TESTING_REQ] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_TESTING_RSP] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_CLIERA_REQ] = "RouteExchage::TransMsg";
@@ -42,13 +43,14 @@ int IOHand::Init( void )
 	s_cmdid2clsname[CMD_KEEPALIVE_REQ] = "BegnHand::on_CMD_KEEPALIVE_REQ";
 	s_cmdid2clsname[CMD_KEEPALIVE_RSP] = "BegnHand::on_CMD_KEEPALIVE_RSP";
 
-	s_cmdid2clsname[CMD_IAMSERV_REQ] = "RemoteCli"; // 中心端报告身份
-	s_cmdid2clsname[CMD_IAMSERV_RSP] = "RemoteCli";
+	s_cmdid2clsname[CMD_IAMSERV_REQ] = "PeerCli"; // 中心端报告身份
+	s_cmdid2clsname[CMD_IAMSERV_RSP] = "PeerCli";
 
 	s_cmdid2clsname[CMD_BROADCAST_REQ] = "BroadCastCli::OnBroadCMD"; // 中心端报告身份
 	s_cmdid2clsname[CMD_BROADCAST_RSP] = "BegnHand::DisplayMsg";
 	s_cmdid2clsname[CMD_CLIERA_REQ] = "BroadCastCli::OnBroadCMD"; 
-	s_cmdid2clsname[CMD_CLIERA_RSP] = "BroadCastCli::OnBroadCMD"; 
+	s_cmdid2clsname[CMD_CLIERA_RSP] = "BroadCastCli::OnBroadCMD";
+	s_cmdid2clsname[CMD_UPDATEERA_REQ] = "BroadCastCli::OnBroadCMD";
 
 	s_cmdid2clsname[0] = "BegnHand::ProcessOne"; // default handle class
 
@@ -415,6 +417,11 @@ string IOHand::getProperty( const string& key )
 	return "";
 }
 
+string IOHand::getERAstr( void )
+{
+	return _F("%s:%d:%d ", getProperty(CONNTERID_KEY).c_str(), 
+		m_era, getIntProperty("atime"));
+}
 
 int IOHand::driveClose( const string& reason )
 {
