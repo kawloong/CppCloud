@@ -56,6 +56,7 @@ namespace CloudConf
     FUNC_STR_CONF(CppCloudListenClass);
     FUNC_INT_CONF(CppCloudServID); // 控制中心自身的svrid
     FUNC_STR_CONF(CppCloudPeerNode); // 分布式其他serv: 192.168.10.44:3303|192.168.10.55:3409
+    FUNC_STR_CONF(CppCloudConfPath); 
 };
 
 #endif

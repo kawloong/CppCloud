@@ -111,6 +111,7 @@ FUNC_INT_CONF_IMP(CppCloudTaskQNum, "cloud_serv", "taskqnum", 1);
 FUNC_STR_CONF_IMP(CppCloudListenClass, "cloud_serv", "listen_class", "Lisn");
 FUNC_INT_CONF_IMP(CppCloudServID, "cloud_serv", "servid", 1);
 FUNC_STR_CONF_IMP(CppCloudPeerNode, "cloud_serv", "peernode", ""); 
+FUNC_STR_CONF_IMP(CppCloudConfPath, "cloud_serv", "conf_path", "conf");
 
 }
 
