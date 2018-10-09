@@ -10,6 +10,7 @@
 #include "exception.h"
 #include "broadcastcli.h"
 #include "route_exchange.h"
+#include "hocfg_mgr.h"
 
 HEPCLASS_IMPL_FUNC(QueryHand, ProcessOne)
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
@@ -49,6 +50,7 @@ int QueryHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 	CMDID2FUNCALL_CALL(CMD_GETCLI_REQ);
 	CMDID2FUNCALL_CALL(CMD_GETLOGR_REQ);
 	CMDID2FUNCALL_CALL(CMD_GETWARN_REQ);
+	CMDID2FUNCALL_CALL(CMD_GETCONFIG_REQ);
 	CMDID2FUNCALL_CALL(CMD_TESTING_REQ);
 	
 	return 0;
@@ -107,7 +109,7 @@ int QueryHand::on_CMD_GETLOGR_REQ( IOHand* parent, const Value* doc, unsigned se
 	return ret;
 }
 
-// request format: { "filter_key": "warn", "filter_val":"ng" }
+// request format: { "filter_key": "warn", "filter_val":"ng"}
 int QueryHand::on_CMD_GETWARN_REQ( IOHand* parent, const Value* doc, unsigned seqid )
 {
 	string filter_key;
@@ -120,6 +122,21 @@ int QueryHand::on_CMD_GETWARN_REQ( IOHand* parent, const Value* doc, unsigned se
 	outstr += "}";
 	
 	int ret = parent->sendData(CMD_GETWARN_RSP, seqid, outstr.c_str(), outstr.length(), true);
+	return ret;
+}
+
+// request format: { "file_pattern": "app1-dev", "key_pattern":"/", "incbase": 1  }
+int QueryHand::on_CMD_GETCONFIG_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
+{
+	RJSON_GETINT_D(incbase, doc);
+	RJSON_GETSTR_D(file_pattern, doc);
+	RJSON_GETSTR_D(key_pattern, doc);
+
+	int ret;
+	string result;
+	ret = HocfgMgr::Instance()->query(result, file_pattern, key_pattern, incbase);
+
+	ret = iohand->sendData(CMD_GETCONFIG_RSP, seqid, result.c_str(), result.length(), true);
 	return ret;
 }
 

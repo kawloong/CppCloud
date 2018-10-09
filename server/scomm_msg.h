@@ -27,6 +27,7 @@ enum command_id_t
     CMD_CLIERA_REQ = 0x000B,
     CMD_TESTING_REQ = 0x000C,
     CMD_UPDATEERA_REQ = 0x000D,
+    CMD_GETCONFIG_REQ = 0x000E, // 查询分布式配置
 
     CMDID_MID = 0x1000,
 
@@ -43,6 +44,7 @@ enum command_id_t
     CMD_CLIERA_RSP = 0x100B,
     CMD_TESTING_RSP = 0x100C,
     CMD_UPDATEERA_RSP = 0x100D,
+    CMD_GETCONFIG_RSP = 0x100E,
 };
 
 static const unsigned char g_msg_ver = 1;

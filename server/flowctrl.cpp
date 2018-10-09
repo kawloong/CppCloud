@@ -7,6 +7,7 @@
 #include "switchhand.h"
 #include "keepaliver.h"
 #include "route_exchange.h"
+#include "hocfg_mgr.h"
 
 HEPCLASS_IMPL(PeerMgr, PeerMgr);
 
@@ -49,6 +50,8 @@ int FlowCtrl::init(int tskqNum)
 
         if (0 == ret)
         {
+            ret = HocfgMgr::Instance()->init(CloudConf::CppCloudConfPath());
+            ERRLOG_IF1RET_N(ret, ret, "HOCFGINIT| msg=init fail %d| confpath=%s", ret, CloudConf::CppCloudConfPath().c_str());
             SwitchHand::Instance()->init(m_hepo->getEPfd());
             KeepAliver::Instance()->init();
             RouteExchage::Init(CloudConf::CppCloudServID());

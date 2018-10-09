@@ -36,12 +36,17 @@ public:
 	int init( const string& conf_root );
 	void uninit( void );
 
+	int query( string& result, const string& file_pattern, const string& key_pattern, bool incBase );
+
 private:
 	int loads( const string& dirpath );
 	bool getBaseConfigName( string& baseCfg, const string& curCfgName );
+	AppConfig* getConfigByName( const string& curCfgName );
 
 	int parseConffile( const string& filename, const string& contant, time_t mtime );
 	int mergeJsonFile( Value* node0, const Value* node1, MemoryPoolAllocator<>& allc );
+	int queryByKeyPattern( string& result, const Value* jdoc, 
+		const string& file_pattern, const string& key_pattern ); // 输入json-key返回对应value
 
 private:
 	string m_cfgpath;

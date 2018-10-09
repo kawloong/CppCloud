@@ -1,6 +1,7 @@
 #include "hocfg_mgr.h"
 #include "comm/file.h"
 #include "cloud/const.h"
+#include "comm/strparse.h"
 #include <fstream>
 #include <sstream>
 #include <sys/types.h>
@@ -20,10 +21,10 @@ HocfgMgr::~HocfgMgr( void )
 
 int HocfgMgr::init( const string& conf_root )
 {
-    ERRLOG_IF1RET_N(File::Isdir(conf_root.c_str()), -40, "CONFIGINIT| msg=path invalid| conf_root=%s", conf_root.c_str());
+    ERRLOG_IF1RET_N(!File::Isdir(conf_root.c_str()), -40, "CONFIGINIT| msg=path invalid| conf_root=%s", conf_root.c_str());
     m_cfgpath = conf_root;
     File::AdjustPath(m_cfgpath, true, '/');
-    return 0;
+    return loads(m_cfgpath);
 }
 
 void HocfgMgr::uninit( void )
@@ -53,7 +54,9 @@ int HocfgMgr::loads( const string& dirpath )
             continue;
         }
 
-        string item = dirpath + "/" + pfile->d_name;
+        string item = dirpath;
+        StrParse::AdjustPath(item, true, '/');
+        item += pfile->d_name;
         
         if (File::Isfile(item.c_str()))
         {
@@ -78,7 +81,7 @@ int HocfgMgr::loads( const string& dirpath )
     return ret;
 }
 
-// 获取父级继承关系, 多个父级以空格分隔
+// 获取父级继承关系, 多个父级以空格分隔, 继承顺序由高至低(即祖父 父 子)
 bool HocfgMgr::getBaseConfigName( string& baseCfg, const string& curCfgName )
 {
     int ret = -1;
@@ -102,8 +105,13 @@ int HocfgMgr::parseConffile( const string& filename, const string& contant, time
     map<string, AppConfig*>::iterator itr = m_Allconfig.find(filename);
     if (m_Allconfig.end() == itr)
     {
+        const size_t pathlen = m_cfgpath.length();
+        size_t pos1 = filename.find(m_cfgpath);
+        size_t pos2 = filename.find(".json");
+        string key = (0 == pos1 && pos2 > pathlen)? filename.substr(pathlen, pos2-pathlen): filename;
+
         papp = new AppConfig;
-        m_Allconfig[filename] = papp;
+        m_Allconfig[key] = papp;
         papp->mtime = mtime;
         papp->doc.Parse(contant.c_str());
     }
@@ -124,13 +132,13 @@ int HocfgMgr::parseConffile( const string& filename, const string& contant, time
 int HocfgMgr::mergeJsonFile( Value* node0, const Value* node1, MemoryPoolAllocator<>& allc )
 {
     ERRLOG_IF1RET_N(!node1->IsObject(), -45, "MERGEJSON| msg=node1 not object| node1=%s", Rjson::ToString(node1).c_str());
-    Document doc;
+
 
     Value::ConstMemberIterator itr = node1->MemberBegin();
     for (; itr != node1->MemberEnd(); ++itr)
     {
         const char* key = itr->name.GetString();
-        if (node0->HasMember(key))
+        if (node0->HasMember(key)) // 后面可以考虑Object类型的合并?
         {
             node0->RemoveMember(key);
         }
@@ -145,9 +153,114 @@ int HocfgMgr::mergeJsonFile( Value* node0, const Value* node1, MemoryPoolAllocat
     return 0;
 }
 
-// 分布式配置查询, file_pattern每个token以-分隔, key_pattern每个token以/分隔
-
-int HocfgMgr::query( string& result, const string& file_pattern, const string& key_pattern )
+AppConfig* HocfgMgr::getConfigByName( const string& curCfgName )
 {
+    map<string, AppConfig*>::iterator itr = m_Allconfig.find(curCfgName);
+    AppConfig* papp = (m_Allconfig.end() == itr)? NULL: itr->second;
+    return papp;
+}
 
+// 分布式配置查询, file_pattern每个token以-分隔, key_pattern每个token以/分隔
+// 返回的字符串可能是 {object} [array] "string" integer null
+int HocfgMgr::query( string& result, const string& file_pattern, const string& key_pattern, bool incBase )
+{
+    int ret = 0;
+
+    do
+    {
+        string baseStr;
+        
+        if (incBase && getBaseConfigName(baseStr, file_pattern))
+        {
+            Document doc;
+            vector<string> vecBase;
+            ret = StrParse::SpliteStr(vecBase, baseStr, ' ');
+            ERRLOG_IF1BRK(ret, -48, "HOCFGQUERY| msg=invalid basestr setting| "
+                "baseStr=%s| filep=%s", baseStr.c_str(), file_pattern.c_str());
+            
+            doc.SetObject();
+            vecBase.push_back(file_pattern);
+            vector<string>::const_iterator vitr = vecBase.begin();
+            for (; vitr != vecBase.end(); ++vitr)
+            {
+                AppConfig* pnod1 = getConfigByName(*vitr);
+                if (pnod1)
+                {
+                    ret = mergeJsonFile(&doc, &pnod1->doc, doc.GetAllocator());
+                    WARNLOG_IF1(ret, "HOCFGQUERY| msg=merge %s into %s fail", (*vitr).c_str(), file_pattern.c_str());
+                }
+            }
+
+            if (key_pattern.empty() || "/" == key_pattern) // 返回整个文件
+            {
+                result = Rjson::ToString(&doc);
+                break;
+            }
+
+            ret = queryByKeyPattern(result, &doc, file_pattern, key_pattern);
+        }
+        else // 仅当前文件查找
+        {
+            AppConfig *pconf = getConfigByName(file_pattern);
+            if (NULL == pconf)
+            {
+                result = "null";
+                break;
+            }
+
+            if (key_pattern.empty() || "/" == key_pattern) // 返回整个文件
+            {
+                result = Rjson::ToString(&pconf->doc);
+                break;
+            }
+
+            ret = queryByKeyPattern(result, &pconf->doc, file_pattern, key_pattern);
+        }
+
+    }
+    while(0);
+    return ret;
+}
+
+int HocfgMgr::queryByKeyPattern( string& result, const Value* jdoc, const string& file_pattern, const string& key_pattern )
+{
+    int ret = 0;
+
+    do
+    {
+        vector<string> vecPattern;
+        ret = StrParse::SpliteStr(vecPattern, key_pattern, '/');
+        ERRLOG_IF1BRK(ret || vecPattern.empty(), -46, 
+            "HOCFGQUERY| msg=key_pattern invalid| key=%s| filep=%s", 
+            key_pattern.c_str(), file_pattern.c_str());
+
+        const Value* pval = jdoc;
+        const Value* ptmp = NULL;
+        vector<string>::const_iterator vitr = vecPattern.begin();
+        for (; vitr != vecPattern.end(); ++vitr)
+        {
+            const string& token = *vitr;
+            if (token.empty() || "/" == token || " " == token) continue;
+            ret = Rjson::GetValue(&ptmp, token.c_str(), pval);
+            if (ret && StrParse::IsNumberic(token)) // 尝试访问数组
+            {
+                ret = Rjson::GetValue(&ptmp, atoi(token.c_str()), pval);
+            }
+            if (ret) // 获取不到时
+            {
+                LOGWARN("HOCFGQUERY| msg=no key found in json|  key=%s| filep=%s", 
+                    key_pattern.c_str(), file_pattern.c_str());
+                ret = -47;
+                pval = NULL;
+                break;
+            }
+
+            pval = ptmp;
+            ptmp = NULL;
+        }
+
+        result = pval? Rjson::ToString(pval): "null";
+    }
+    while(0);
+    return ret;
 }
