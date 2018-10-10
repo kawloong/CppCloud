@@ -28,6 +28,9 @@ int IOHand::Init( void )
 	s_cmdid2interceptor[CMD_TESTING_RSP] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_CLIERA_REQ] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_CLIERA_RSP] = "RouteExchage::TransMsg";
+	s_cmdid2interceptor[CMD_HOCFGNEW_RSP] = "RouteExchage::TransMsg";
+	s_cmdid2interceptor[CMD_SETCONFIG2_REQ] = "RouteExchage::TransMsg";
+	s_cmdid2interceptor[CMD_SETCONFIG3_REQ] = "BroadCastCli::TransToAll"; // 广播
 
 
 	// 消息->处理类
@@ -42,6 +45,8 @@ int IOHand::Init( void )
 	s_cmdid2clsname[CMD_TESTING_REQ] = "QueryHand::ProcessOne";
 	s_cmdid2clsname[CMD_GETCONFIG_REQ] = "QueryHand::ProcessOne";
 	s_cmdid2clsname[CMD_SETCONFIG_REQ] = "HocfgMgr::OnSetConfigHandle";
+	s_cmdid2clsname[CMD_SETCONFIG2_REQ] = "HocfgMgr::OnSetConfigHandle";
+	s_cmdid2clsname[CMD_SETCONFIG3_REQ] = "HocfgMgr::OnSetConfigHandle";
 	s_cmdid2clsname[CMD_GETCFGNAME_REQ] = "HocfgMgr::OnGetAllCfgName";
 	s_cmdid2clsname[CMD_KEEPALIVE_REQ] = "BegnHand::on_CMD_KEEPALIVE_REQ";
 	s_cmdid2clsname[CMD_KEEPALIVE_RSP] = "BegnHand::on_CMD_KEEPALIVE_RSP";
@@ -51,6 +56,7 @@ int IOHand::Init( void )
 
 	s_cmdid2clsname[CMD_BROADCAST_REQ] = "BroadCastCli::OnBroadCMD"; // 中心端报告身份
 	s_cmdid2clsname[CMD_BROADCAST_RSP] = "BegnHand::DisplayMsg";
+	s_cmdid2clsname[CMD_HOCFGNEW_RSP] = "BegnHand::DisplayMsg";
 	s_cmdid2clsname[CMD_CLIERA_REQ] = "BroadCastCli::OnBroadCMD"; 
 	s_cmdid2clsname[CMD_CLIERA_RSP] = "BroadCastCli::OnBroadCMD";
 	s_cmdid2clsname[CMD_UPDATEERA_REQ] = "BroadCastCli::OnBroadCMD";

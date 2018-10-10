@@ -281,7 +281,8 @@ int HocfgMgr::queryByKeyPattern( string& result, const Value* jdoc, const string
     return ret;
 }
 
-/**
+/** 
+ * request: by CMD_SETCONFIG_REQ CMD_SETCONFIG2_REQ CMD_SETCONFIG3_REQ
  * remart: 如果没有contents,则是删除
  * format: { filename: "", mtime: 123456, contents: {..} }
  **/
@@ -384,7 +385,7 @@ int HocfgMgr::compareServHoCfg( int fromSvrid, const Value* jdoc )
 {
     ERRLOG_IF1RET_N(!jdoc->IsObject(), -50, "HOCFGCMP| msg=cfgera isnot jobject| ");
 
-    string reqmsg("[");
+    string reqmsg("{\"data\":[");
     int count = 0;
     Value::ConstMemberIterator itr = jdoc->MemberBegin();
     for (; itr != jdoc->MemberEnd(); ++itr)
@@ -400,7 +401,47 @@ int HocfgMgr::compareServHoCfg( int fromSvrid, const Value* jdoc )
             ++count;
         }
     }
-    reqmsg += "]";
+    reqmsg += "]}";
     
     return count>0 ? RouteExchage::PostToCli(reqmsg, CMD_HOCFGNEW_REQ, ++m_seqid, fromSvrid) : 0;
 }
+
+int HocfgMgr::OnCMD_HOCFGNEW_REQ( void* ptr, unsigned cmdid, void* param )
+{
+    MSGHANDLE_PARSEHEAD(false)
+    int from = 0;
+    const Value* arrdoc = NULL;
+
+    int ret = Rjson::GetArray(&arrdoc, "data", &doc);
+    Rjson::GetInt(from, ROUTE_MSG_KEY_FROM, &doc);
+    ERRLOG_IF1RET_N(ret, -51, "HOCFGNEWREQ| msg=json[data] invalid| from=%d", from);
+
+    int size = arrdoc->Size();
+    int okcount = 0;
+    for (int i=0; i < size; ++i)
+    {
+        string fname;
+        if (0 == Rjson::GetStr(fname, i, arrdoc))
+        {
+            AppConfig* pcfg = This->getConfigByName(fname);
+            if (NULL == pcfg) continue;
+
+            // 响应对应于 HocfgMgr::OnSetConfigHandle 消费
+            string msgrsp("{");
+            StrParse::PutOneJson(msgrsp, "callby", "cfg_newer", true);
+            StrParse::PutOneJson(msgrsp, "filename", fname, true);
+            StrParse::PutOneJson(msgrsp, "mtime", pcfg->mtime, true);
+            StrParse::PutOneJson(msgrsp, "contents", Rjson::ToString(pcfg->doc), false);
+            msgrsp += "}";
+
+            RouteExchage::PostToCli(msgrsp, CMD_SETCONFIG2_REQ, seqid, from);
+            ++okcount;
+        }
+    }
+    
+    RouteExchage::PostToCli(
+        _F("{\"desc\": \"send %d cfg out\", \"code\":0}", okcount), 
+        CMD_HOCFGNEW_RSP, seqid, from);
+    return ret;
+}
+

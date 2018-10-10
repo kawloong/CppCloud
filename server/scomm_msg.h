@@ -31,6 +31,8 @@ enum command_id_t
     CMD_SETCONFIG_REQ = 0x000F,
     CMD_GETCFGNAME_REQ = 0x0010,
     CMD_HOCFGNEW_REQ = 0x0011, // 需要新的配置
+    CMD_SETCONFIG2_REQ = 0x0012, // 单播
+    CMD_SETCONFIG3_REQ = 0x0013, // 广播
 
     CMDID_MID = 0x1000,
 
@@ -51,6 +53,8 @@ enum command_id_t
     CMD_SETCONFIG_RSP = 0x100F,
     CMD_GETCFGNAME_RSP = 0x1010,
     CMD_HOCFGNEW_RSP = 0x1011, 
+    CMD_SETCONFIG2_RSP = 0x1012,
+    CMD_SETCONFIG3_RSP = 0x1013,
 };
 
 static const unsigned char g_msg_ver = 1;

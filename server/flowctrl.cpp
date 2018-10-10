@@ -114,6 +114,7 @@ int FlowCtrl::run( bool& bexit )
         m_tskq[i].unInit();
     }
 
+    HocfgMgr::Instance()->uninit();
     PeerMgr::Instance()->uninit();
     SwitchHand::Instance()->join();
 	CliMgr::Instance()->progExitHanele(0);
