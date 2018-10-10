@@ -34,7 +34,7 @@ int HEpoll::init( void ) // int port, const char* svrhost /* = NULL*/, int lqueu
 
 int HEpoll::run( bool& bexit )
 {
-    int ret;
+    int ret = 0;
     struct epoll_event backEvs[MAX_EVENT_NUMBER];
 
     while ( !bexit )

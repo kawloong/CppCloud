@@ -19,6 +19,8 @@ public:
     static bool Isdir(const char* dirname);
     // 是否是普通文件
     static bool Isfile(const char* filename);
+    // 获取文件修改时间
+    static time_t mtime(const char* filename);
 
     // 递归创建目录
     static bool CreatDir_r(const char* path);

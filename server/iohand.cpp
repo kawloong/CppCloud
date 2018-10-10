@@ -41,6 +41,8 @@ int IOHand::Init( void )
 	s_cmdid2clsname[CMD_GETWARN_REQ] = "QueryHand::ProcessOne";
 	s_cmdid2clsname[CMD_TESTING_REQ] = "QueryHand::ProcessOne";
 	s_cmdid2clsname[CMD_GETCONFIG_REQ] = "QueryHand::ProcessOne";
+	s_cmdid2clsname[CMD_SETCONFIG_REQ] = "HocfgMgr::OnSetConfigHandle";
+	s_cmdid2clsname[CMD_GETCFGNAME_REQ] = "HocfgMgr::OnGetAllCfgName";
 	s_cmdid2clsname[CMD_KEEPALIVE_REQ] = "BegnHand::on_CMD_KEEPALIVE_REQ";
 	s_cmdid2clsname[CMD_KEEPALIVE_RSP] = "BegnHand::on_CMD_KEEPALIVE_RSP";
 

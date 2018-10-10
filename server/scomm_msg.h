@@ -28,6 +28,9 @@ enum command_id_t
     CMD_TESTING_REQ = 0x000C,
     CMD_UPDATEERA_REQ = 0x000D,
     CMD_GETCONFIG_REQ = 0x000E, // 查询分布式配置
+    CMD_SETCONFIG_REQ = 0x000F,
+    CMD_GETCFGNAME_REQ = 0x0010,
+    CMD_HOCFGNEW_REQ = 0x0011, // 需要新的配置
 
     CMDID_MID = 0x1000,
 
@@ -45,6 +48,9 @@ enum command_id_t
     CMD_TESTING_RSP = 0x100C,
     CMD_UPDATEERA_RSP = 0x100D,
     CMD_GETCONFIG_RSP = 0x100E,
+    CMD_SETCONFIG_RSP = 0x100F,
+    CMD_GETCFGNAME_RSP = 0x1010,
+    CMD_HOCFGNEW_RSP = 0x1011, 
 };
 
 static const unsigned char g_msg_ver = 1;

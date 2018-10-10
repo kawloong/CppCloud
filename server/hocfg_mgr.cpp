@@ -1,17 +1,32 @@
 #include "hocfg_mgr.h"
+#include "homacro.h"
+#include "exception.h"
+#include "iohand.h"
+#include "comm/hep_base.h"
 #include "comm/file.h"
 #include "cloud/const.h"
 #include "comm/strparse.h"
+#include "route_exchange.h"
+#include "rapidjson/filewritestream.h"
 #include <fstream>
 #include <sstream>
 #include <sys/types.h>
 #include <dirent.h>
 #include <cstring>
 #include <cerrno>
+#include <cstdio>
 
-HocfgMgr::HocfgMgr( void )
+
+HEPCLASS_IMPL_FUNCX_BEG(HocfgMgr)
+HEPCLASS_IMPL_FUNCX_MORE(HocfgMgr, OnSetConfigHandle)
+HEPCLASS_IMPL_FUNCX_MORE(HocfgMgr, OnGetAllCfgName)
+HEPCLASS_IMPL_FUNCX_END(HocfgMgr)
+
+HocfgMgr* HocfgMgr::This = NULL;
+
+HocfgMgr::HocfgMgr( void ): m_seqid(0)
 {
-
+    This = this;
 }
 
 HocfgMgr::~HocfgMgr( void )
@@ -96,24 +111,24 @@ bool HocfgMgr::getBaseConfigName( string& baseCfg, const string& curCfgName )
 }
 
 // 解析json文档进内存map
-int HocfgMgr::parseConffile( const string& filename, const string& contant, time_t mtime )
+int HocfgMgr::parseConffile( const string& filename, const string& contents, time_t mtime )
 {
     Document fdoc;
 
-    ERRLOG_IF1RET_N(fdoc.Parse(contant.c_str()).GetParseError(), -44, "CONFIGLOADS| msg=json read fail| file=%s", filename.c_str());
+    ERRLOG_IF1RET_N(fdoc.Parse(contents.c_str()).GetParseError(), -44, "CONFIGLOADS| msg=json read fail| file=%s", filename.c_str());
     AppConfig* papp = NULL;
     map<string, AppConfig*>::iterator itr = m_Allconfig.find(filename);
     if (m_Allconfig.end() == itr)
     {
         const size_t pathlen = m_cfgpath.length();
         size_t pos1 = filename.find(m_cfgpath);
-        size_t pos2 = filename.find(".json");
-        string key = (0 == pos1 && pos2 > pathlen)? filename.substr(pathlen, pos2-pathlen): filename;
+        //size_t pos2 = filename.find(".json");
+        string key = (0 == pos1/* && pos2 > pathlen*/)? filename.substr(pathlen/*, pos2-pathlen*/): filename;
 
         papp = new AppConfig;
         m_Allconfig[key] = papp;
         papp->mtime = mtime;
-        papp->doc.Parse(contant.c_str());
+        papp->doc.Parse(contents.c_str());
     }
     else
     {
@@ -121,7 +136,8 @@ int HocfgMgr::parseConffile( const string& filename, const string& contant, time
         if (papp->mtime < mtime)
         {
             papp->doc.SetObject();
-            papp->doc.Parse(contant.c_str());
+            papp->doc.Parse(contents.c_str());
+            papp->mtime = mtime;
         }
     }
 
@@ -263,4 +279,128 @@ int HocfgMgr::queryByKeyPattern( string& result, const Value* jdoc, const string
     }
     while(0);
     return ret;
+}
+
+/**
+ * remart: 如果没有contents,则是删除
+ * format: { filename: "", mtime: 123456, contents: {..} }
+ **/
+int HocfgMgr::OnSetConfigHandle( void* ptr, unsigned cmdid, void* param )
+{
+    MSGHANDLE_PARSEHEAD(false)
+    RJSON_GETSTR_D(filename, &doc);
+    RJSON_GETINT_D(mtime, &doc);
+    const Value* contents = NULL;
+    Rjson::GetValue(&contents, "contents", &doc);
+
+    NormalExceptionOn_IFTRUE(filename.empty(), 400, cmdid, seqid, "leak of filename param");
+
+    int ret = 0;
+    string desc;
+    if (NULL == contents || contents->IsNull()) // 删除操作
+    {
+        This->remove(filename); // 清除内存,同时unlink磁盘文件
+        desc = _F("remove %s success", filename.c_str());
+    }
+    else
+    {
+        filename = This->m_cfgpath + filename; // 文件名要加上本地路径来存储
+        if (0 == mtime) mtime = time(NULL);
+        ret = This->parseConffile(filename, Rjson::ToString(contents), mtime);
+        desc = (0==ret)? "success": "fail";
+        if (0 == ret)
+        {
+            ret = This->save2File(filename, contents);
+        }
+    }
+
+
+    string resp = _F("{\"code\": %d, \"desc\": \"%s\"}", ret, desc.c_str());
+    iohand->sendData(CMD_SETCONFIG_RSP, seqid, resp.c_str(), resp.length(), true);
+
+    return ret;
+}
+
+/**
+ * remart: 外部查询所有配置的名字
+ * return format: { file1: mtime1, file2: mtime2 }
+ **/
+int HocfgMgr::OnGetAllCfgName( void* ptr, unsigned cmdid, void* param )
+{
+    IOHand* iohand = (IOHand*)ptr;
+    IOBuffItem* iBufItem = (IOBuffItem*)param; 
+    unsigned seqid = iBufItem->head()->seqid;
+    
+    string resp = This->getAllCfgNameJson();
+    iohand->sendData(CMD_GETCFGNAME_RSP, seqid, resp.c_str(), resp.length(), true);
+    return 0;
+}
+
+string HocfgMgr::getAllCfgNameJson( void ) const
+{
+    string jresult("{");
+
+    map<string, AppConfig*>::const_iterator itr = m_Allconfig.begin();
+    for (int i=0; itr != m_Allconfig.end(); ++itr, ++i)
+    {
+        if (i > 0) jresult += ",";
+        StrParse::PutOneJson(jresult, itr->first, itr->second->mtime, false);
+    }
+
+    jresult += "}";
+    return jresult;
+}
+
+void HocfgMgr::remove( const string& cfgname )
+{
+    map<string,AppConfig*>::iterator it = m_Allconfig.find(cfgname);
+    if (it != m_Allconfig.end())
+    {
+        IFDELETE(it->second);
+        m_Allconfig.erase(it);
+
+        string local_file = m_cfgpath + cfgname;
+        unlink(local_file.c_str());
+    }
+}
+
+int HocfgMgr::save2File( const string& filename, const Value* doc )
+{
+    FILE* fp = NULL;
+    char buf[64];
+    fp = fopen(filename.c_str(), "w");
+    ERRLOG_IF1RET_N(fp<0, -49, "HOCFGSAVE| msg=fopen fail %d| filename=%s", errno, filename.c_str());
+    FileWriteStream osm(fp, buf, sizeof(buf));
+    PrettyWriter<FileWriteStream> writer(osm);
+    bool bret = doc->Accept(writer);
+    fclose(fp);
+    ERRLOG_IF1RET_N(!bret, -48, "HOCFGSAVE| msg=doc accept fail | filename=%s", filename.c_str());
+
+    return 0;
+}
+
+// 对比来自其他节点上的配置, 若本地过旧,则请求更新
+int HocfgMgr::compareServHoCfg( int fromSvrid, const Value* jdoc )
+{
+    ERRLOG_IF1RET_N(!jdoc->IsObject(), -50, "HOCFGCMP| msg=cfgera isnot jobject| ");
+
+    string reqmsg("[");
+    int count = 0;
+    Value::ConstMemberIterator itr = jdoc->MemberBegin();
+    for (; itr != jdoc->MemberEnd(); ++itr)
+    {
+        const char* key = itr->name.GetString();
+        int omtime = itr->value.GetInt();
+
+        AppConfig* appcfg = getConfigByName(key);
+        if (NULL == appcfg || appcfg->mtime < omtime)
+        {
+            if (count > 0) reqmsg += ",";
+            reqmsg += string("\"") + key + "\"";
+            ++count;
+        }
+    }
+    reqmsg += "]";
+    
+    return count>0 ? RouteExchage::PostToCli(reqmsg, CMD_HOCFGNEW_REQ, ++m_seqid, fromSvrid) : 0;
 }

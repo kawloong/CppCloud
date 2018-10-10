@@ -21,6 +21,8 @@ const char CLI_PREFIX_KEY_TIMEOUT[] = "atime_";
 const char CLI_PREFIX_KEY_SERV[] = "dserv";
 const char EXCLUDE_SVRID_LIST[] = "haspass";
 const char ROUTE_PATH[] = "act_path";
+const char CLIS_ERASTRING_KEY[] = "ERA";
+const char HOCFG_ERASTRING_KEY[] = "CFGERA";
 
 // 广播消息json控制Key
 const char BROARDCAST_KEY_FROM[] = "from";
@@ -39,11 +41,15 @@ const char ROUTE_MSG_KEY_JUMP[] = "jump";
 const char UPDATE_CLIPROP_UPKEY[] = "up";
 const char UPDATE_CLIPROP_DOWNKEY[] = "down";
 
+// 分布式配置
+const char HOCFG_METAFILE[] = "_meta";
+
 const int SERV_CLITYPE_ID = 1;
 const int CLI_KEEPALIVE_TIME_SEC = 60*10;
 const int CLI_DEAD_TIME_SEC = 60*20;
 const int BROADCASTCLI_INTERVAL_SEC = 60*2;
 const int PEERSERV_EXIST_CHKTIME = 500*1000; // ms unit
 const int PEERSERV_NOEXIST_CHKTIME = 20*1000; // ms unit
+
 
 #endif

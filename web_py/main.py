@@ -16,31 +16,49 @@ from client_py.scomm_cli2 import ScommCli2
 from client_py.cliconfig import config
 from client_py.const import *
 
-gScommCli = None
+gweb_cli = None
 # http server
 app = Flask(__name__)
 
 @app.route('/test')
-def tset():
+def test():
     cmd = request.args.get("cmd")
-    resp = gScommCli.request(CMD_TESTING_REQ, {
+    resp = gweb_cli.request(CMD_TESTING_REQ, {
         "cmd": cmd, "toSvr": 990})
     return resp
 
+@app.route('/confname')
+def confname():
+    return gweb_cli.request(CMD_GETCFGNAME_REQ, {})
+
+@app.route('/getconf')
+def qconf():
+    return gweb_cli.request(CMD_GETCONFIG_REQ, {
+        "file_pattern": request.args.get("file_pattern"),
+        "key_pattern": request.args.get("key_pattern"),
+        "incbase": int(request.args.get("incbase", 0))
+    })
+
+@app.route('/setconf', methods=['POST'])
+def setconf():
+    data = request.get_data()
+    #print(type(data))
+    print(request.json)
+    return gweb_cli.request(CMD_SETCONFIG_REQ, request.json)
+
 if __name__ == '__main__':
-    global gScommCli
-    gScommCli = ScommCli2( 
-        ('192.168.228.44', 4803),
+    gweb_cli = ScommCli2( 
+        ('192.168.228.44', 4800),
         clitype = 20,
-        svrid = 992,
+        svrid = 990,
         progName = "Web-Ctrl",
         progDesc = "Web-Serv(monitor)"
     )
 
-    if gScommCli.run():
+    if gweb_cli.run():
         # app.debug = True
         host = config.get('http_host', '0.0.0.0')
-        port = config.get('http_port', 800)
+        port = config.get('http_port', 80)
 
         app.response_class.default_mimetype = 'application/json; charset=utf-8'
         app.run(host=host,port=port) # , threaded=True

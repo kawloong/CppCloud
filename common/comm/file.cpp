@@ -33,6 +33,15 @@ bool File::Isfile(const char* filename)
     return (bool)S_ISREG(st.st_mode);
 }
 
+time_t File::mtime(const char* filename)
+{
+    struct stat st;
+    if(stat(filename, &st) == -1){
+        return false;
+    }
+    return (st.st_mtime);
+}
+
 bool File::CreatDir_r( const char* path )
 {
     if (NULL == path) return false;
@@ -132,7 +141,7 @@ bool File::Move( const char* srcfile, const char* dstfile )
     int result;
 
     result = rename(srcfile, dstfile);
-    if (-1 == result && ENOENT == errno) // Ä¿±êÄ¿Â¼È±ÉÙÊ±ÏÈ´´½¨
+    if (-1 == result && ENOENT == errno) // Ä¿ï¿½ï¿½Ä¿Â¼È±ï¿½ï¿½Ê±ï¿½È´ï¿½ï¿½ï¿½
     {
         string dstpath;
         GetPath(dstfile, dstpath, true);
@@ -176,7 +185,7 @@ bool File::RemoveDir(const char* dir_full_path)
 
         if(S_ISDIR(st.st_mode))
         {
-            if(!RemoveDir(sub_path.c_str())) // Èç¹ûÊÇÄ¿Â¼ÎÄ¼þ£¬µÝ¹éÉ¾³ý
+            if(!RemoveDir(sub_path.c_str())) // ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿Â¼ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½Ý¹ï¿½É¾ï¿½ï¿½
             {
                 closedir(dirp);
                 return false;
@@ -186,7 +195,7 @@ bool File::RemoveDir(const char* dir_full_path)
         }
         else if(S_ISREG(st.st_mode))
         {
-            unlink(sub_path.c_str());     // Èç¹ûÊÇÆÕÍ¨ÎÄ¼þ£¬Ôòunlink
+            unlink(sub_path.c_str());     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¨ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½unlink
         }
         else
         {

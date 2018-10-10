@@ -9,6 +9,7 @@
 #include "outer_cli.h"
 #include "outer_serv.h"
 #include "exception.h"
+#include "hocfg_mgr.h"
 
 HEPCLASS_IMPL_FUNC_BEG(BroadCastCli)
 HEPCLASS_IMPL_FUNC_MORE(BroadCastCli, TransToAll)
@@ -54,13 +55,16 @@ int BroadCastCli::qrun( int flag, long p2 )
     if (HEFG_PEXIT != flag)
     {
         string localEra = CliMgr::Instance()->getLocalClisEraString(); // 获取本地cli的当前版本
+        string hocfgEraJson = HocfgMgr::Instance()->getAllCfgNameJson();
 
         DEBUG_TRACE("2. broadcast self cliera out, era=%s", localEra.c_str());
         //if (!localEra.empty())
         {
             //ret = toWorld(s_my_svrid, 1, localEra, " ", "");
             string reqmsg("{");
-            StrParse::PutOneJson(reqmsg, "ERA", localEra);
+            StrParse::PutOneJson(reqmsg, CLIS_ERASTRING_KEY, localEra, true);
+            StrParse::AppendFormat(reqmsg, "\"%s\":", HOCFG_ERASTRING_KEY);
+            reqmsg += hocfgEraJson;
             reqmsg += "}";
             ret = toWorld(reqmsg, CMD_BROADCAST_REQ, ++m_seqid);
         }
@@ -267,13 +271,12 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
     int ret;
     int osvrid = 0;
     string era;
-    int ttl = 1;
     string str_osvrid;
     string excludeSvrid;
     string routepath;
     
     ret = Rjson::GetInt(osvrid, BROARDCAST_KEY_FROM, doc);
-    ret |= Rjson::GetStr(era, "ERA", doc);
+    ret |= Rjson::GetStr(era, CLIS_ERASTRING_KEY, doc);
     ret |= Rjson::GetStr(routepath, BROARDCAST_KEY_TRAIL, doc);
     str_osvrid = StrParse::Itoa(osvrid);
 
@@ -320,14 +323,13 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
     else
     // 2. 编号为osvrid的对象的era是否最新，否则请求获取
     {
-
-        if (2 == ttl || servptr->isLocal()) // 直连的Serv发出的广播
+        if (servptr->isLocal()) // 直连的Serv发出的广播
         {
             NormalExceptionOn_IFTRUE(near_servid!=str_osvrid, 412, CMD_BROADCAST_RSP,
                 seqid, StrParse::Format("first broadcast serv-%d should be near serv-%s ", 
                 osvrid, near_servid.c_str())); // assert
 
-            old_era = iohand->getProperty("ERA");
+            old_era = iohand->getProperty(CLIS_ERASTRING_KEY);
             DEBUG_TRACE("c2. near Serv(%d)", osvrid);
         }
         else
@@ -337,7 +339,7 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
                 seqid, StrParse::Format("servptr-%s isnot OuterServ instance ", 
                 servptr->m_idProfile.c_str())); // assert
 
-            old_era = outsvr->getProperty("ERA");
+            old_era = outsvr->getProperty(CLIS_ERASTRING_KEY);
             CliMgr::Instance()->updateCliTime(outsvr);
 
             // 更新路由信息

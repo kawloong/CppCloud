@@ -65,6 +65,15 @@ struct HEpEvFlag
 #define HEPCLASS_IMPL_FUNC_END    \
     }
 
+#define HEPCLASS_IMPL_FUNCX_BEG(clsname) \
+    static struct Reg##clsname {\
+        Reg##clsname(){
+
+#define HEPCLASS_IMPL_FUNCX_MORE(clsname, static_method_name);    \
+    HEpBase::RegisterFunc(#clsname "::" #static_method_name, &clsname::static_method_name);
+
+#define HEPCLASS_IMPL_FUNCX_END(clsname)    \
+    }} g_reg_##clsname;
 
 #define HEPCLS_STATIC_TIMER_FUN(clsname, qidx, delay_ms) \
     FlowCtrl::Instance()->appendTask(&g_##clsname, qidx, delay_ms)
