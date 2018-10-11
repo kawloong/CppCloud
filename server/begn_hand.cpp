@@ -55,7 +55,7 @@ int BegnHand::onEvent( int evtype, va_list ap )
 int BegnHand::DisplayMsg( void* ptr, unsigned cmdid, void* param )
 {
 	CMDID2FUNCALL_BEGIN
-	LOGDEBUG("DISPLAYMSG| from=%s| cmd=%u| seq=%u| body=%s",
+	LOGDEBUG("DISPLAYMSG| from=%s| cmd=0x%X| seq=%u| body=%s",
 		iohand->m_idProfile.c_str(), cmdid, seqid, body);
 	return 0;
 }

@@ -355,7 +355,6 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
 
     // era新旧判断
     string differa = needall? "all": diffOuterCliEra(osvrid, era);
-    
     if (!differa.empty() && now > last_reqera_time + reqall_interval_sec)
     {
         // 请求获取某Serv下的所有cli (CMD_CLIERA_REQ)
@@ -375,6 +374,12 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
         LOGDEBUG("REQERAALL| msg=Serv-%d need %d eraall data| era=%s->%s| differa=%s| refpath=%s| retsend=%d", 
             s_my_svrid, osvrid, old_era.c_str(), era.c_str(), differa.c_str(), routepath.c_str(), ret);
         DEBUG_TRACE("d. req %d-serv's cli: %s", osvrid, msgbody.c_str());
+    }
+
+    const Value* hocfgEra = NULL;
+    if (0 == Rjson::GetValue(&hocfgEra, HOCFG_ERASTRING_KEY, doc))
+    {
+        ret = HocfgMgr::Instance()->compareServHoCfg(osvrid, hocfgEra);
     }
 
     return ret;

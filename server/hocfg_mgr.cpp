@@ -2,6 +2,7 @@
 #include "homacro.h"
 #include "exception.h"
 #include "iohand.h"
+#include "broadcastcli.h"
 #include "comm/hep_base.h"
 #include "comm/file.h"
 #include "cloud/const.h"
@@ -20,6 +21,7 @@
 HEPCLASS_IMPL_FUNCX_BEG(HocfgMgr)
 HEPCLASS_IMPL_FUNCX_MORE(HocfgMgr, OnSetConfigHandle)
 HEPCLASS_IMPL_FUNCX_MORE(HocfgMgr, OnGetAllCfgName)
+HEPCLASS_IMPL_FUNCX_MORE(HocfgMgr, OnCMD_HOCFGNEW_REQ)
 HEPCLASS_IMPL_FUNCX_END(HocfgMgr)
 
 HocfgMgr* HocfgMgr::This = NULL;
@@ -47,6 +49,7 @@ void HocfgMgr::uninit( void )
     map<string, AppConfig*>::iterator itr = m_Allconfig.begin();
     for (; itr != m_Allconfig.end(); ++itr)
     {
+        LOGDEBUG("delete %p", itr->second);
         IFDELETE(itr->second);
     }
     m_Allconfig.clear();
@@ -116,16 +119,17 @@ int HocfgMgr::parseConffile( const string& filename, const string& contents, tim
     Document fdoc;
 
     ERRLOG_IF1RET_N(fdoc.Parse(contents.c_str()).GetParseError(), -44, "CONFIGLOADS| msg=json read fail| file=%s", filename.c_str());
-    AppConfig* papp = NULL;
-    map<string, AppConfig*>::iterator itr = m_Allconfig.find(filename);
+    AppConfig *papp = NULL;
+    const size_t pathlen = m_cfgpath.length();
+    size_t pos1 = filename.find(m_cfgpath);
+    //size_t pos2 = filename.find(".json");
+    string key = (0 == pos1 /* && pos2 > pathlen*/) ? filename.substr(pathlen /*, pos2-pathlen*/) : filename;
+    
+    map<string, AppConfig *>::iterator itr = m_Allconfig.find(key);
     if (m_Allconfig.end() == itr)
     {
-        const size_t pathlen = m_cfgpath.length();
-        size_t pos1 = filename.find(m_cfgpath);
-        //size_t pos2 = filename.find(".json");
-        string key = (0 == pos1/* && pos2 > pathlen*/)? filename.substr(pathlen/*, pos2-pathlen*/): filename;
-
         papp = new AppConfig;
+        LOGDEBUG("new ptr=%p", papp);
         m_Allconfig[key] = papp;
         papp->mtime = mtime;
         papp->doc.Parse(contents.c_str());
@@ -133,11 +137,12 @@ int HocfgMgr::parseConffile( const string& filename, const string& contents, tim
     else
     {
         papp = itr->second;
-        if (papp->mtime < mtime)
+        if (papp->mtime <= mtime)
         {
             papp->doc.SetObject();
             papp->doc.Parse(contents.c_str());
             papp->mtime = mtime;
+            papp->isDel = false;
         }
     }
 
@@ -289,24 +294,26 @@ int HocfgMgr::queryByKeyPattern( string& result, const Value* jdoc, const string
 int HocfgMgr::OnSetConfigHandle( void* ptr, unsigned cmdid, void* param )
 {
     MSGHANDLE_PARSEHEAD(false)
+    RJSON_GETSTR_D(callby, &doc); // cfg_newer:来自某一Serv请求某文件; null:来自web-cli到达的修改; setall:广播设备所有
     RJSON_GETSTR_D(filename, &doc);
     RJSON_GETINT_D(mtime, &doc);
     const Value* contents = NULL;
     Rjson::GetValue(&contents, "contents", &doc);
-
     NormalExceptionOn_IFTRUE(filename.empty(), 400, cmdid, seqid, "leak of filename param");
 
     int ret = 0;
     string desc;
+    if (0 == mtime) mtime = time(NULL);
+    
+
     if (NULL == contents || contents->IsNull()) // 删除操作
     {
-        This->remove(filename); // 清除内存,同时unlink磁盘文件
+        This->remove(filename, mtime); // xx清除内存xx, 同时unlink磁盘文件
         desc = _F("remove %s success", filename.c_str());
     }
     else
     {
         filename = This->m_cfgpath + filename; // 文件名要加上本地路径来存储
-        if (0 == mtime) mtime = time(NULL);
         ret = This->parseConffile(filename, Rjson::ToString(contents), mtime);
         desc = (0==ret)? "success": "fail";
         if (0 == ret)
@@ -315,9 +322,24 @@ int HocfgMgr::OnSetConfigHandle( void* ptr, unsigned cmdid, void* param )
         }
     }
 
+    if (CMD_SETCONFIG_REQ == cmdid)
+    {
+        string resp = _F("{\"code\": %d, \"desc\": \"%s\"}", ret, desc.c_str());
+        iohand->sendData(CMD_SETCONFIG_RSP, seqid, resp.c_str(), resp.length(), true);
 
-    string resp = _F("{\"code\": %d, \"desc\": \"%s\"}", ret, desc.c_str());
-    iohand->sendData(CMD_SETCONFIG_RSP, seqid, resp.c_str(), resp.length(), true);
+        //int fromcli = iohand->getIntProperty(CONNTERID_KEY);
+        //ret = Rjson::SetObjMember(BROARDCAST_KEY_FROM, fromcli, &doc);
+        ret = Rjson::SetObjMember("callby", "setall", &doc);
+        ERRLOG_IF1(ret, "HOCFGSET| msg=set callby fail| cmdid=0x%X| mi=%s", cmdid, iohand->m_idProfile.c_str());
+        ret = BroadCastCli::Instance()->toWorld(doc, CMD_SETCONFIG3_REQ, seqid);
+        LOGINFO("HOCFGSET| msg=modify hocfg by app(%s)| filename=%s| ret=%d", iohand->m_idProfile.c_str(), filename.c_str(), ret);
+    }
+    else
+    {
+        RJSON_GETSTR_D(from, &doc);
+        LOGINFO("HOCFGSET| msg=modify hocfg by Serv(%s) %s| filename=%s| ret=%d", 
+            from.c_str(), callby.c_str(), filename.c_str(), ret);
+    }
 
     return ret;
 }
@@ -337,31 +359,49 @@ int HocfgMgr::OnGetAllCfgName( void* ptr, unsigned cmdid, void* param )
     return 0;
 }
 
-string HocfgMgr::getAllCfgNameJson( void ) const
+// param: 0仅返回删除的; 1仅返回存在的; 2全返回(default)
+string HocfgMgr::getAllCfgNameJson( int filter_flag /*=2*/ ) const
 {
     string jresult("{");
 
     map<string, AppConfig*>::const_iterator itr = m_Allconfig.begin();
-    for (int i=0; itr != m_Allconfig.end(); ++itr, ++i)
+    for (int i=0; itr != m_Allconfig.end(); ++itr)
     {
-        if (i > 0) jresult += ",";
-        StrParse::PutOneJson(jresult, itr->first, itr->second->mtime, false);
+        AppConfig* pcfg = itr->second;
+        int flag0 = pcfg->isDel ? 0 : 1;
+
+        if (2 == filter_flag || flag0 == filter_flag)
+        {
+            if (i > 0) jresult += ",";
+            StrParse::AppendFormat(jresult, "\"%s\":[%d,%d]", itr->first.c_str(), flag0, pcfg->mtime);
+            ++i;
+        }
     }
 
     jresult += "}";
     return jresult;
 }
 
-void HocfgMgr::remove( const string& cfgname )
+void HocfgMgr::remove( const string& cfgname, time_t mtime )
 {
     map<string,AppConfig*>::iterator it = m_Allconfig.find(cfgname);
     if (it != m_Allconfig.end())
     {
-        IFDELETE(it->second);
-        m_Allconfig.erase(it);
-
-        string local_file = m_cfgpath + cfgname;
-        unlink(local_file.c_str());
+        if (0 == mtime)
+        {
+            IFDELETE(it->second);
+            m_Allconfig.erase(it);
+            string local_file = m_cfgpath + cfgname;
+            unlink(local_file.c_str());
+        }
+        else if (mtime >= it->second->mtime) // web上请求删除时,不移除内存,只作unlink,因为如删内存了,同步多机有问题
+        {
+            string local_file = m_cfgpath + cfgname;
+            unlink(local_file.c_str());
+            it->second->mtime = mtime;
+            it->second->isDel = true;
+            it->second->doc.SetObject();
+        }
     }
 }
 
@@ -381,29 +421,44 @@ int HocfgMgr::save2File( const string& filename, const Value* doc )
 }
 
 // 对比来自其他节点上的配置, 若本地过旧,则请求更新
+// 触发自CMD_BROADCAST_REQ
 int HocfgMgr::compareServHoCfg( int fromSvrid, const Value* jdoc )
 {
     ERRLOG_IF1RET_N(!jdoc->IsObject(), -50, "HOCFGCMP| msg=cfgera isnot jobject| ");
 
+    int ret = 0;
     string reqmsg("{\"data\":[");
     int count = 0;
     Value::ConstMemberIterator itr = jdoc->MemberBegin();
     for (; itr != jdoc->MemberEnd(); ++itr)
     {
         const char* key = itr->name.GetString();
-        int omtime = itr->value.GetInt();
+        ERRLOG_IF0BRK(itr->value.IsArray() && 2 == itr->value.Size(), -51, 
+            "HOCFGCMP| msg=item not array| fromSvrid=%d| jdoc=%s", fromSvrid, Rjson::ToString(jdoc).c_str());
+        int existFlag = 0;
+        int omtime = 0;
+        Rjson::GetInt(existFlag, 0, &itr->value);
+        Rjson::GetInt(omtime, 1, &itr->value);
 
         AppConfig* appcfg = getConfigByName(key);
         if (NULL == appcfg || appcfg->mtime < omtime)
         {
-            if (count > 0) reqmsg += ",";
-            reqmsg += string("\"") + key + "\"";
-            ++count;
+            if (0 == existFlag) // 要删的
+            {
+                remove(key, omtime);
+            }
+            else
+            {
+                if (count > 0) reqmsg += ",";
+                reqmsg += string("\"") + key + "\"";
+                ++count;
+            }
         }
     }
     reqmsg += "]}";
+    ret = count>0 ? RouteExchage::PostToCli(reqmsg, CMD_HOCFGNEW_REQ, ++m_seqid, fromSvrid) : 0;
     
-    return count>0 ? RouteExchage::PostToCli(reqmsg, CMD_HOCFGNEW_REQ, ++m_seqid, fromSvrid) : 0;
+    return ret;
 }
 
 int HocfgMgr::OnCMD_HOCFGNEW_REQ( void* ptr, unsigned cmdid, void* param )
@@ -418,6 +473,7 @@ int HocfgMgr::OnCMD_HOCFGNEW_REQ( void* ptr, unsigned cmdid, void* param )
 
     int size = arrdoc->Size();
     int okcount = 0;
+    string fs;
     for (int i=0; i < size; ++i)
     {
         string fname;
@@ -431,16 +487,18 @@ int HocfgMgr::OnCMD_HOCFGNEW_REQ( void* ptr, unsigned cmdid, void* param )
             StrParse::PutOneJson(msgrsp, "callby", "cfg_newer", true);
             StrParse::PutOneJson(msgrsp, "filename", fname, true);
             StrParse::PutOneJson(msgrsp, "mtime", pcfg->mtime, true);
-            StrParse::PutOneJson(msgrsp, "contents", Rjson::ToString(pcfg->doc), false);
+            msgrsp += string("\"contents\":") + Rjson::ToString(&pcfg->doc);
             msgrsp += "}";
 
-            RouteExchage::PostToCli(msgrsp, CMD_SETCONFIG2_REQ, seqid, from);
+            fs += fname + " ";
+            ret = RouteExchage::PostToCli(msgrsp, CMD_SETCONFIG2_REQ, seqid, from);
+            ERRLOG_IF1(ret, "HOCFGNEWREQ| msg=post cfgout fail %d| filename=%s", ret, fname.c_str());
             ++okcount;
         }
     }
     
     RouteExchage::PostToCli(
-        _F("{\"desc\": \"send %d cfg out\", \"code\":0}", okcount), 
+        _F("{\"desc\": \"send %d cfg( %s) out\", \"code\":0}", okcount, fs.c_str()), 
         CMD_HOCFGNEW_RSP, seqid, from);
     return ret;
 }

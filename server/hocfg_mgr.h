@@ -20,10 +20,9 @@ struct AppConfig
 {
 	Document doc;
 	time_t mtime;
-	int aliasNum;
-	bool isLocal;
+	bool isDel;
 
-	AppConfig(void):mtime(0), aliasNum(0), isLocal(true) {}
+	AppConfig(void):mtime(0), isDel(false) {}
 };
 
 class HocfgMgr
@@ -35,13 +34,14 @@ class HocfgMgr
 public:
 	static int OnSetConfigHandle( void* ptr, unsigned cmdid, void* param );
 	static int OnGetAllCfgName( void* ptr, unsigned cmdid, void* param );
+	static int OnCMD_HOCFGNEW_REQ( void* ptr, unsigned cmdid, void* param );
 
 public:
 	int init( const string& conf_root );
 	void uninit( void );
 
 	int query( string& result, const string& file_pattern, const string& key_pattern, bool incBase );
-	string getAllCfgNameJson( void ) const;
+	string getAllCfgNameJson( int filter_flag = 2 ) const;
 
 	// 分布式配置互相同步闻新配置
 	int compareServHoCfg( int fromSvrid, const Value* jdoc );
@@ -50,7 +50,7 @@ private:
 	int loads( const string& dirpath );
 	bool getBaseConfigName( string& baseCfg, const string& curCfgName );
 	AppConfig* getConfigByName( const string& curCfgName );
-	void remove( const string& cfgname );
+	void remove( const string& cfgname, time_t mtime );
 
 	int parseConffile( const string& filename, const string& contents, time_t mtime ); // 读出,解析
 	int save2File( const string& filename, const Value* doc ); // 持久化至磁盘

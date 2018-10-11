@@ -28,6 +28,7 @@ int IOHand::Init( void )
 	s_cmdid2interceptor[CMD_TESTING_RSP] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_CLIERA_REQ] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_CLIERA_RSP] = "RouteExchage::TransMsg";
+	s_cmdid2interceptor[CMD_HOCFGNEW_REQ] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_HOCFGNEW_RSP] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_SETCONFIG2_REQ] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_SETCONFIG3_REQ] = "BroadCastCli::TransToAll"; // 广播
@@ -44,6 +45,7 @@ int IOHand::Init( void )
 	s_cmdid2clsname[CMD_GETWARN_REQ] = "QueryHand::ProcessOne";
 	s_cmdid2clsname[CMD_TESTING_REQ] = "QueryHand::ProcessOne";
 	s_cmdid2clsname[CMD_GETCONFIG_REQ] = "QueryHand::ProcessOne";
+	s_cmdid2clsname[CMD_HOCFGNEW_REQ] = "HocfgMgr::OnCMD_HOCFGNEW_REQ";
 	s_cmdid2clsname[CMD_SETCONFIG_REQ] = "HocfgMgr::OnSetConfigHandle";
 	s_cmdid2clsname[CMD_SETCONFIG2_REQ] = "HocfgMgr::OnSetConfigHandle";
 	s_cmdid2clsname[CMD_SETCONFIG3_REQ] = "HocfgMgr::OnSetConfigHandle";
