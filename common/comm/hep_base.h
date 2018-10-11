@@ -56,15 +56,6 @@ struct HEpEvFlag
     {RegisterFunc(#clsname "::" #static_method_name, &clsname::static_method_name);}
 
 // 注册多个func
-#define HEPCLASS_IMPL_FUNC_BEG(clsname)    \
-    static clsname g_##clsname("_"); \
-    clsname::clsname(const char* name): HEpBase(name) \
-    {
-#define HEPCLASS_IMPL_FUNC_MORE(clsname, static_method_name);    \
-    RegisterFunc(#clsname "::" #static_method_name, &clsname::static_method_name);
-#define HEPCLASS_IMPL_FUNC_END    \
-    }
-
 #define HEPCLASS_IMPL_FUNCX_BEG(clsname) \
     static struct Reg##clsname {\
         Reg##clsname(){

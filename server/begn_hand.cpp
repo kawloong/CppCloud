@@ -12,12 +12,12 @@
 #include "broadcastcli.h"
 
 
-HEPCLASS_IMPL_FUNC_BEG(BegnHand)
-HEPCLASS_IMPL_FUNC_MORE(BegnHand, ProcessOne)
-HEPCLASS_IMPL_FUNC_MORE(BegnHand, DisplayMsg)
-HEPCLASS_IMPL_FUNC_MORE(BegnHand, on_CMD_KEEPALIVE_REQ)
-HEPCLASS_IMPL_FUNC_MORE(BegnHand, on_CMD_KEEPALIVE_RSP)
-HEPCLASS_IMPL_FUNC_END
+HEPCLASS_IMPL_FUNCX_BEG(BegnHand)
+HEPCLASS_IMPL_FUNCX_MORE(BegnHand, ProcessOne)
+HEPCLASS_IMPL_FUNCX_MORE(BegnHand, DisplayMsg)
+HEPCLASS_IMPL_FUNCX_MORE(BegnHand, on_CMD_KEEPALIVE_REQ)
+HEPCLASS_IMPL_FUNCX_MORE(BegnHand, on_CMD_KEEPALIVE_RSP)
+HEPCLASS_IMPL_FUNCX_END(BegnHand)
 
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
 

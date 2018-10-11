@@ -11,10 +11,10 @@
 #include "exception.h"
 #include "hocfg_mgr.h"
 
-HEPCLASS_IMPL_FUNC_BEG(BroadCastCli)
-HEPCLASS_IMPL_FUNC_MORE(BroadCastCli, TransToAll)
-HEPCLASS_IMPL_FUNC_MORE(BroadCastCli, OnBroadCMD)
-HEPCLASS_IMPL_FUNC_END
+HEPCLASS_IMPL_FUNCX_BEG(BroadCastCli)
+HEPCLASS_IMPL_FUNCX_MORE(BroadCastCli, TransToAllPeer)
+HEPCLASS_IMPL_FUNCX_MORE(BroadCastCli, OnBroadCMD)
+HEPCLASS_IMPL_FUNCX_END(BroadCastCli)
 
 #define RouteExException_IFTRUE_EASY(cond, resonstr) \
     RouteExException_IFTRUE(cond, cmdid, seqid, s_my_svrid, from, resonstr, actpath)
@@ -75,7 +75,8 @@ int BroadCastCli::qrun( int flag, long p2 )
     return ret;
 }
 
-int BroadCastCli::TransToAll( void* ptr, unsigned cmdid, void* param )
+
+int BroadCastCli::TransToAllPeer( void* ptr, unsigned cmdid, void* param )
 {
 	CMDID2FUNCALL_BEGIN
 	Document doc;

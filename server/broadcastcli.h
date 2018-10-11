@@ -23,7 +23,7 @@ public:
 
 public:
     static int OnBroadCMD( void* ptr, unsigned cmdid, void* param );
-    static int TransToAll( void* ptr, unsigned cmdid, void* param );
+    static int TransToAllPeer( void* ptr, unsigned cmdid, void* param );
     static int on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsigned seqid );
     static int on_CMD_CLIERA_REQ( IOHand* iohand, const Value* doc, unsigned seqid );
     static int on_CMD_CLIERA_RSP( IOHand* iohand, const Value* doc, unsigned seqid );

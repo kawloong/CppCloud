@@ -8,9 +8,9 @@
 #include "outer_cli.h"
 
 
-HEPCLASS_IMPL_FUNC_BEG(RouteExchage)
-HEPCLASS_IMPL_FUNC_MORE(RouteExchage, TransMsg)
-HEPCLASS_IMPL_FUNC_END
+HEPCLASS_IMPL_FUNCX_BEG(RouteExchage)
+HEPCLASS_IMPL_FUNCX_MORE(RouteExchage, TransMsg)
+HEPCLASS_IMPL_FUNCX_END(RouteExchage)
 
 int RouteExchage::s_my_svrid = 0;
 #define RouteExException_IFTRUE_EASY(cond, resonstr) \

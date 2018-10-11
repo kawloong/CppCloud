@@ -12,7 +12,10 @@
 #include "route_exchange.h"
 #include "hocfg_mgr.h"
 
-HEPCLASS_IMPL_FUNC(QueryHand, ProcessOne)
+HEPCLASS_IMPL_FUNCX_BEG(QueryHand)
+HEPCLASS_IMPL_FUNCX_MORE(QueryHand, TransMsg)
+HEPCLASS_IMPL_FUNCX_END(QueryHand)
+
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
 
 //const char s_app_cache_id[] = "3";
@@ -27,6 +30,8 @@ QueryHand::~QueryHand(void)
 	
 }
 
+/**
+ *  interface for HEpBase
 int QueryHand::run( int flag, long p2 )
 {
 	return 0;
@@ -43,6 +48,7 @@ int QueryHand::onEvent( int evtype, va_list ap )
 	
 	return ret;
 }
+*/
 
 int QueryHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 {

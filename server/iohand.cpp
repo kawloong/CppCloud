@@ -22,8 +22,8 @@ int IOHand::serv_sendpkg_num = 0;
 int IOHand::Init( void )
 {
 	// 前置拦截器
-	s_cmdid2interceptor[CMD_BROADCAST_REQ] = "BroadCastCli::TransToAll";
-	s_cmdid2interceptor[CMD_UPDATEERA_REQ] = "BroadCastCli::TransToAll";
+	s_cmdid2interceptor[CMD_BROADCAST_REQ] = "BroadCastCli::TransToAllPeer";
+	s_cmdid2interceptor[CMD_UPDATEERA_REQ] = "BroadCastCli::TransToAllPeer";
 	s_cmdid2interceptor[CMD_TESTING_REQ] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_TESTING_RSP] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_CLIERA_REQ] = "RouteExchage::TransMsg";
@@ -31,7 +31,7 @@ int IOHand::Init( void )
 	s_cmdid2interceptor[CMD_HOCFGNEW_REQ] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_HOCFGNEW_RSP] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_SETCONFIG2_REQ] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_SETCONFIG3_REQ] = "BroadCastCli::TransToAll"; // 广播
+	s_cmdid2interceptor[CMD_SETCONFIG3_REQ] = "BroadCastCli::TransToAllPeer"; // 广播
 
 
 	// 消息->处理类

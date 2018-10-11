@@ -13,7 +13,7 @@ Modification :
 
 
 class IOHand;
-class QueryHand: public HEpBase
+class QueryHand//: public HEpBase
 {
 
 public:
@@ -38,8 +38,8 @@ private:
     static int on_ExchangeMsg( IOHand* parent, const Value* doc, unsigned cmdid, unsigned seqid );
 
 protected: // interface IEPollRun
-    virtual int run( int flag, long p2 );
-	virtual int onEvent( int evtype, va_list ap );
+    //virtual int run( int flag, long p2 );
+	//virtual int onEvent( int evtype, va_list ap );
 
 
 protected:
