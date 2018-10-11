@@ -253,4 +253,10 @@ static string ToString(const Value* node)
 }
 };
 
+// 便捷声明和获得json数据
+#define RJSON_GETINT(keyname, node) Rjson::GetInt(keyname, #keyname, node)
+#define RJSON_GETINT_D(keyname, node) int keyname=0; Rjson::GetInt(keyname, #keyname, node)
+#define RJSON_GETSTR(keyname, node) Rjson::GetStr(keyname, #keyname, node)
+#define RJSON_GETSTR_D(keyname, node) string keyname; Rjson::GetStr(keyname, #keyname, node)
+
 #endif
