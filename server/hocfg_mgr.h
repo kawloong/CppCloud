@@ -42,8 +42,9 @@ public:
 
 	int query( string& result, const string& file_pattern, const string& key_pattern, bool incBase );
 	string getAllCfgNameJson( int filter_flag = 2 ) const;
+	int getCfgMtime( const string& file_pattern, bool incBase ) const;
 
-	// 分布式配置互相同步闻新配置
+	// 分布式配置互相同步最新配置
 	int compareServHoCfg( int fromSvrid, const Value* jdoc );
 
 private:

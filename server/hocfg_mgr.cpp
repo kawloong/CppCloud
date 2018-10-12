@@ -181,6 +181,37 @@ AppConfig* HocfgMgr::getConfigByName( const string& curCfgName )
     return papp;
 }
 
+/**
+ * @return: 返回文件时间截，如果是继承的(incBase=1)，则是最大文件的时间截；无文件返回0
+ **/
+int HocfgMgr::getCfgMtime( const string& file_pattern, bool incBase ) const
+{
+    int ret = 0;
+    string baseStr;
+ 
+    AppConfig *pconf = getConfigByName(file_pattern);
+    IFRETURN_N(NULL == pconf, 0);
+    ret = pconf->mtime;
+    if (incBase && getBaseConfigName(baseStr, file_pattern))
+    {
+        vector<string> vecBase;
+        ret = StrParse::SpliteStr(vecBase, baseStr, ' ');
+        ERRLOG_IF1(ret, "HOCFGQUERY| msg=invalid basestr setting| "
+                        "baseStr=%s| filep=%s", baseStr.c_str(), file_pattern.c_str());
+        vector<string>::const_iterator vitr = vecBase.begin();
+        for (; vitr != vecBase.end(); ++vitr)
+        {
+            AppConfig *pnod1 = getConfigByName(*vitr);
+            if (pnod1 && pnod1->mtime > ret)
+            {
+                ret = pnod1->mtime;
+            }
+        }
+    }
+
+    return ret;
+}
+
 // 分布式配置查询, file_pattern每个token以-分隔, key_pattern每个token以/分隔
 // 返回的字符串可能是 {object} [array] "string" integer null
 int HocfgMgr::query( string& result, const string& file_pattern, const string& key_pattern, bool incBase )

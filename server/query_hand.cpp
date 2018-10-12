@@ -131,16 +131,37 @@ int QueryHand::on_CMD_GETWARN_REQ( IOHand* iohand, const Value* doc, unsigned se
 	return ret;
 }
 
-// request format: { "file_pattern": "app1-dev", "key_pattern":"/", "incbase": 1  }
+/** 
+ * @format: { "file_pattern": "app1-dev", "key_pattern":"/", 
+ * 		     "incbase": 1, "gt_mtime": 154000999  }
+ * @file_pattern: 文件名
+ * @key_pattern: 查询键 （可选）
+ * @incbase: 包含继承文件 （可选）
+ * @gt_mtime:  （可选）当大于此时间的情况下才响应配置信息，否则返回"ok"
+ **/ 
 int QueryHand::on_CMD_GETCONFIG_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
 {
 	RJSON_GETINT_D(incbase, doc);
+	RJSON_GETINT_D(gt_mtime, doc);
 	RJSON_GETSTR_D(file_pattern, doc);
 	RJSON_GETSTR_D(key_pattern, doc);
 
-	int ret;
 	string result;
-	ret = HocfgMgr::Instance()->query(result, file_pattern, key_pattern, incbase);
+	int ret;
+	//bool rspIncMtime = doc.HasMember("gt_mtime");
+	int curMtime = HocfgMgr::Instance()->getCfgMtime(file_pattern, incbase);
+	if (0 == gt_mtime || curMtime > gt_mtime)
+	{
+		string strtmp;
+		result = "{";
+		StrParse::PutOneJson(result, "mtime", curMtime, true);
+		ret = HocfgMgr::Instance()->query(strtmp, file_pattern, key_pattern, incbase);
+		result += _F("\"contents\": %s }", strtmp.c_str());
+	}
+	else
+	{
+		result = (0 == curMtime)? "null" : "ok";
+	}
 
 	ret = iohand->sendData(CMD_GETCONFIG_RSP, seqid, result.c_str(), result.length(), true);
 	return ret;
