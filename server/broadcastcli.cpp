@@ -66,7 +66,7 @@ int BroadCastCli::qrun( int flag, long p2 )
             StrParse::AppendFormat(reqmsg, "\"%s\":", HOCFG_ERASTRING_KEY);
             reqmsg += hocfgEraJson;
             reqmsg += "}";
-            ret = toWorld(reqmsg, CMD_BROADCAST_REQ, ++m_seqid);
+            ret = toWorld(reqmsg, CMD_BROADCAST_REQ, ++m_seqid, false);
         }
 
         SwitchHand::Instance()->appendQTask(this, BROADCASTCLI_INTERVAL_SEC*1000);
@@ -83,8 +83,9 @@ int BroadCastCli::TransToAllPeer( void* ptr, unsigned cmdid, void* param )
     int ret = 0;
 
     if (doc.Parse(body).HasParseError())  throw NormalExceptionOn(404, cmdid|CMDID_MID, seqid, iohand->m_idProfile+" body json invalid");
-
-    ret = 0==BroadCastCli::Instance()->toWorld(doc, cmdid, seqid)? 1: 0;
+    
+    bool includeCli = doc.HasMember(BROARDCAST_KEY_CLIS);
+    ret = 0==BroadCastCli::Instance()->toWorld(doc, cmdid, seqid, includeCli)? 1: 0;
     return ret;
 }
 
@@ -92,7 +93,7 @@ int BroadCastCli::TransToAllPeer( void* ptr, unsigned cmdid, void* param )
  * @summery: 包体为json的消息广播
  * @desc: 必须包含的字段 {"from": 123, "pass": " 2 3 ", "path": "1>3>", "jump": 1}
  */
-int BroadCastCli::toWorld( Document& doc, unsigned cmdid, unsigned seqid )
+int BroadCastCli::toWorld( Document& doc, unsigned cmdid, unsigned seqid, bool includeCli )
 {
     int ret = 0;
     int ntmp = 0;
@@ -154,6 +155,11 @@ int BroadCastCli::toWorld( Document& doc, unsigned cmdid, unsigned seqid )
     doc.RemoveMember(BROARDCAST_KEY_JUMP);
     doc.AddMember(BROARDCAST_KEY_JUMP, ++ntmp, doc.GetAllocator());
 
+    if (includeCli && !doc.HasMember(BROARDCAST_KEY_CLIS))
+    {
+        doc.AddMember(BROARDCAST_KEY_CLIS, "", doc.GetAllocator());
+    }
+
     string reqbody(Rjson::ToString(&doc));
     for (unsigned i = 0; i < vecCli.size(); ++i)
     {
@@ -168,11 +174,62 @@ int BroadCastCli::toWorld( Document& doc, unsigned cmdid, unsigned seqid )
             LOGERROR("BROADCASTWORLD| msg=alias unmatch| cli=%p", vecCli[i]);
         }
     }
+    if (includeCli)
+    {
+        string clifilter;
+        Rjson::GetStr(clifilter, BROARDCAST_KEY_CLIS, &doc);
+        ret = toAllLocalCli(cmdid, seqid, reqbody, clifilter);
+    }
 
     return ret;
 }
 
-int BroadCastCli::toWorld( const string& jsonmsg, unsigned cmdid, unsigned seqid )
+// clifilter非空时过滤只发送给符合条件的cli
+// clifilter format: key=val1
+int BroadCastCli::toAllLocalCli( unsigned cmdid, unsigned seqid, const string& msg, const string& clifilter )
+{
+    CliMgr::AliasCursor alcr(INNERCLI_ALIAS_PREFIX); // 查找出所有直连的Serv节点
+    CliBase *cli = NULL;
+
+    int count = 0;
+    string filter_key, filter_value;
+    bool filter_enable = clifilter.empty();
+
+    if (filter_enable)
+    {
+        vector<string> vfilter;
+        StrParse::SpliteStr(vfilter, clifilter, '=');
+    }
+
+    vector<CliBase*> vecCli;
+    while ((cli = alcr.pop()))
+    {
+        IOHand* iocli = dynamic_cast<IOHand *>(cli);
+        if (NULL == iocli)
+        {
+            LOGERROR("BROADCASTCLI| msg=found no IOHand cli| cli=%s| ptr=%p", cli->m_idProfile.c_str(), cli);
+            continue;
+        }
+        if (!filter_enable)
+        {
+            iocli->sendData(cmdid, seqid, msg.c_str(), msg.length(), true);
+            ++count;
+        }
+        else
+        {
+            if (cli->getProperty(filter_key) == filter_value)
+            {
+                iocli->sendData(cmdid, seqid, msg.c_str(), msg.length(), true);
+                ++count;
+            }
+        }
+    }
+
+    LOGDEBUG("BROADCASTCLI| msg=has send to %d cli| cmd=0x%x| seqid=%u", count, cmdid, seqid);
+    return 0;
+}
+
+int BroadCastCli::toWorld( const string& jsonmsg, unsigned cmdid, unsigned seqid, bool incCli )
 {
     Document doc;
 
@@ -182,7 +239,7 @@ int BroadCastCli::toWorld( const string& jsonmsg, unsigned cmdid, unsigned seqid
     }
 
     if (0 == seqid) seqid = ++m_seqid;
-    return toWorld(doc, cmdid, seqid);
+    return toWorld(doc, cmdid, seqid, incCli);
 }
 
 

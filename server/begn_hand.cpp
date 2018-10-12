@@ -133,9 +133,10 @@ int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqi
 		{
 			svrid = ++ss_svrid_gen + CloudConf::CppCloudServID()*1000;
 		}
-		str = StrParse::Itoa(svrid) + "_I";
 
-		ret = CliMgr::Instance()->addAlias2Child(str, iohand);
+		str = StrParse::Itoa(svrid) + "_I";
+		ret |= CliMgr::Instance()->addAlias2Child(str, iohand);
+		ret |= CliMgr::Instance()->addAlias2Child(_F("%s_%d", INNERCLI_ALIAS_PREFIX, svrid), iohand);
 		if (ret)
 		{
 			LOGERROR("SETALIAS| msg=notify set asname fail| asname=%s| ret=%d", str.c_str(), ret);
@@ -183,7 +184,7 @@ int BegnHand::whoamiFinish( IOHand* ioh, bool first )
 	StrParse::PutOneJson(msgbody, "ERAN", ioh->m_era, false); // 无逗号结束
 	msgbody += "}]}";
 
-	return BroadCastCli::Instance()->toWorld(msgbody, CMD_UPDATEERA_REQ, 0);
+	return BroadCastCli::Instance()->toWorld(msgbody, CMD_UPDATEERA_REQ, 0, false);
 }
 
 int BegnHand::on_CMD_HUNGUP_REQ( IOHand* iohand, const Value* doc, unsigned seqid )

@@ -13,7 +13,7 @@
 #include "hocfg_mgr.h"
 
 HEPCLASS_IMPL_FUNCX_BEG(QueryHand)
-HEPCLASS_IMPL_FUNCX_MORE(QueryHand, TransMsg)
+HEPCLASS_IMPL_FUNCX_MORE(QueryHand, ProcessOne)
 HEPCLASS_IMPL_FUNCX_END(QueryHand)
 
 static const char g_resp_strbeg[] = "{ \"code\": 0, \"desc\": \"success\", \"data\": ";
@@ -81,7 +81,7 @@ int QueryHand::getIntFromJson( const string& key, const Value* doc )
 }
 
 
-int QueryHand::on_CMD_GETCLI_REQ( IOHand* parent, const Value* doc, unsigned seqid )
+int QueryHand::on_CMD_GETCLI_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
 {
 	int ret = 0;
 	int svrid = 0;
@@ -98,12 +98,13 @@ int QueryHand::on_CMD_GETCLI_REQ( IOHand* parent, const Value* doc, unsigned seq
 	outjson += "}";
 	ERRLOG_IF1(ret, "CMD_GETCLI_REQ| msg=pickupCliProfile fail %d| get_svrid=%d| key=%s", ret, svrid, dstKey.c_str());
 
-	ret = SendMsg(parent, CMD_GETCLI_RSP, seqid, outjson, true);
+	//ret = SendMsg(iohand, CMD_GETCLI_RSP, seqid, outjson, true);
+	iohand->sendData(CMD_GETCLI_RSP, seqid, outjson.c_str(), outjson.length(), true);
 	return ret;
 }
 
 
-int QueryHand::on_CMD_GETLOGR_REQ( IOHand* parent, const Value* doc, unsigned seqid )
+int QueryHand::on_CMD_GETLOGR_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
 {
 	int nsize = 10;
 	Rjson::GetInt(nsize, "size", doc);
@@ -111,12 +112,11 @@ int QueryHand::on_CMD_GETLOGR_REQ( IOHand* parent, const Value* doc, unsigned se
 	Actmgr::Instance()->pickupCliOpLog(outstr, nsize);
 	outstr += "}";
 	
-	int ret = SendMsg(parent, CMD_GETLOGR_RSP, seqid, outstr, true);
-	return ret;
+	return iohand->sendData(CMD_GETLOGR_RSP, seqid, outstr.c_str(), outstr.length(), true);
 }
 
 // request format: { "filter_key": "warn", "filter_val":"ng"}
-int QueryHand::on_CMD_GETWARN_REQ( IOHand* parent, const Value* doc, unsigned seqid )
+int QueryHand::on_CMD_GETWARN_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
 {
 	string filter_key;
 	string filter_val;
@@ -127,7 +127,7 @@ int QueryHand::on_CMD_GETWARN_REQ( IOHand* parent, const Value* doc, unsigned se
 	Actmgr::Instance()->pickupWarnCliProfile(outstr, filter_key, filter_val);
 	outstr += "}";
 	
-	int ret = parent->sendData(CMD_GETWARN_RSP, seqid, outstr.c_str(), outstr.length(), true);
+	int ret = iohand->sendData(CMD_GETWARN_RSP, seqid, outstr.c_str(), outstr.length(), true);
 	return ret;
 }
 

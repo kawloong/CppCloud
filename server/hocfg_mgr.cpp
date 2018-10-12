@@ -331,7 +331,7 @@ int HocfgMgr::OnSetConfigHandle( void* ptr, unsigned cmdid, void* param )
         //ret = Rjson::SetObjMember(BROARDCAST_KEY_FROM, fromcli, &doc);
         ret = Rjson::SetObjMember("callby", "setall", &doc);
         ERRLOG_IF1(ret, "HOCFGSET| msg=set callby fail| cmdid=0x%X| mi=%s", cmdid, iohand->m_idProfile.c_str());
-        ret = BroadCastCli::Instance()->toWorld(doc, CMD_SETCONFIG3_REQ, seqid);
+        ret = BroadCastCli::Instance()->toWorld(doc, CMD_SETCONFIG3_REQ, seqid, false);
         LOGINFO("HOCFGSET| msg=modify hocfg by app(%s)| filename=%s| ret=%d", iohand->m_idProfile.c_str(), filename.c_str(), ret);
     }
     else
@@ -346,7 +346,7 @@ int HocfgMgr::OnSetConfigHandle( void* ptr, unsigned cmdid, void* param )
 
 /**
  * remart: 外部查询所有配置的名字
- * return format: { file1: mtime1, file2: mtime2 }
+ * return format: { file1: [1,mtime1], file2: [0,mtime2] }
  **/
 int HocfgMgr::OnGetAllCfgName( void* ptr, unsigned cmdid, void* param )
 {

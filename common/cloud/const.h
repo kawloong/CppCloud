@@ -14,7 +14,8 @@ const char OBJECT_TYPE_KEY[] = "objtype";
 const char SERV_ALIAS_PREFIX[] = "serv_";
 const char SERV_IN_ALIAS_PREFIX[] = "serv_I";
 const char SERV_OUT_ALIAS_PREFIX[] = "serv_o";
-const char OUTERCLI_ALIAS_PREFIX[] = "oc"; // oc_[servid]_[appid]
+const char INNERCLI_ALIAS_PREFIX[] = "c_I";
+const char OUTERCLI_ALIAS_PREFIX[] = "c_o"; // c_o_[servid]_[appid]
 const char LAST_REQ_SERVMTIME[] = "lastreqall_mtime";
 
 const char CLI_PREFIX_KEY_TIMEOUT[] = "atime_";
@@ -23,12 +24,14 @@ const char EXCLUDE_SVRID_LIST[] = "haspass";
 const char ROUTE_PATH[] = "act_path";
 const char CLIS_ERASTRING_KEY[] = "ERA";
 const char HOCFG_ERASTRING_KEY[] = "CFGERA";
+//const char EXROUTE_MSG_KEY[] = ".r"; // 路由信息key
 
 // 广播消息json控制Key
 const char BROARDCAST_KEY_FROM[] = "from";
 const char BROARDCAST_KEY_PASS[] = "pass";
 const char BROARDCAST_KEY_TRAIL[] = "path";
 const char BROARDCAST_KEY_JUMP[] = "jump";
+const char BROARDCAST_KEY_CLIS[] = "_toapp_";
 
 // 单播消息json控制Key
 const char ROUTE_MSG_KEY_FROM[] = "from";
@@ -42,7 +45,7 @@ const char UPDATE_CLIPROP_UPKEY[] = "up";
 const char UPDATE_CLIPROP_DOWNKEY[] = "down";
 
 // 分布式配置
-const char HOCFG_METAFILE[] = "_meta";
+const char HOCFG_METAFILE[] = "_meta.json";
 
 const int SERV_CLITYPE_ID = 1;
 const int CLI_KEEPALIVE_TIME_SEC = 60*10;

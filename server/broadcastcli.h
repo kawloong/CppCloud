@@ -34,8 +34,9 @@ public:
     static int setJsonMember( const string& key, const string& val, Document* node );
 
     // 消息广播方法
-    int toWorld( Document& doc, unsigned cmdid, unsigned seqid );
-    int toWorld( const string& jsonmsg, unsigned cmdid, unsigned seqid );
+    int toWorld( Document& doc, unsigned cmdid, unsigned seqid, bool includeCli );
+    int toWorld( const string& jsonmsg, unsigned cmdid, unsigned seqid, bool includeCli );
+    int toAllLocalCli( unsigned cmdid, unsigned seqid, const string& msg, const string& clifilter );
 
 protected: // interface IEPollRun
 	virtual int run(int p1, long p2);

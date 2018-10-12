@@ -313,7 +313,7 @@ int CliMgr::onChildEvent( int evtype, va_list ap )
 
 		// 广播通知其他Serv某一cli下线
 		string broadcast_msg = _F("{\"%s\":[%d]}", UPDATE_CLIPROP_DOWNKEY, son->getIntProperty(CONNTERID_KEY));
-		BroadCastCli::Instance()->toWorld(broadcast_msg, CMD_UPDATEERA_REQ, 0);
+		BroadCastCli::Instance()->toWorld(broadcast_msg, CMD_UPDATEERA_REQ, 0, false);
 
 		removeAliasChild(son, true);
 		ret = 0;
