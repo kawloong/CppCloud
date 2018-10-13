@@ -258,5 +258,10 @@ static string ToString(const Value* node)
 #define RJSON_GETINT_D(keyname, node) int keyname=0; Rjson::GetInt(keyname, #keyname, node)
 #define RJSON_GETSTR(keyname, node) Rjson::GetStr(keyname, #keyname, node)
 #define RJSON_GETSTR_D(keyname, node) string keyname; Rjson::GetStr(keyname, #keyname, node)
+// 保存到指定变量中
+#define RJSON_VGETINT(varname, keynstr, node) Rjson::GetInt(varname, keynstr, node)
+#define RJSON_VGETINT_D(varname, keynstr, node) int varname=0; Rjson::GetInt(varname, keynstr, node)
+#define RJSON_VGETSTR(varname, keynstr, node) Rjson::GetStr(varname, keynstr, node)
+#define RJSON_VGETSTR_D(varname, keynstr, node) string varname; Rjson::GetStr(varname, keynstr, node)
 
 #endif

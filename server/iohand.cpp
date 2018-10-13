@@ -50,6 +50,8 @@ int IOHand::Init( void )
 	s_cmdid2clsname[CMD_SETCONFIG2_REQ] = "HocfgMgr::OnSetConfigHandle";
 	s_cmdid2clsname[CMD_SETCONFIG3_REQ] = "HocfgMgr::OnSetConfigHandle";
 	s_cmdid2clsname[CMD_GETCFGNAME_REQ] = "HocfgMgr::OnGetAllCfgName";
+	s_cmdid2clsname[CMD_GETCFGNAME_RSP] = "BegnHand::DisplayMsg";
+	s_cmdid2clsname[CMD_BOOKCFGCHANGE_REQ] = "HocfgMgr::OnCMD_BOOKCFGCHANGE_REQ";
 	s_cmdid2clsname[CMD_KEEPALIVE_REQ] = "BegnHand::on_CMD_KEEPALIVE_REQ";
 	s_cmdid2clsname[CMD_KEEPALIVE_RSP] = "BegnHand::on_CMD_KEEPALIVE_RSP";
 

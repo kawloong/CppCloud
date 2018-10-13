@@ -141,10 +141,10 @@ int QueryHand::on_CMD_GETWARN_REQ( IOHand* iohand, const Value* doc, unsigned se
  **/ 
 int QueryHand::on_CMD_GETCONFIG_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
 {
-	RJSON_GETINT_D(incbase, doc);
-	RJSON_GETINT_D(gt_mtime, doc);
-	RJSON_GETSTR_D(file_pattern, doc);
-	RJSON_GETSTR_D(key_pattern, doc);
+	RJSON_VGETINT_D(incbase, HOCFG_INCLUDEBASE_KEY, doc);
+	RJSON_VGETINT_D(gt_mtime, HOCFG_GT_MTIME_KEY, doc);
+	RJSON_VGETSTR_D(file_pattern, HOCFG_FILENAME_KEY, doc);
+	RJSON_VGETSTR_D(key_pattern, HOCFG_KEYPATTEN_KEY, doc);
 
 	string result;
 	int ret;

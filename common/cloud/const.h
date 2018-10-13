@@ -16,6 +16,7 @@ const char SERV_IN_ALIAS_PREFIX[] = "serv_I";
 const char SERV_OUT_ALIAS_PREFIX[] = "serv_o";
 const char INNERCLI_ALIAS_PREFIX[] = "c_I";
 const char OUTERCLI_ALIAS_PREFIX[] = "c_o"; // c_o_[servid]_[appid]
+const char BOOK_HOCFG_ALIAS_PREFIX[] = "cfg";
 const char LAST_REQ_SERVMTIME[] = "lastreqall_mtime";
 
 const char CLI_PREFIX_KEY_TIMEOUT[] = "atime_";
@@ -46,6 +47,10 @@ const char UPDATE_CLIPROP_DOWNKEY[] = "down";
 
 // 分布式配置
 const char HOCFG_METAFILE[] = "_meta.json";
+const char HOCFG_FILENAME_KEY[] = "file_pattern";
+const char HOCFG_KEYPATTEN_KEY[] = "key_pattern";
+const char HOCFG_GT_MTIME_KEY[] = "gt_mtime";
+const char HOCFG_INCLUDEBASE_KEY[] = "incbase";
 
 const int SERV_CLITYPE_ID = 1;
 const int CLI_KEEPALIVE_TIME_SEC = 60*10;

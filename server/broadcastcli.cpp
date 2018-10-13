@@ -584,7 +584,7 @@ int BroadCastCli::on_CMD_UPDATEERA_REQ( IOHand* iohand, const Value* doc, unsign
 
     if (0 == Rjson::GetArray(&uplist, UPDATE_CLIPROP_UPKEY, doc))
     {
-        RJSON_GETINT_D(from, doc);
+        RJSON_VGETINT_D(from, BROARDCAST_KEY_FROM, doc);
         ret = UpdateCliProps(uplist, from);
     }
 

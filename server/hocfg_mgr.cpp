@@ -3,6 +3,7 @@
 #include "exception.h"
 #include "iohand.h"
 #include "broadcastcli.h"
+#include "climanage.h"
 #include "comm/hep_base.h"
 #include "comm/file.h"
 #include "cloud/const.h"
@@ -22,6 +23,7 @@ HEPCLASS_IMPL_FUNCX_BEG(HocfgMgr)
 HEPCLASS_IMPL_FUNCX_MORE(HocfgMgr, OnSetConfigHandle)
 HEPCLASS_IMPL_FUNCX_MORE(HocfgMgr, OnGetAllCfgName)
 HEPCLASS_IMPL_FUNCX_MORE(HocfgMgr, OnCMD_HOCFGNEW_REQ)
+HEPCLASS_IMPL_FUNCX_MORE(HocfgMgr, OnCMD_BOOKCFGCHANGE_REQ)
 HEPCLASS_IMPL_FUNCX_END(HocfgMgr)
 
 HocfgMgr* HocfgMgr::This = NULL;
@@ -184,7 +186,7 @@ AppConfig* HocfgMgr::getConfigByName( const string& curCfgName )
 /**
  * @return: 返回文件时间截，如果是继承的(incBase=1)，则是最大文件的时间截；无文件返回0
  **/
-int HocfgMgr::getCfgMtime( const string& file_pattern, bool incBase ) const
+int HocfgMgr::getCfgMtime( const string& file_pattern, bool incBase ) 
 {
     int ret = 0;
     string baseStr;
@@ -353,6 +355,7 @@ int HocfgMgr::OnSetConfigHandle( void* ptr, unsigned cmdid, void* param )
         }
     }
 
+    This->notifyChange(filename, mtime);
     if (CMD_SETCONFIG_REQ == cmdid)
     {
         string resp = _F("{\"code\": %d, \"desc\": \"%s\"}", ret, desc.c_str());
@@ -367,12 +370,40 @@ int HocfgMgr::OnSetConfigHandle( void* ptr, unsigned cmdid, void* param )
     }
     else
     {
-        RJSON_GETSTR_D(from, &doc);
+        string from;
+        RJSON_VGETSTR(from, BROARDCAST_KEY_FROM, &doc);
         LOGINFO("HOCFGSET| msg=modify hocfg by Serv(%s) %s| filename=%s| ret=%d", 
             from.c_str(), callby.c_str(), filename.c_str(), ret);
     }
 
     return ret;
+}
+
+// 当某配置发生变化时，通知到已订阅的客户端
+void HocfgMgr::notifyChange( const string& filename, int mtime )
+{
+    string aliasPrefix = _F("%s_%s@", BOOK_HOCFG_ALIAS_PREFIX, filename.c_str());
+    CliMgr::AliasCursor alcr(aliasPrefix); 
+    CliBase *cli = NULL;
+    vector<CliBase*> vecCli;
+
+    string msg("{");
+    StrParse::PutOneJson(msg, "notify", "cfg_change", true);
+    StrParse::PutOneJson(msg, "filename", filename, true);
+    StrParse::PutOneJson(msg, "mtime", mtime, false);
+    msg += "}";
+
+    while ((cli = alcr.pop()))
+    {
+        IOHand* iohand = dynamic_cast<IOHand*>(cli);
+        if (NULL == iohand)
+        {
+            LOGWARN("NOTIFYCHANGE| msg=book from ocli| cli=%s| file=%s",
+                       cli->m_idProfile.c_str(), filename.c_str());
+            continue;
+        }
+        iohand->sendData(CMD_BOOKCFGCHANGE_REQ, ++m_seqid, msg.c_str(), msg.size(), true);
+    }
 }
 
 /**
@@ -534,3 +565,39 @@ int HocfgMgr::OnCMD_HOCFGNEW_REQ( void* ptr, unsigned cmdid, void* param )
     return ret;
 }
 
+// 请求订阅配置改变通知
+//  { "file_pattern": "xxx", "incbase": 1}
+int HocfgMgr::OnCMD_BOOKCFGCHANGE_REQ( void* ptr, unsigned cmdid, void* param )
+{
+    MSGHANDLE_PARSEHEAD(false)
+    RJSON_VGETINT_D(incbase, HOCFG_INCLUDEBASE_KEY, &doc);
+    RJSON_VGETSTR_D(file_pattern, HOCFG_FILENAME_KEY, &doc);
+
+    NormalExceptionOn_IFTRUE(file_pattern.empty()||NULL==This->getConfigByName(file_pattern), 
+            420, CMD_BOOKCFGCHANGE_RSP, seqid, string("no file=" + file_pattern));
+        
+    string baseStr;
+    int ret = 0;
+    vector<string> vecBase;
+
+    if (1 == incbase && This->getBaseConfigName(baseStr, file_pattern))
+    {
+        ret = StrParse::SpliteStr(vecBase, baseStr, ' ');
+    }
+    
+    vecBase.push_back(file_pattern);
+    vector<string>::const_iterator vitr = vecBase.begin();
+    for (; vitr != vecBase.end(); ++vitr)
+    {
+        const string& vitem = *vitr;
+        if (StrParse::IsCharacter(vitem))
+        {
+            string aliasName = _F("%s_%s@%s", BOOK_HOCFG_ALIAS_PREFIX, 
+                vitem.c_str(), iohand->getProperty(CONNTERID_KEY).c_str());
+            ret = CliMgr::Instance()->addAlias2Child(aliasName, iohand);
+            ERRLOG_IF1(ret, "HOCFGBOOK| msg=add alias fail| aliasName=%s| iohand=%p", aliasName.c_str(), iohand);
+        }
+    }
+
+    return ret;
+}

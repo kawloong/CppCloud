@@ -33,6 +33,8 @@ enum command_id_t
     CMD_HOCFGNEW_REQ = 0x0011, // 需要新的配置
     CMD_SETCONFIG2_REQ = 0x0012, // 单播
     CMD_SETCONFIG3_REQ = 0x0013, // 广播
+    CMD_BOOKCFGCHANGE_REQ = 0x0014, // 订阅配置改变,有改变时通过CMD_EVNOTIFY_REQ通知
+    CMD_EVNOTIFY_REQ = 0x0015, // 通知app事件
 
     CMDID_MID = 0x1000,
 
@@ -55,6 +57,8 @@ enum command_id_t
     CMD_HOCFGNEW_RSP = 0x1011, 
     CMD_SETCONFIG2_RSP = 0x1012,
     CMD_SETCONFIG3_RSP = 0x1013,
+    CMD_BOOKCFGCHANGE_RSP = 0x1014, 
+    CMD_EVNOTIFY_RSP = 0x1015,
 };
 
 static const unsigned char g_msg_ver = 1;
