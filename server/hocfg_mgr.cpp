@@ -346,12 +346,12 @@ int HocfgMgr::OnSetConfigHandle( void* ptr, unsigned cmdid, void* param )
     }
     else
     {
-        filename = This->m_cfgpath + filename; // 文件名要加上本地路径来存储
-        ret = This->parseConffile(filename, Rjson::ToString(contents), mtime);
+        string fullfilename = This->m_cfgpath + filename; // 文件名要加上本地路径来存储
+        ret = This->parseConffile(fullfilename, Rjson::ToString(contents), mtime);
         desc = (0==ret)? "success": "fail";
         if (0 == ret)
         {
-            ret = This->save2File(filename, contents);
+            ret = This->save2File(fullfilename, contents);
         }
     }
 
@@ -402,7 +402,7 @@ void HocfgMgr::notifyChange( const string& filename, int mtime )
                        cli->m_idProfile.c_str(), filename.c_str());
             continue;
         }
-        iohand->sendData(CMD_BOOKCFGCHANGE_REQ, ++m_seqid, msg.c_str(), msg.size(), true);
+        iohand->sendData(CMD_EVNOTIFY_REQ, ++m_seqid, msg.c_str(), msg.size(), true);
     }
 }
 
@@ -585,19 +585,28 @@ int HocfgMgr::OnCMD_BOOKCFGCHANGE_REQ( void* ptr, unsigned cmdid, void* param )
         ret = StrParse::SpliteStr(vecBase, baseStr, ' ');
     }
     
+    string linkFiles;
     vecBase.push_back(file_pattern);
     vector<string>::const_iterator vitr = vecBase.begin();
     for (; vitr != vecBase.end(); ++vitr)
     {
         const string& vitem = *vitr;
-        if (StrParse::IsCharacter(vitem))
+        static const string filename_special_char("/-._"); // 文件名可以包含的特殊字符
+        if (StrParse::IsCharacter(vitem, filename_special_char, true))
         {
             string aliasName = _F("%s_%s@%s", BOOK_HOCFG_ALIAS_PREFIX, 
                 vitem.c_str(), iohand->getProperty(CONNTERID_KEY).c_str());
             ret = CliMgr::Instance()->addAlias2Child(aliasName, iohand);
             ERRLOG_IF1(ret, "HOCFGBOOK| msg=add alias fail| aliasName=%s| iohand=%p", aliasName.c_str(), iohand);
+            if (0 == ret)
+            {
+                linkFiles += vitem + " ";
+            }
         }
     }
 
+    string resp = 0 == ret? _F("{\"code\": 0, \"desc\": \"monitor %s success\"}", linkFiles.c_str()) :
+        _F("{\"code\": 400, \"desc\": \"fail %d\"", ret);
+    iohand->sendData(CMD_BOOKCFGCHANGE_RSP, seqid, resp.c_str(), resp.length(), true);
     return ret;
 }

@@ -17,9 +17,9 @@ CliMgr::AliasCursor::AliasCursor( const string& key_beg, const string& key_end )
 {
 }
 
-CliBase* CliMgr::AliasCursor::pop(void)
+CliBase* CliMgr::AliasCursor::pop(bool forceFindEach)
 {
-	return iter_range.pop();
+	return iter_range.pop(forceFindEach);
 }
 
 bool CliMgr::AliasCursor::empty(void)
@@ -33,6 +33,7 @@ CliMgr::CliMgr(void)
 	m_waitRmPtr = NULL;
 	m_localEra = 0;
 }
+
 CliMgr::~CliMgr(void)
 {
 	IFDELETE(m_waitRmPtr);
@@ -131,7 +132,7 @@ void CliMgr::removeAliasChild( CliBase* ptr, bool rmAll )
 				IFDELETE(m_waitRmPtr); // 清理前一待删对象(为避免同步递归调用)
 			}
 
-			LOGINFO("CliMgr_CHILDRM| msg=a iohand close| dt=%ds| asname=%s", int(time(NULL)-cliinfo.t0), asnamestr.c_str());
+			LOGINFO("CliMgr_CHILDRM| msg=a iohand close| life=%ds| asname=%s", int(time(NULL)-cliinfo.t0), asnamestr.c_str());
 			if (it->second.inControl)
 			{
 				m_waitRmPtr = static_cast<IOHand*>(ptr);
@@ -313,9 +314,9 @@ int CliMgr::onChildEvent( int evtype, va_list ap )
 
 		// 广播通知其他Serv某一cli下线
 		string broadcast_msg = _F("{\"%s\":[%d]}", UPDATE_CLIPROP_DOWNKEY, son->getIntProperty(CONNTERID_KEY));
-		BroadCastCli::Instance()->toWorld(broadcast_msg, CMD_UPDATEERA_REQ, 0, false);
-
 		removeAliasChild(son, true);
+		son = NULL;
+		BroadCastCli::Instance()->toWorld(broadcast_msg, CMD_UPDATEERA_REQ, 0, false);
 		ret = 0;
 	}
 	else if (HEPNTF_SET_ALIAS == evtype)

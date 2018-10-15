@@ -44,7 +44,7 @@ public:
         CliMapRange iter_range;
         AliasCursor(const string& key_beg);
         AliasCursor(const string& key_beg, const string& key_end);
-        CliBase* pop(void);
+        CliBase* pop(bool forceFindEach=false);
         bool empty(void);
     };
 

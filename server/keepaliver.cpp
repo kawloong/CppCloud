@@ -35,11 +35,11 @@ int KeepAliver::qrun( int flag, long p2 )
 
     LOGDEBUG("KEEPALIVRUN| %s", CliMgr::Instance()->selfStat(false).c_str());
     CliMgr::AliasCursor alcur(CLI_PREFIX_KEY_TIMEOUT);
-    while ( (cli = alcur.pop()) )
+    while ( (cli = alcur.pop(true)) )
     {
         if (expire_dead_key.compare(alcur.iter_range.retKey) > 0) // 需清理
         {
-            LOGDEBUG("KEEPALIVRUN| msg=remove %s", CliMgr::Instance()->selfStat(false).c_str());
+            LOGDEBUG("KEEPALIVRUN| msg=remove| %s", CliMgr::Instance()->selfStat(false).c_str());
             if (cli->isLocal())
             {
                 closeCli(cli);

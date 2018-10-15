@@ -406,7 +406,7 @@ int IOHand::sendData( unsigned int cmdid, unsigned int seqid, const char* body, 
 	if (setOutAtonce)
 	{
 		int ret = m_epCtrl.addEvt(EPOLLOUT);
-		ERRLOG_IF1(ret, "IOHAND_SET_EPOU| msg=set out flag fail %d| mi=%s", ret, m_cliName.c_str());
+		ERRLOG_IF1(ret, "IOHAND_SET_EPOU| msg=set out flag fail %d| mi=%s| fd=%d", ret, m_cliName.c_str(), m_cliFd);
 	}
 
 	return 0;

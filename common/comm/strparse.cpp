@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include "strparse.h"
 
-// ÒÔdv×÷Îª·Ö¸ô·û²ð·Östr´®·µµÃµ½µÄ½á¹û´æ·Åµ½dataÈÝÆ÷
+// ï¿½ï¿½dvï¿½ï¿½Îªï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½strï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½ï¿½Ä½ï¿½ï¿½ï¿½ï¿½Åµï¿½dataï¿½ï¿½ï¿½ï¿½
 int StrParse::SpliteInt(vector<int>& data, const string& str, char dv, int nildef)
 {
     vector<string> vstr;
@@ -26,7 +26,7 @@ int StrParse::SpliteInt(vector<int>& data, const string& str, char dv, int nilde
     return 0;
 }
 
-// ÒÔdv×÷Îª·Ö¸ô·û²ð·Östr´®·µµÃµ½µÄ½á¹û´æ·Åµ½dataÈÝÆ÷
+// ï¿½ï¿½dvï¿½ï¿½Îªï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½strï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½ï¿½Ä½ï¿½ï¿½ï¿½ï¿½Åµï¿½dataï¿½ï¿½ï¿½ï¿½
 int StrParse::SpliteStr(vector<string>& data, const string& str, char dv)
 {
     if (!str.empty())
@@ -63,8 +63,8 @@ int StrParse::SpliteStr(vector<string>& data, const char* pstr, unsigned int len
     return 0;
 }
 
-// @summery: query_string²ÎÊý½âÎö, ÊäÈëqstrÊÇ"key1=va11&key2=vv2&key3=123"ÐÎÊ½;
-// @param: outPar [out] ½ÓÊÕ½âÒª½á¹ûoutPar[key1]="val1"..
+// @summery: query_stringï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½qstrï¿½ï¿½"key1=va11&key2=vv2&key3=123"ï¿½ï¿½Ê½;
+// @param: outPar [out] ï¿½ï¿½ï¿½Õ½ï¿½Òªï¿½ï¿½ï¿½outPar[key1]="val1"..
 int StrParse::SpliteQueryString( map<string, string>& outPar, const string& querystr )
 {
     int ret = 0;
@@ -160,7 +160,7 @@ int StrParse::PickOneJson(string& ostr, const string& src, const string& name)
         char chkch;
         size_t namepos = tempstr.find(tmpname);
 
-        // ÕÒµ½Ò»¸öÍêÈ«Æ¥ÅäµÄkey
+        // ï¿½Òµï¿½Ò»ï¿½ï¿½ï¿½ï¿½È«Æ¥ï¿½ï¿½ï¿½key
         while (namepos != string::npos)
         {
             pchstr = tempstr.data();
@@ -192,7 +192,7 @@ int StrParse::PickOneJson(string& ostr, const string& src, const string& name)
             namepos = tempstr.find(tmpname, namepos+namelen);
         }
 
-        if (!found) break; // ÕÒ²»µ½key
+        if (!found) break; // ï¿½Ò²ï¿½ï¿½ï¿½key
 
         size_t valpos = tempstr.find_first_of(":=", namepos+namelen);
         if (string::npos == valpos) break;
@@ -203,7 +203,7 @@ int StrParse::PickOneJson(string& ostr, const string& src, const string& name)
 
         if (valpos >= len) break;
 
-        // 2016-06-14 Ôö¼Ó´¦ÀíË«ÒýºÅµÄ¹¦ÄÜ
+        // 2016-06-14 ï¿½ï¿½ï¿½Ó´ï¿½ï¿½ï¿½Ë«ï¿½ï¿½ï¿½ÅµÄ¹ï¿½ï¿½ï¿½
         size_t valend;
         if ('\"' == pchstr[valpos])
         {
@@ -235,7 +235,7 @@ int StrParse::PickOneJson(string& ostr, const string& src, const string& name)
             valend = tempstr.find_first_of(" ,}\r\n", valpos);
         }
 
-        // ÌáÈ¡½á¹ûÖµ
+        // ï¿½ï¿½È¡ï¿½ï¿½ï¿½Öµ
         if (string::npos == valend)
         {
             ostr = tempstr.substr(valpos);
@@ -331,6 +331,40 @@ bool StrParse::IsCharacter(const string& str, bool inc_digit)
     return ret;
 }
 
+bool StrParse::IsCharacter(const string& str, const string& excludeStr, bool inc_digit)
+{
+    bool ret = true;
+    size_t len = str.length();
+    size_t lenExclu = excludeStr.length();
+    const char* pstr = str.c_str();
+
+    for (size_t i = 0; i < len; ++i)
+    {
+        char ch = pstr[i];
+        if (!( (ch >= 'a' && ch <= 'z') ||
+             (ch >= 'A' && ch <= 'Z') ||
+             (inc_digit && ch >= '0' && ch <= '9')))
+        {
+            size_t j = 0;
+            for (; j < lenExclu; ++j)
+            {
+                if( ch == excludeStr[j])
+                {
+                    break;
+                }
+            }
+
+            if (0 == lenExclu || j >= lenExclu)
+            {
+                ret = false;
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
 bool StrParse::IsNumberic(const string& str)
 {
     bool ret = true;
@@ -378,7 +412,7 @@ string StrParse::Format( const char* fmt, ... )
     ret=vsnprintf(buff, sizeof(buff)-1, fmt, ap);
     va_end(ap);
 
-	// ³¬³¤Ê±¿¼ÂÇÓÃvasprintf
+	// ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½vasprintf
 	if (ret >= (int)sizeof(buff))
 	{
 		va_list ap2;

@@ -34,7 +34,8 @@ public:
 	static void AdjustPath(string& path, bool useend, char dv = '/');
 
     // 判断字符串是否不含特殊字符
-    static bool IsCharacter(const string& str, bool inc_digit = true);
+    static bool IsCharacter(const string& str, bool inc_digit);
+    static bool IsCharacter(const string& str, const string& excludeStr, bool inc_digit);
     static bool IsNumberic(const string& str);
 
     // 字符串格式化,类似sprintf作用

@@ -49,31 +49,38 @@ public:
     AliasContainer& contn;
     AliasIterator it0;
     AliasIterator it1;
+    bool firstPop;
 
 
     MapRanger(AliasContainer& container, const MPKEY& k0 ): 
-        lower(k0), contn(container) 
+        lower(k0), contn(container), firstPop(true) 
     {
         it0 = contn.lower_bound(lower);
         it1 = contn.end();
     }
 
     MapRanger(AliasContainer& container, const MPKEY& k0, const MPKEY& k1 ): 
-        lower(k0), upper(k1), contn(container) 
+        lower(k0), upper(k1), contn(container), firstPop(true) 
     {
         it0 = contn.lower_bound(lower);
         it1 = contn.upper_bound(upper);
     }
 
-    MPVAL pop(void)
+    // param: forceFindEach是否每一次pop()都进行查找，当pop()得到的对象会可能被删除的情况要传true
+    MPVAL pop(bool forceFindEach=false)
     {
         MPVAL ret = NULL;
+        if (forceFindEach && !firstPop)
+        {
+            it0 = contn.upper_bound(retKey);
+        }
         if (it0 != contn.end() && it0 != it1)
         {
             ret = (it0->second);
             retKey = it0->first;
             retVal = it0->second;
             ++it0;
+            firstPop = false;
         }
 
         return ret;
