@@ -13,13 +13,14 @@ Modification :
 #include "iohand.h"
 #include <cstdarg>
 #include <map>
-#include <list>
+#include <vector>
 #include <string>
 
 using std::map;
-using std::list;
+using std::vector;
 using std::string;
 
+typedef void (*CliPreCloseNotifyFunc)( CliBase* );
 typedef MapRanger<string, CliBase*> CliMapRange;
 
 struct CliInfo
@@ -83,6 +84,7 @@ public:
     // 获取当前对象状态
     string selfStat( bool incAliasDetail );
 
+    void addCliCloseConsumerFunc( CliPreCloseNotifyFunc func );
     int onChildEvent( int evtype, va_list ap );
 
 private:
@@ -92,6 +94,7 @@ private:
 protected:
     map<CliBase*, CliInfo> m_children;
     map<string, CliBase*> m_aliName2Child;
+    vector<CliPreCloseNotifyFunc> m_cliCloseConsumer; // 客户关闭事件消费者
 
     IOHand* m_waitRmPtr;
     int m_localEra;

@@ -34,7 +34,7 @@ class ScommCli2(ScommCli):
             if (0 == itemsnd):
                 return 0
             ret = self.sndMsg(*itemsnd)
-            print('*%s* Send ret=%d| %s'% (time.ctime(), ret, itemsnd))
+            print('*%s* Send ret=%d| cmd=0x%x| %s'% (time.ctime(), ret, itemsnd[0], itemsnd))
 
     def _recvLoop(self):
         while not self.bexit:
@@ -75,7 +75,7 @@ class ScommCli2(ScommCli):
                     self.sndQ.put(rsptuple)
 
     def _doUnknowCMD(self, cmdid, seqid, msgbody):
-        print('recv Undefine Cmd=%x,msgbody=%s' % (cmdid, msgbody))
+        print('recv Undefine Cmd=0x%x,msgbody=%s' % (cmdid, msgbody))
         if cmdid < CMDID_MID: # discard or not?
             return (cmdid|CMDID_MID, seqid, {'code': 404, 'desc': 'unknow command'})
 
@@ -101,6 +101,10 @@ class ScommCli2(ScommCli):
             self.sndQ.put( (cmdid|CMDID_MID, seqid, {
                 'to': msgbody.get('from'), 'from': self.svrid, 'code': 410, 'desc': 'unknow command'}) )
     
+    # param: func is def function_name(cmd, seqid, msg)
+    def setCmdHandle(self, cmdid, func):
+        self.cmd2doFun[cmdid] = func;
+
     def tell_whoami(self): # 覆盖基类，无操作
         pass
     # 发出请求，并等待回应
@@ -114,7 +118,7 @@ class ScommCli2(ScommCli):
         try:
             resp = waitq.get(timeout=self.reqTimeOutSec) # 
         except:
-            print('req %x timeout (body=%s)' % (cmdid, reqbody))
+            print('req 0x%x timeout (body=%s)' % (cmdid, reqbody))
         #self.waitRspQMap.pop(seqid)
         return resp
     

@@ -36,8 +36,18 @@ def qconf():
     return gweb_cli.request(CMD_GETCONFIG_REQ, {
         "file_pattern": request.args.get("file_pattern"),
         "key_pattern": request.args.get("key_pattern"),
+        "gt_mtime": int(request.args.get("gt_mtime", 0)),
         "incbase": int(request.args.get("incbase", 0))
     })
+
+@app.route('/bookchange')
+def bookchange():
+    rsp = gweb_cli.request(CMD_BOOKCFGCHANGE_REQ, {
+        "file_pattern": request.args.get("file_pattern"),
+        "incbase": int(request.args.get("incbase", 0))
+    })
+    print("bookchange resp:"+rsp)
+    return rsp
 
 @app.route('/setconf', methods=['POST'])
 def setconf():
@@ -45,6 +55,9 @@ def setconf():
     #print(type(data))
     print(request.json)
     return gweb_cli.request(CMD_SETCONFIG_REQ, request.json)
+
+def onNotifyMsg(cmdid, seqid, msg):
+    print(msg)
 
 if __name__ == '__main__':
     gweb_cli = ScommCli2( 
@@ -54,6 +67,8 @@ if __name__ == '__main__':
         progName = "Web-Ctrl",
         progDesc = "Web-Serv(monitor)"
     )
+
+    gweb_cli.setCmdHandle(CMD_EVNOTIFY_REQ, onNotifyMsg);
 
     if gweb_cli.run():
         # app.debug = True

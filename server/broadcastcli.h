@@ -14,6 +14,7 @@ Modification :
 class CliBase;
 class IOHand;
 
+
 class BroadCastCli: public HEpBase
 {
 public:
@@ -30,6 +31,7 @@ public:
     static int on_CMD_UPDATEERA_REQ( IOHand* iohand, const Value* doc, unsigned seqid );
 
     void init( int my_svrid );
+    
     static string GetDebugTrace( void );
     static int setJsonMember( const string& key, const string& val, Document* node );
 

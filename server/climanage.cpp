@@ -126,6 +126,15 @@ void CliMgr::removeAliasChild( CliBase* ptr, bool rmAll )
 
 		if (rmAll) // 移除m_children指针
 		{
+			if (!m_cliCloseConsumer.empty())
+			{
+				vector<CliPreCloseNotifyFunc>::iterator itrConsumer = m_cliCloseConsumer.begin();
+				for (; itrConsumer != m_cliCloseConsumer.end(); ++itrConsumer)
+				{
+					(*itrConsumer)(it->first);
+				}
+			}
+
 			m_children.erase(it);
 			if (ptr != (CliBase*)m_waitRmPtr)
 			{
@@ -327,6 +336,14 @@ int CliMgr::onChildEvent( int evtype, va_list ap )
 	}
 
 	return ret;
+}
+
+void CliMgr::addCliCloseConsumerFunc( CliPreCloseNotifyFunc func )
+{
+	if (func)
+	{
+		m_cliCloseConsumer.push_back(func);
+	}
 }
 
 // ep线程调用此方法通知各子对象退出
