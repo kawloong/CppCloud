@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 FileName     : provider_manage.h
-Description  : 服务提供者
+Description  : 全局服务提供者管理类
 remark       : 
 Modification :
 --------------------------------------------------------------------------
@@ -23,11 +23,22 @@ class ProviderMgr
 	ProviderMgr( void );
 	~ProviderMgr( void );
 
+public:
+	static int OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param ); // 服务注册/更新
+	static int OnCMD_SVRSEARCH_REQ( void* ptr, unsigned cmdid, void* param ); // 服务发现
+
 	static void OnCliCloseHandle( CliBase* cli );
 	void onCliCloseHandle( CliBase* cli );
 
 private:
+	int getAllJson( string& strjson ) const;
+	int getOneProviderJson( string& strjson, const string& svrname ) const;
+	int getOneProviderJson( string& strjson, const string& svrname, short idc, short rack, short version, short limit ) const;
+
+private:
 	map<string, ServiceProvider*> m_providers;
+	int m_seqid;
+	static ProviderMgr* This;
 };
 
 #endif

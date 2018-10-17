@@ -51,7 +51,6 @@ void HocfgMgr::uninit( void )
     map<string, AppConfig*>::iterator itr = m_Allconfig.begin();
     for (; itr != m_Allconfig.end(); ++itr)
     {
-        LOGDEBUG("delete %p", itr->second);
         IFDELETE(itr->second);
     }
     m_Allconfig.clear();
@@ -102,10 +101,10 @@ int HocfgMgr::loads( const string& dirpath )
 }
 
 // 获取父级继承关系, 多个父级以空格分隔, 继承顺序由高至低(即祖父 父 子)
-bool HocfgMgr::getBaseConfigName( string& baseCfg, const string& curCfgName )
+bool HocfgMgr::getBaseConfigName( string& baseCfg, const string& curCfgName ) const
 {
     int ret = -1;
-    map<string,AppConfig*>::iterator itr = m_Allconfig.find(HOCFG_METAFILE);
+    map<string,AppConfig*>::const_iterator itr = m_Allconfig.find(HOCFG_METAFILE);
     if (m_Allconfig.end() != itr)
     {
         AppConfig* papp = itr->second;
@@ -131,7 +130,7 @@ int HocfgMgr::parseConffile( const string& filename, const string& contents, tim
     if (m_Allconfig.end() == itr)
     {
         papp = new AppConfig;
-        LOGDEBUG("new ptr=%p", papp);
+        
         m_Allconfig[key] = papp;
         papp->mtime = mtime;
         papp->doc.Parse(contents.c_str());
@@ -152,7 +151,7 @@ int HocfgMgr::parseConffile( const string& filename, const string& contents, tim
 }
 
 // json合并, 将node1的内存合并进node0
-int HocfgMgr::mergeJsonFile( Value* node0, const Value* node1, MemoryPoolAllocator<>& allc )
+int HocfgMgr::mergeJsonFile( Value* node0, const Value* node1, MemoryPoolAllocator<>& allc ) const
 {
     ERRLOG_IF1RET_N(!node1->IsObject(), -45, "MERGEJSON| msg=node1 not object| node1=%s", Rjson::ToString(node1).c_str());
 
@@ -176,9 +175,9 @@ int HocfgMgr::mergeJsonFile( Value* node0, const Value* node1, MemoryPoolAllocat
     return 0;
 }
 
-AppConfig* HocfgMgr::getConfigByName( const string& curCfgName )
+AppConfig* HocfgMgr::getConfigByName( const string& curCfgName ) const
 {
-    map<string, AppConfig*>::iterator itr = m_Allconfig.find(curCfgName);
+    map<string, AppConfig*>::const_iterator itr = m_Allconfig.find(curCfgName);
     AppConfig* papp = (m_Allconfig.end() == itr)? NULL: itr->second;
     return papp;
 }
@@ -186,7 +185,7 @@ AppConfig* HocfgMgr::getConfigByName( const string& curCfgName )
 /**
  * @return: 返回文件时间截，如果是继承的(incBase=1)，则是最大文件的时间截；无文件返回0
  **/
-int HocfgMgr::getCfgMtime( const string& file_pattern, bool incBase ) 
+int HocfgMgr::getCfgMtime( const string& file_pattern, bool incBase ) const
 {
     int ret = 0;
     string baseStr;
@@ -216,7 +215,7 @@ int HocfgMgr::getCfgMtime( const string& file_pattern, bool incBase )
 
 // 分布式配置查询, file_pattern每个token以-分隔, key_pattern每个token以/分隔
 // 返回的字符串可能是 {object} [array] "string" integer null
-int HocfgMgr::query( string& result, const string& file_pattern, const string& key_pattern, bool incBase )
+int HocfgMgr::query( string& result, const string& file_pattern, const string& key_pattern, bool incBase ) const
 {
     int ret = 0;
 
@@ -276,7 +275,7 @@ int HocfgMgr::query( string& result, const string& file_pattern, const string& k
     return ret;
 }
 
-int HocfgMgr::queryByKeyPattern( string& result, const Value* jdoc, const string& file_pattern, const string& key_pattern )
+int HocfgMgr::queryByKeyPattern( string& result, const Value* jdoc, const string& file_pattern, const string& key_pattern ) const
 {
     int ret = 0;
 
@@ -380,7 +379,7 @@ int HocfgMgr::OnSetConfigHandle( void* ptr, unsigned cmdid, void* param )
 }
 
 // 当某配置发生变化时，通知到已订阅的客户端
-void HocfgMgr::notifyChange( const string& filename, int mtime )
+void HocfgMgr::notifyChange( const string& filename, int mtime ) const
 {
     string aliasPrefix = _F("%s_%s@", BOOK_HOCFG_ALIAS_PREFIX, filename.c_str());
     CliMgr::AliasCursor alcr(aliasPrefix); 
@@ -467,7 +466,7 @@ void HocfgMgr::remove( const string& cfgname, time_t mtime )
     }
 }
 
-int HocfgMgr::save2File( const string& filename, const Value* doc )
+int HocfgMgr::save2File( const string& filename, const Value* doc ) const
 {
     FILE* fp = NULL;
     char buf[64];

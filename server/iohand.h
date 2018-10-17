@@ -30,9 +30,9 @@ public: // interface HEpBase
 	virtual int onEvent( int evtype, va_list ap );
 
 	// 自定义属性的操作
-    void setProperty( const string& key, const string& val );
-    string getProperty( const string& key );
-	int getCliType(void) {return m_cliType; }
+    //void setProperty( const string& key, const string& val );
+    //string getProperty( const string& key );
+	//int getCliType(void) {return m_cliType; }
 	string getERAstr( void );
 
 	int driveClose( const string& reason );

@@ -45,6 +45,7 @@ int IOHand::Init( void )
 	s_cmdid2clsname[CMD_GETWARN_REQ] = "QueryHand::ProcessOne";
 	s_cmdid2clsname[CMD_TESTING_REQ] = "QueryHand::ProcessOne";
 	s_cmdid2clsname[CMD_GETCONFIG_REQ] = "QueryHand::ProcessOne";
+
 	s_cmdid2clsname[CMD_HOCFGNEW_REQ] = "HocfgMgr::OnCMD_HOCFGNEW_REQ";
 	s_cmdid2clsname[CMD_SETCONFIG_REQ] = "HocfgMgr::OnSetConfigHandle";
 	s_cmdid2clsname[CMD_SETCONFIG2_REQ] = "HocfgMgr::OnSetConfigHandle";
@@ -64,6 +65,10 @@ int IOHand::Init( void )
 	s_cmdid2clsname[CMD_CLIERA_REQ] = "BroadCastCli::OnBroadCMD"; 
 	s_cmdid2clsname[CMD_CLIERA_RSP] = "BroadCastCli::OnBroadCMD";
 	s_cmdid2clsname[CMD_UPDATEERA_REQ] = "BroadCastCli::OnBroadCMD";
+
+	// 分布式服务治理
+	s_cmdid2clsname[CMD_SVRREGISTER_REQ] = "ProviderMgr::OnCMD_SVRREGISTER_REQ";
+	s_cmdid2clsname[CMD_SVRSEARCH_REQ] = "ProviderMgr::OnCMD_SVRSEARCH_REQ";
 
 	s_cmdid2clsname[0] = "BegnHand::ProcessOne"; // default handle class
 
@@ -413,7 +418,7 @@ int IOHand::sendData( unsigned int cmdid, unsigned int seqid, const char* body, 
 }
 
 
-
+/*
 void IOHand::setProperty( const string& key, const string& val )
 {
 	m_cliProp[key] = val;
@@ -429,6 +434,7 @@ string IOHand::getProperty( const string& key )
 
 	return "";
 }
+*/
 
 string IOHand::getERAstr( void )
 {

@@ -30,9 +30,9 @@ public: // interface HEpBase
 	// 自定义属性的操作
 	int Json2Map( const Value* objnode );
     void setProperty( const string& key, const string& val );
-    string getProperty( const string& key );
+    string getProperty( const string& key ) const;
     void setIntProperty( const string& key, int val );
-    int getIntProperty( const string& key );
+    int getIntProperty( const string& key ) const;
 	void setCliType(int tp) { m_cliType=tp; }
 	void updateEra( void );
 
@@ -42,7 +42,7 @@ public: // interface HEpBase
 	bool isLocal(void) const { return m_isLocal; }
 	//bool isOutObj(void) const { return m_outObj; }
 
-	int serialize( string& outstr );
+	int serialize( string& outstr ) const;
 	int unserialize( const Value* rpJsonValue );
 
 protected:

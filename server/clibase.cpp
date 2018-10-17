@@ -45,7 +45,7 @@ void CliBase::setProperty( const string& key, const string& val )
 	m_cliProp[key] = val;
 }
 
-string CliBase::getProperty( const string& key )
+string CliBase::getProperty( const string& key ) const
 {
 	map<string, string>::const_iterator itr = m_cliProp.find(key);
 	if (itr != m_cliProp.end())
@@ -90,12 +90,12 @@ void CliBase::updateEra( void )
 	m_era = 1 + m_era;
 }
 
-int CliBase::getIntProperty( const string& key )
+int CliBase::getIntProperty( const string& key ) const
 {
 	return atoi(getProperty(key).c_str());
 }
 
-int CliBase::serialize( string& outstr )
+int CliBase::serialize( string& outstr ) const
 {
 	map<string, string>::const_iterator it = m_cliProp.begin();
 	for (; it != m_cliProp.end(); ++it)

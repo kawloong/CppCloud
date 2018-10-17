@@ -41,33 +41,33 @@ public:
 	int init( const string& conf_root );
 	void uninit( void );
 
-	int query( string& result, const string& file_pattern, const string& key_pattern, bool incBase );
+	int query( string& result, const string& file_pattern, const string& key_pattern, bool incBase ) const;
 	string getAllCfgNameJson( int filter_flag = 2 ) const;
-	int getCfgMtime( const string& file_pattern, bool incBase ) ;
+	int getCfgMtime( const string& file_pattern, bool incBase ) const;
 
 	// 分布式配置互相同步最新配置
 	int compareServHoCfg( int fromSvrid, const Value* jdoc );
 
 private:
 	int loads( const string& dirpath );
-	bool getBaseConfigName( string& baseCfg, const string& curCfgName );
-	AppConfig* getConfigByName( const string& curCfgName );
+	bool getBaseConfigName( string& baseCfg, const string& curCfgName ) const;
+	AppConfig* getConfigByName( const string& curCfgName ) const;
 	void remove( const string& cfgname, time_t mtime );
 
 	int parseConffile( const string& filename, const string& contents, time_t mtime ); // 读出,解析
-	int save2File( const string& filename, const Value* doc ); // 持久化至磁盘
+	int save2File( const string& filename, const Value* doc ) const; // 持久化至磁盘
 
-	int mergeJsonFile( Value* node0, const Value* node1, MemoryPoolAllocator<>& allc ); // 合并继承json
+	int mergeJsonFile( Value* node0, const Value* node1, MemoryPoolAllocator<>& allc ) const; // 合并继承json
 	int queryByKeyPattern( string& result, const Value* jdoc, 
-		const string& file_pattern, const string& key_pattern ); // 输入json-key返回对应value
+		const string& file_pattern, const string& key_pattern ) const; // 输入json-key返回对应value
 
 	// 事件通知触发
-	void notifyChange( const string& filename, int mtime );
+	void notifyChange( const string& filename, int mtime ) const;
 
 private:
 	string m_cfgpath;
 	map<string, AppConfig*> m_Allconfig;
-	int m_seqid;
+	mutable int m_seqid;
 	static HocfgMgr* This;
 };
 
