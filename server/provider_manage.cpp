@@ -11,9 +11,10 @@
 HEPCLASS_IMPL_FUNCX_BEG(ProviderMgr)
 HEPCLASS_IMPL_FUNCX_MORE(ProviderMgr, OnCMD_SVRREGISTER_REQ)
 HEPCLASS_IMPL_FUNCX_MORE(ProviderMgr, OnCMD_SVRSEARCH_REQ)
+HEPCLASS_IMPL_FUNCX_MORE(ProviderMgr, OnCMD_SVRSHOW_REQ)
 HEPCLASS_IMPL_FUNCX_END(ProviderMgr)
 
-ProviderMgr* ProviderMgr::This = NULL;
+ProviderMgr* ProviderMgr::This = ProviderMgr::Instance();
 
 ProviderMgr::ProviderMgr( void )
 {
@@ -38,6 +39,7 @@ void ProviderMgr::OnCliCloseHandle( CliBase* cli )
 	ProviderMgr::Instance()->onCliCloseHandle(cli);
 }
 
+// 接收所有客户应用断开连接通知
 void ProviderMgr::onCliCloseHandle( CliBase* cli )
 {
 	if (cli->getCliType() > 1)
@@ -46,7 +48,29 @@ void ProviderMgr::onCliCloseHandle( CliBase* cli )
 		for (; itr != m_providers.end(); ++itr)
 		{
 			ServiceProvider* second = itr->second;
-			second->removeItme(cli);
+			bool exist = second->removeItme(cli);
+			if (exist)
+			{
+				string preKey(SVRBOOKCH_ALIAS_PREFIX);
+				preKey += "_" + itr->first + "@";
+				CliMgr::AliasCursor finder(preKey);
+				CliBase* invokerCli = NULL;
+				string msg;
+				while ( (invokerCli = finder.pop()) )
+				{
+					IOHand* invokerIO = dynamic_cast<IOHand*>(invokerCli);
+					if (NULL == invokerIO) continue;
+					if (msg.empty())
+					{
+						msg = _F("{\"notify\": \"provider_down\", \"svrid\": %d, \"svrname\": \"%s\"}",
+									cli->getIntProperty(CONNTERID_KEY), itr->first.c_str());
+					}
+					
+					int ret = invokerIO->sendData(CMD_EVNOTIFY_REQ, ++m_seqid, msg.c_str(), msg.length(), true);
+					LOGDEBUG("NOTIFYINVOKER| msg=notify provider_down to %d| ret=%d| msg=%s", 
+							invokerCli->getIntProperty(CONNTERID_KEY), ret, msg.c_str());
+				}
+			}
 		}
 	}
 }
@@ -85,8 +109,20 @@ int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
     	for (; itr != svrprop->MemberEnd(); ++itr)
 		{
 			const char* key = itr->name.GetString();
-			const char* val = itr->value.GetString();
-			cli->setProperty(regname + ":" + key, val);
+			if (itr->value.IsString())
+			{
+				const char* val = itr->value.GetString();
+				cli->setProperty(regname + ":" + key, val);
+			}
+			else if (itr->value.IsInt())
+			{
+				string val = StrParse::Itoa(itr->value.GetInt());
+				cli->setProperty(regname + ":" + key, val);
+			}
+			else if (itr->value.IsBool()) // true -> "1", false -> "0"
+			{
+				cli->setProperty(regname + ":" + key, itr->value.IsTrue()? "1": "0");
+			}
 		}
 	}
 
@@ -98,10 +134,12 @@ int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
 	}
 
 	ret = provider->setItem(cli);
+	string resp = _F("\"code\": 0, \"desc\": \"reg %s result %d\"", regname.c_str(), ret);
+	iohand->sendData(CMD_SVRREGISTER_RSP, seqid, resp.c_str(), resp.length(), true);
 	return ret;
 }
 
-// format: {"regname": "app1", version: 1, idc: 1, rack: 2 }
+// format: {"regname": "app1", version: 1, idc: 1, rack: 2, bookchange: 1 }
 int ProviderMgr::OnCMD_SVRSEARCH_REQ( void* ptr, unsigned cmdid, void* param )
 {
     MSGHANDLE_PARSEHEAD(false);
@@ -110,7 +148,8 @@ int ProviderMgr::OnCMD_SVRSEARCH_REQ( void* ptr, unsigned cmdid, void* param )
 	RJSON_GETINT_D(version, &doc);
 	RJSON_GETINT_D(idc, &doc);
 	RJSON_GETINT_D(rack, &doc);
-	int limit = 10;
+	RJSON_GETINT_D(bookchange, &doc);
+	int limit = 4;
 	RJSON_GETINT(limit, &doc);
 
 	if (0 == idc)
@@ -127,7 +166,33 @@ int ProviderMgr::OnCMD_SVRSEARCH_REQ( void* ptr, unsigned cmdid, void* param )
 	StrParse::PutOneJson(resp, "code", 0, false);
 	resp.append("}");
 
+	if (bookchange) // 订阅改变事件（cli下线）
+	{
+		string alias = string(SVRBOOKCH_ALIAS_PREFIX) + "_" + regname + "@" + iohand->getProperty(CONNTERID_KEY);
+		CliMgr::Instance()->addAlias2Child(alias, iohand);
+	}
+
 	return iohand->sendData(CMD_SVRSEARCH_RSP, seqid, resp.c_str(), resp.length(), true);
+}
+
+// format: {"regname": "all"}
+int ProviderMgr::OnCMD_SVRSHOW_REQ( void* ptr, unsigned cmdid, void* param )
+{
+    MSGHANDLE_PARSEHEAD(false);
+	RJSON_GETSTR_D(regname, &doc);
+	//RJSON_GETINT_D(onlyname, &doc);
+
+	bool ball = (regname.empty() || "all" == regname);
+	int count = 0;
+	string resp("{");
+
+	resp.append("\"data\":");
+	count = ball? This->getAllJson(resp) : This->getOneProviderJson(resp, regname);
+	resp.append(",");
+	StrParse::PutOneJson(resp, "len", count, false);
+	resp.append("}");
+
+	return iohand->sendData(CMD_SVRSHOW_RSP, seqid, resp.c_str(), resp.length(), true);
 }
 
 // return provider个数
@@ -138,7 +203,8 @@ int ProviderMgr::getAllJson( string& strjson ) const
 	map<string, ServiceProvider*>::const_iterator itr = m_providers.begin();
 	for (; itr != m_providers.end(); ++itr)
 	{
-		strjson += _F("\"%s\":", itr->first.c_str());
+		if (count > 0) strjson.append(",");
+		strjson.append(_F("\"%s\":", itr->first.c_str()));
 		itr->second->getAllJson(strjson);
 		++count;
 	}
@@ -154,7 +220,7 @@ int ProviderMgr::getOneProviderJson( string& strjson, const string& svrname ) co
 	map<string, ServiceProvider*>::const_iterator itr = m_providers.find(svrname);
 	if (itr != m_providers.end())
 	{
-		strjson += "\"svrname\":";
+		strjson.append(_F("\"%s\":", itr->first.c_str()));
 		count = itr->second->getAllJson(strjson);
 	}
 	strjson.append("}");

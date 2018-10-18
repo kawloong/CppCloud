@@ -26,6 +26,7 @@ class ProviderMgr
 public:
 	static int OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param ); // 服务注册/更新
 	static int OnCMD_SVRSEARCH_REQ( void* ptr, unsigned cmdid, void* param ); // 服务发现
+	static int OnCMD_SVRSHOW_REQ( void* ptr, unsigned cmdid, void* param ); // 服务展示
 
 	static void OnCliCloseHandle( CliBase* cli );
 	void onCliCloseHandle( CliBase* cli );

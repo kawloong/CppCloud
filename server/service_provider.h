@@ -28,6 +28,7 @@ struct ServiceItem
 	short weight; // 服务权重
 	short idc;
 	short rack;
+	bool islocal;
 	bool enable;
 
 	ServiceItem( void );
@@ -47,7 +48,7 @@ public:
 	~ServiceProvider( void );
 
 	int setItem( CliBase* cli );
-	void removeItme( CliBase* cli );
+	bool removeItme( CliBase* cli );
 
 	// 计算返回可用服务
 	int query( string& jstr, short idc, short rack, short version, short limit ) const;

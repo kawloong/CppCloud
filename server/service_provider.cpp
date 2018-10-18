@@ -5,7 +5,7 @@
 #include "comm/strparse.h"
 
 ServiceItem::ServiceItem( void ): svrid(0), okcount(0), ngcount(0), tmpnum(0),
-	 protocol(0),version(0), weight(0), idc(0), rack(0), enable(false)
+	 protocol(0),version(0), weight(0), idc(0), rack(0), islocal(false), enable(false)
 {
 
 }
@@ -23,6 +23,7 @@ int ServiceItem::parse0( const string& svrname, CliBase* cli )
 	this->svrname = svrname;
 	idc = cli->getIntProperty("idc");
 	rack = cli->getIntProperty("rack");
+	islocal = cli->isLocal();
 	return 0;
 }
 
@@ -81,6 +82,11 @@ int ServiceItem::score( short oidc, short orack ) const
 		score += (orack > 0 && orack == this->rack)? calc_weight*match_mult2 : calc_weight*match_mult1;
 	}
 
+	if (this->islocal) // 优先同一注册中心的服务
+	{
+		score += calc_weight;
+	}
+
 	score += calc_weight;
 	score += (rand()&0x7);
 	return score;
@@ -127,14 +133,17 @@ int ServiceProvider::setItem( CliBase* cli )
 	return  pitem->parse(cli);
 }
 
-void ServiceProvider::removeItme( CliBase* cli )
+bool ServiceProvider::removeItme( CliBase* cli )
 {
+	bool ret = false;
 	map<CliBase*, ServiceItem*>::iterator itr = m_svrItems.find(cli);
 	if (itr != m_svrItems.end())
 	{
 		IFDELETE(itr->second);
 		m_svrItems.erase(itr);
+		ret = true;
 	}
+	return ret;
 }
 
 // 返回json-array[]形式
@@ -184,7 +193,7 @@ int ServiceProvider::query( string& strjson, short idc, short rack, short versio
 	map<int, ServiceItem*>::reverse_iterator ritr = sortItemMap.rbegin();
 	for (; count < limit && sortItemMap.rend() != ritr; ++ritr, ++count)
 	{
-		ServiceItem* ptr = itr->second;
+		ServiceItem* ptr = ritr->second;
 		if (count > 0) strjson.append(",");
 		ptr->getCalcJson(strjson, ptr->tmpnum);
 	}

@@ -56,6 +56,28 @@ def setconf():
     print(request.json)
     return gweb_cli.request(CMD_SETCONFIG_REQ, request.json)
 
+@app.route('/svrall')
+def svrall():
+    rsp = gweb_cli.request(CMD_SVRSHOW_REQ, {
+        "regname": request.args.get("regname", "")
+    })
+    return rsp
+
+@app.route('/qsvr') # 服务发现
+def qsvr():
+    rsp = gweb_cli.request(CMD_SVRSEARCH_REQ, {
+        "regname": request.args.get("regname", ""),
+        "idc": int(request.args.get("idc", 0)),
+        "rack": int(request.args.get("rack", 0)),
+        "bookchange": int(request.args.get("bookchange", 0))
+    })
+    return rsp
+
+@app.route('/regsvr', methods=['POST'])
+def regsvr():
+    return gweb_cli.request(CMD_SVRREGISTER_REQ, request.json)
+
+
 def onNotifyMsg(cmdid, seqid, msg):
     print(msg)
 

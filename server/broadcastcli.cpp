@@ -18,7 +18,7 @@ HEPCLASS_IMPL_FUNCX_END(BroadCastCli)
 
 #define RouteExException_IFTRUE_EASY(cond, resonstr) \
     RouteExException_IFTRUE(cond, cmdid, seqid, s_my_svrid, from, resonstr, actpath)
-#ifdef DEBUG
+#if 0
 #define DEBUG_TRACE(fmt, ...) StrParse::AppendFormat(s_debugTrace, fmt , ##__VA_ARGS__);s_debugTrace+="\n"; printf(">>> " fmt "\n", ##__VA_ARGS__)
 #define DEBUG_PRINT printf(s_debugTrace.c_str()); s_debugTrace.clear()
 #else

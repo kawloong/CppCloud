@@ -54,6 +54,7 @@ const char HOCFG_INCLUDEBASE_KEY[] = "incbase";
 
 // 分布式服务治理
 const char SVRPROVIDER_CLI_KEY[] = "_provider_mark";
+const char SVRBOOKCH_ALIAS_PREFIX[] = "invoker";
 
 const int SERV_CLITYPE_ID = 1;
 const int CLI_KEEPALIVE_TIME_SEC = 60*10;

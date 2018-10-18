@@ -69,6 +69,7 @@ int IOHand::Init( void )
 	// 分布式服务治理
 	s_cmdid2clsname[CMD_SVRREGISTER_REQ] = "ProviderMgr::OnCMD_SVRREGISTER_REQ";
 	s_cmdid2clsname[CMD_SVRSEARCH_REQ] = "ProviderMgr::OnCMD_SVRSEARCH_REQ";
+	s_cmdid2clsname[CMD_SVRSHOW_REQ] = "ProviderMgr::OnCMD_SVRSHOW_REQ";
 
 	s_cmdid2clsname[0] = "BegnHand::ProcessOne"; // default handle class
 
