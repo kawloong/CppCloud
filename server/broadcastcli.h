@@ -46,6 +46,7 @@ protected: // interface IEPollRun
 
     static string diffOuterCliEra( int servid, const string& erastr );
     static int UpdateCliProps( const Value* pdatas, int from );
+    static void AfterUpdatePropsHandle( CliBase* cli );
 
 protected:
     static int s_my_svrid;

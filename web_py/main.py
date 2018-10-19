@@ -83,9 +83,9 @@ def onNotifyMsg(cmdid, seqid, msg):
 
 if __name__ == '__main__':
     gweb_cli = ScommCli2( 
-        ('192.168.228.44', 4800),
+        ('192.168.228.44', 4804),
         clitype = 20,
-        svrid = 990,
+        svrid = 994,
         progName = "Web-Ctrl",
         progDesc = "Web-Serv(monitor)"
     )
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     if gweb_cli.run():
         # app.debug = True
         host = config.get('http_host', '0.0.0.0')
-        port = config.get('http_port', 80)
+        port = config.get('http_port', 8004)
 
         app.response_class.default_mimetype = 'application/json; charset=utf-8'
         app.run(host=host,port=port) # , threaded=True

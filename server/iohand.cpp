@@ -32,6 +32,7 @@ int IOHand::Init( void )
 	s_cmdid2interceptor[CMD_HOCFGNEW_RSP] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_SETCONFIG2_REQ] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_SETCONFIG3_REQ] = "BroadCastCli::TransToAllPeer"; // 广播
+	s_cmdid2interceptor[CMD_SVRREGISTER2_REQ] = "BroadCastCli::TransToAllPeer";
 
 
 	// 消息->处理类
@@ -68,8 +69,10 @@ int IOHand::Init( void )
 
 	// 分布式服务治理
 	s_cmdid2clsname[CMD_SVRREGISTER_REQ] = "ProviderMgr::OnCMD_SVRREGISTER_REQ";
+	s_cmdid2clsname[CMD_SVRREGISTER2_REQ] = "ProviderMgr::OnCMD_SVRREGISTER_REQ";
 	s_cmdid2clsname[CMD_SVRSEARCH_REQ] = "ProviderMgr::OnCMD_SVRSEARCH_REQ";
 	s_cmdid2clsname[CMD_SVRSHOW_REQ] = "ProviderMgr::OnCMD_SVRSHOW_REQ";
+	s_cmdid2clsname[CMD_SVRREGISTER_RSP] = "BegnHand::DisplayMsg";
 
 	s_cmdid2clsname[0] = "BegnHand::ProcessOne"; // default handle class
 

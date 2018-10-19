@@ -30,11 +30,17 @@ public:
 
 	static void OnCliCloseHandle( CliBase* cli );
 	void onCliCloseHandle( CliBase* cli );
+	void updateProvider( CliBase* cli,  const string& regname);
 
 private:
 	int getAllJson( string& strjson ) const;
-	int getOneProviderJson( string& strjson, const string& svrname ) const;
-	int getOneProviderJson( string& strjson, const string& svrname, short idc, short rack, short version, short limit ) const;
+	int getOneProviderJson( string& strjson, const string& regname ) const;
+	int getOneProviderJson( string& strjson, const string& regname, short idc, short rack, short version, short limit ) const;
+
+	// 服务提供者退出或禁用，通知各订阅过服务的消费者
+	void notify2Invoker( const string& regname, int svrid );
+	// 注册或设备服务提供者的属性
+	int setProviderProperty( CliBase* cli, const void* doc, const string& regname );
 
 private:
 	map<string, ServiceProvider*> m_providers;

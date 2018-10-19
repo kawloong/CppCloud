@@ -36,8 +36,9 @@ enum command_id_t
     CMD_BOOKCFGCHANGE_REQ = 0x0014, // 订阅配置改变,有改变时通过CMD_EVNOTIFY_REQ通知
     CMD_EVNOTIFY_REQ = 0x0015, // 通知app事件
     CMD_SVRREGISTER_REQ = 0x0016, // 服务注册
-    CMD_SVRSEARCH_REQ = 0x0017, // 服务发现
-    CMD_SVRSHOW_REQ = 0x0018, // 列出所有服务
+    CMD_SVRREGISTER2_REQ = 0x0017, // 服务注册(广播)
+    CMD_SVRSEARCH_REQ = 0x0018, // 服务发现
+    CMD_SVRSHOW_REQ = 0x0019, // 列出所有服务
 
     CMDID_MID = 0x1000,
 
@@ -63,8 +64,9 @@ enum command_id_t
     CMD_BOOKCFGCHANGE_RSP = 0x1014, 
     CMD_EVNOTIFY_RSP = 0x1015,
     CMD_SVRREGISTER_RSP = 0x1016,
-    CMD_SVRSEARCH_RSP = 0x1017,
-    CMD_SVRSHOW_RSP = 0x1018,
+    CMD_SVRREGISTER2_RSP = 0x1016,
+    CMD_SVRSEARCH_RSP = 0x1018,
+    CMD_SVRSHOW_RSP = 0x1019,
 };
 
 static const unsigned char g_msg_ver = 1;

@@ -15,12 +15,12 @@ bool ServiceItem::valid( void ) const
 	return enable && protocol > 0 && svrid > 0 && weight > 0 && !url.empty();
 }
 
-int ServiceItem::parse0( const string& svrname, CliBase* cli )
+int ServiceItem::parse0( const string& regname, CliBase* cli )
 {
 	svrid = cli->getIntProperty("svrid");
-	ERRLOG_IF1RET_N(svrname.empty() || svrid <= 0, -70, "SERVITEMPARSE| msg=parse fail| cli=%s", cli->m_idProfile.c_str());
+	ERRLOG_IF1RET_N(regname.empty() || svrid <= 0, -70, "SERVITEMPARSE| msg=parse fail| cli=%s", cli->m_idProfile.c_str());
 
-	this->svrname = svrname;
+	this->regname = regname;
 	idc = cli->getIntProperty("idc");
 	rack = cli->getIntProperty("rack");
 	islocal = cli->isLocal();
@@ -32,24 +32,24 @@ int ServiceItem::parse( CliBase* cli )
 	// 固定部份-不会随运行过程改变的
 	if (0 == version || 0 == protocol || url.empty())
 	{
-		url = cli->getProperty(svrname + ":url");
-		protocol = cli->getIntProperty(svrname + ":protocol");
-		version = cli->getIntProperty(svrname + ":version");		
+		url = cli->getProperty(regname + ":url");
+		protocol = cli->getIntProperty(regname + ":protocol");
+		version = cli->getIntProperty(regname + ":version");		
 	}
 
 	// 变化部分
-	desc = cli->getProperty(svrname + ":desc");
-	okcount = cli->getIntProperty(svrname + ":okcount");
-	ngcount = cli->getIntProperty(svrname + ":ngcount");
-	weight = cli->getIntProperty(svrname + ":weight");
-	enable = cli->getIntProperty(svrname + ":enable");
+	desc = cli->getProperty(regname + ":desc");
+	okcount = cli->getIntProperty(regname + ":okcount");
+	ngcount = cli->getIntProperty(regname + ":ngcount");
+	weight = cli->getIntProperty(regname + ":weight");
+	enable = cli->getIntProperty(regname + ":enable");
 	return 0;
 }
 
 void ServiceItem::getJsonStr( string& strjson, int oweight ) const
 {
 	strjson.append("{");
-	StrParse::PutOneJson(strjson, "svrname", svrname, true);
+	StrParse::PutOneJson(strjson, "regname", regname, true);
 	StrParse::PutOneJson(strjson, "url", url, true);
 	StrParse::PutOneJson(strjson, "desc", desc, true);
 	StrParse::PutOneJson(strjson, "svrid", svrid, true);
@@ -92,7 +92,7 @@ int ServiceItem::score( short oidc, short orack ) const
 	return score;
 }
 
-ServiceProvider::ServiceProvider( const string& svrName ): m_svrName(svrName)
+ServiceProvider::ServiceProvider( const string& svrName ): m_regName(svrName)
 {
 
 }
@@ -115,7 +115,7 @@ int ServiceProvider::setItem( CliBase* cli )
 	if (m_svrItems.end() == itr)
 	{
 		pitem = new ServiceItem;
-		int ret = pitem->parse0(m_svrName, cli);
+		int ret = pitem->parse0(m_regName, cli);
 		if (ret)
 		{
 			IFDELETE(pitem);
@@ -123,7 +123,7 @@ int ServiceProvider::setItem( CliBase* cli )
 		}
 		m_svrItems[cli] = pitem;
 		string provval = cli->getProperty(SVRPROVIDER_CLI_KEY);
-		cli->setProperty(SVRPROVIDER_CLI_KEY, provval.empty()? m_svrName: string("+")+provval);
+		cli->setProperty(SVRPROVIDER_CLI_KEY, provval.empty()? m_regName: string("+")+provval);
 	}
 	else
 	{

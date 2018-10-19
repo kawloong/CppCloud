@@ -10,6 +10,7 @@
 #include "outer_serv.h"
 #include "exception.h"
 #include "hocfg_mgr.h"
+#include "provider_manage.h"
 
 HEPCLASS_IMPL_FUNCX_BEG(BroadCastCli)
 HEPCLASS_IMPL_FUNCX_MORE(BroadCastCli, TransToAllPeer)
@@ -246,7 +247,7 @@ int BroadCastCli::toWorld( const string& jsonmsg, unsigned cmdid, unsigned seqid
 int BroadCastCli::OnBroadCMD( void* ptr, unsigned cmdid, void* param )
 {
     CMDID2FUNCALL_BEGIN
-    LOGDEBUG("BROADCMD| seqid=%u| cmd=%u| body=%s", seqid, cmdid, body);
+    LOGDEBUG("BROADCMD| seqid=%u| cmd=0x%x| body=%s", seqid, cmdid, body);
     CMDID2FUNCALL_CALL(CMD_BROADCAST_REQ)
     CMDID2FUNCALL_CALL(CMD_CLIERA_REQ)
     CMDID2FUNCALL_CALL(CMD_CLIERA_RSP)
@@ -544,12 +545,33 @@ int BroadCastCli::UpdateCliProps( const Value* pdatas, int from )
                 {
                     LOGERROR("CLIERA_RSP| msg=add child to CliMgr fail| svrid=%d| ret=%d", from, ret);
                     CliMgr::Instance()->removeAliasChild(outcli, true);
+                    continue;
                 }
+                cli = outcli;
             }
+
+            AfterUpdatePropsHandle(cli);
         }
     }
 
     return ret;
+}
+
+// 客户（外部）属性改变的处理
+void BroadCastCli::AfterUpdatePropsHandle( CliBase* cli )
+{
+    // 服务注册处理
+    string svrreg = cli->getProperty(SVRPROVIDER_CLI_KEY);
+    if (!svrreg.empty())
+    {
+        vector<string> vprovName;
+        StrParse::SpliteStr(vprovName, svrreg, '+');
+        vector<string>::const_iterator it = vprovName.begin();
+        for (; it != vprovName.end(); ++it)
+        {
+            ProviderMgr::Instance()->updateProvider(cli, *it);
+        }
+    }
 }
 
 string BroadCastCli::GetDebugTrace( void )

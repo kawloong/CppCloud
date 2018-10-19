@@ -51,32 +51,37 @@ void ProviderMgr::onCliCloseHandle( CliBase* cli )
 			bool exist = second->removeItme(cli);
 			if (exist)
 			{
-				string preKey(SVRBOOKCH_ALIAS_PREFIX);
-				preKey += "_" + itr->first + "@";
-				CliMgr::AliasCursor finder(preKey);
-				CliBase* invokerCli = NULL;
-				string msg;
-				while ( (invokerCli = finder.pop()) )
-				{
-					IOHand* invokerIO = dynamic_cast<IOHand*>(invokerCli);
-					if (NULL == invokerIO) continue;
-					if (msg.empty())
-					{
-						msg = _F("{\"notify\": \"provider_down\", \"svrid\": %d, \"svrname\": \"%s\"}",
-									cli->getIntProperty(CONNTERID_KEY), itr->first.c_str());
-					}
-					
-					int ret = invokerIO->sendData(CMD_EVNOTIFY_REQ, ++m_seqid, msg.c_str(), msg.length(), true);
-					LOGDEBUG("NOTIFYINVOKER| msg=notify provider_down to %d| ret=%d| msg=%s", 
-							invokerCli->getIntProperty(CONNTERID_KEY), ret, msg.c_str());
-				}
+				notify2Invoker(itr->first, cli->getIntProperty(CONNTERID_KEY));
 			}
 		}
 	}
 }
 
+void ProviderMgr::notify2Invoker( const string& regname, int svrid )
+{
+	string preKey(SVRBOOKCH_ALIAS_PREFIX);
+	preKey += "_" + regname + "@";
+	CliMgr::AliasCursor finder(preKey);
+	CliBase *invokerCli = NULL;
+	string msg;
+	while ((invokerCli = finder.pop()))
+	{
+		IOHand *invokerIO = dynamic_cast<IOHand *>(invokerCli);
+		if (NULL == invokerIO) continue;
+		if (msg.empty())
+		{
+			msg = _F("{\"notify\": \"provider_down\", \"svrid\": %d, \"regname\": \"%s\"}",
+					 svrid, regname.c_str());
+		}
+
+		int ret = invokerIO->sendData(CMD_EVNOTIFY_REQ, ++m_seqid, msg.c_str(), msg.length(), true);
+		LOGDEBUG("NOTIFYINVOKER| msg=notify provider_down to %d| ret=%d| msg=%s",
+				 invokerCli->getIntProperty(CONNTERID_KEY), ret, msg.c_str());
+	}
+}
+
 /** 服务提供者注册服务
- * request: by CMD_SVRREGISTER_REQ
+ * request: by CMD_SVRREGISTER_REQ CMD_SVRREGISTER2_REQ
  * format: { "regname": "app1", "svrid": 100, "svrprop": {"okcount": 123, ..} }
  **/
 int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
@@ -87,7 +92,6 @@ int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
 	
 	int ret = 0;
 	int svrid = 0;
-	const Value* svrprop = NULL;
 	CliBase* cli = NULL;
 
 	if (0 == Rjson::GetInt(svrid, CONNTERID_KEY, &doc)) // 来自其他Peer-Serv的广播
@@ -100,10 +104,41 @@ int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
 		cli = iohand;
 		svrid = iohand->getIntProperty(CONNTERID_KEY);
 		Rjson::SetObjMember(CONNTERID_KEY, svrid, &doc);
-		BroadCastCli::Instance()->toWorld(doc, CMD_SVRREGISTER_REQ, ++This->m_seqid, false);
+		BroadCastCli::Instance()->toWorld(doc, CMD_SVRREGISTER2_REQ, ++This->m_seqid, false);
 	}
 
-	if (0 == Rjson::GetObject(&svrprop, "svrprop", &doc) && svrprop)
+	int enableBeforValue = cli->getIntProperty(regname + ":enable");
+	ret = This->setProviderProperty(cli, &doc, regname);
+	int enableAfterValue = cli->getIntProperty(regname + ":enable");
+	if (0 == ret && 1 == enableBeforValue && 0 == enableAfterValue) // 禁用服务时触发
+	{
+		// 通知各个订阅者
+		This->notify2Invoker(regname, svrid);
+	}
+
+	This->updateProvider(cli, regname);
+	string resp = _F("\"code\": 0, \"desc\": \"reg %s result %d\"", regname.c_str(), ret);
+	iohand->sendData(CMD_SVRREGISTER_RSP, seqid, resp.c_str(), resp.length(), true);
+	return ret;
+}
+
+void ProviderMgr::updateProvider( CliBase* cli,  const string& regname)
+{
+	ServiceProvider* provider = m_providers[regname];
+	if (NULL == provider)
+	{
+		provider = new ServiceProvider(regname);
+		m_providers[regname] = provider;
+	}
+
+	provider->setItem(cli);
+}
+
+int ProviderMgr::setProviderProperty( CliBase* cli, const void* doc, const string& regname )
+{
+	int ret = -1;
+	const Value* svrprop = NULL;
+	if (0 == Rjson::GetObject(&svrprop, "svrprop", (const Value*)doc) && svrprop)
 	{
 		Value::ConstMemberIterator itr = svrprop->MemberBegin();
     	for (; itr != svrprop->MemberEnd(); ++itr)
@@ -124,18 +159,9 @@ int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
 				cli->setProperty(regname + ":" + key, itr->value.IsTrue()? "1": "0");
 			}
 		}
+		ret = 0;
 	}
 
-	ServiceProvider* provider = This->m_providers[regname];
-	if (NULL == provider)
-	{
-		provider = new ServiceProvider(regname);
-		This->m_providers[regname] = provider;
-	}
-
-	ret = provider->setItem(cli);
-	string resp = _F("\"code\": 0, \"desc\": \"reg %s result %d\"", regname.c_str(), ret);
-	iohand->sendData(CMD_SVRREGISTER_RSP, seqid, resp.c_str(), resp.length(), true);
 	return ret;
 }
 
@@ -213,11 +239,11 @@ int ProviderMgr::getAllJson( string& strjson ) const
 }
 
 // return item个数
-int ProviderMgr::getOneProviderJson( string& strjson, const string& svrname ) const
+int ProviderMgr::getOneProviderJson( string& strjson, const string& regname ) const
 {
 	int count = 0;
 	strjson.append("{");
-	map<string, ServiceProvider*>::const_iterator itr = m_providers.find(svrname);
+	map<string, ServiceProvider*>::const_iterator itr = m_providers.find(regname);
 	if (itr != m_providers.end())
 	{
 		strjson.append(_F("\"%s\":", itr->first.c_str()));
@@ -227,10 +253,10 @@ int ProviderMgr::getOneProviderJson( string& strjson, const string& svrname ) co
 	return count;
 }
 // return item个数
-int ProviderMgr::getOneProviderJson( string& strjson, const string& svrname, short idc, short rack, short version, short limit ) const
+int ProviderMgr::getOneProviderJson( string& strjson, const string& regname, short idc, short rack, short version, short limit ) const
 {
 	int count = 0;
-	map<string, ServiceProvider*>::const_iterator itr = m_providers.find(svrname);
+	map<string, ServiceProvider*>::const_iterator itr = m_providers.find(regname);
 	if (itr != m_providers.end() && limit > 0)
 	{
 		count = itr->second->query(strjson, idc, rack, version, limit);

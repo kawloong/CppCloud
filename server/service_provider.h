@@ -16,7 +16,7 @@ class CliBase;
 
 struct ServiceItem
 {
-	string svrname;
+	string regname;
 	string url;
 	string desc;
 	int svrid;
@@ -55,7 +55,7 @@ public:
 	int getAllJson( string& strjson ) const;
 
 private:
-	const string m_svrName;
+	const string m_regName;
 	map<CliBase*, ServiceItem*> m_svrItems;
 };
 
