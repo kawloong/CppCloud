@@ -34,7 +34,7 @@ int ServiceItem::parse( CliBase* cli )
 	{
 		url = cli->getProperty(regname + ":url");
 		protocol = cli->getIntProperty(regname + ":protocol");
-		version = cli->getIntProperty(regname + ":version");		
+		version = cli->getIntProperty(regname + ":version");
 	}
 
 	// 变化部分

@@ -45,6 +45,11 @@ void CliBase::setProperty( const string& key, const string& val )
 	m_cliProp[key] = val;
 }
 
+void CliBase::setProperty( const string& key, int val )
+{
+	m_cliProp[key] = StrParse::Itoa(val);
+}
+
 string CliBase::getProperty( const string& key ) const
 {
 	map<string, string>::const_iterator itr = m_cliProp.find(key);

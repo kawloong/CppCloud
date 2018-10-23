@@ -8,6 +8,7 @@
 
 const char MYSERVNAME[] = "serv";
 const char CONNTERID_KEY[] = "svrid";
+const char SVRNAME_KEY[] = "svrname";
 const char CLISOCKET_KEY[] = "localsock";
 const char CLIENT_TYPE_KEY[] = "clitype";
 const char OBJECT_TYPE_KEY[] = "objtype";
@@ -47,10 +48,13 @@ const char UPDATE_CLIPROP_DOWNKEY[] = "down";
 
 // 分布式配置
 const char HOCFG_METAFILE[] = "_meta.json";
+const char HOCFG_META_CONF_KEY[] = "conf_inherit";
+const char HOCFG_META_HOST_CUSTUM_KEY[] = "app_profile";
 const char HOCFG_FILENAME_KEY[] = "file_pattern";
 const char HOCFG_KEYPATTEN_KEY[] = "key_pattern";
 const char HOCFG_GT_MTIME_KEY[] = "gt_mtime";
 const char HOCFG_INCLUDEBASE_KEY[] = "incbase";
+const char HOCFG_CLI_MAINCONF_KEY[] = "_mainconf";
 
 // 分布式服务治理
 const char SVRPROVIDER_CLI_KEY[] = "_provider_mark";

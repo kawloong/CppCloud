@@ -108,7 +108,7 @@ bool HocfgMgr::getBaseConfigName( string& baseCfg, const string& curCfgName ) co
     if (m_Allconfig.end() != itr)
     {
         AppConfig* papp = itr->second;
-        ret = Rjson::GetStr(baseCfg, curCfgName.c_str(), &papp->doc);
+        ret = Rjson::GetStr(baseCfg, HOCFG_META_CONF_KEY, curCfgName.c_str(), &papp->doc);
     }
 
     return (0 == ret && !baseCfg.empty());
@@ -609,3 +609,49 @@ int HocfgMgr::OnCMD_BOOKCFGCHANGE_REQ( void* ptr, unsigned cmdid, void* param )
     iohand->sendData(CMD_BOOKCFGCHANGE_RSP, seqid, resp.c_str(), resp.length(), true);
     return ret;
 }
+
+/**
+ * @summery: 通过后端配置，完善客户应用属性和定制属性
+ */
+int HocfgMgr::setupPropByServConfig( IOHand* iohand ) const
+{
+    int ret = 0;
+
+    map<string,AppConfig*>::const_iterator itr = m_Allconfig.find(HOCFG_METAFILE);
+    IFRETURN_N(m_Allconfig.end() == itr, 0);
+    const Value* customnode = NULL;
+    Rjson::GetObject(&customnode, HOCFG_META_HOST_CUSTUM_KEY, &itr->second->doc);
+    IFRETURN_N(NULL == customnode, 0);
+    
+
+    const Value* tagnode = NULL; // cli指定tag属性，优先级最高
+    const Value* hostnode = NULL; // cli所在host，优先级其次
+    const Value* defnode = NULL; // 缺省配置，优先级最低
+    string cliip = iohand->getProperty("_ip");
+    string tag = iohand->getProperty("tag");
+    string svrnam = iohand->getProperty(SVRNAME_KEY);
+    
+    Rjson::GetObject(&defnode, "default", customnode);
+    Rjson::GetObject(&hostnode, cliip.c_str(), customnode);
+    Rjson::GetObject(&tagnode, tag.c_str(), customnode);
+
+    int ntmp = 0;
+    string strtmp;
+    bool bexist = true;
+#define SET_PROP_BY_PRIORITY(Type, cfgkey, val, propKey)              \
+    bexist = true;                                                    \
+    if (0 != Rjson::Get##Type(val, cfgkey, tagnode)) {                \
+        if (0 != Rjson::Get##Type(val, cfgkey, hostnode)) {           \
+            if (0 != Rjson::Get##Type(val, cfgkey, defnode)) {        \
+                bexist = false;                                       \
+            } } }                                                     \
+        if (bexist) { iohand->setProperty(propKey, val); }
+    
+    SET_PROP_BY_PRIORITY(Int, "_idc", ntmp, "idc");
+    SET_PROP_BY_PRIORITY(Int, "_rack", ntmp, "rack");
+    SET_PROP_BY_PRIORITY(Str, svrnam.c_str(), strtmp, HOCFG_CLI_MAINCONF_KEY);
+
+    return ret;
+}
+
+

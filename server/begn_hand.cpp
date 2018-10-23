@@ -10,6 +10,7 @@
 #include "act_mgr.h"
 #include "homacro.h"
 #include "broadcastcli.h"
+#include "hocfg_mgr.h"
 
 
 HEPCLASS_IMPL_FUNCX_BEG(BegnHand)
@@ -169,8 +170,14 @@ int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqi
 
 
 	whoamiFinish(iohand, first);
+	string maincfg = iohand->getProperty(HOCFG_CLI_MAINCONF_KEY);
+	string optstr;
+	if (!maincfg.empty()) // 如果配置了客户的mainconf，则返回
+	{
+		StrParse::PutOneJson(optstr, "mconf", maincfg, true);
+	}
 
-	ret = SendMsg(iohand, CMD_WHOAMI_RSP, seqid, true, "{ \"code\": 0, \"svrid\": %d }", svrid);
+	ret = SendMsg(iohand, CMD_WHOAMI_RSP, seqid, true, "{ \"code\": 0, %s \"svrid\": %d }", optstr.c_str(), svrid);
 	LOGDEBUG("CMD_WHOAMI_REQ| req=%s| svrid=%d| seqid=%d sndret=%d", str.c_str(), svrid, seqid, ret);
 
 	return ret;
@@ -179,6 +186,10 @@ int BegnHand::on_CMD_WHOAMI_REQ( IOHand* iohand, const Value* doc, unsigned seqi
 // 自报身份完毕. -> 广播给其他Serv
 int BegnHand::whoamiFinish( IOHand* ioh, bool first )
 {
+	// 自定制配置的属性完善
+	HocfgMgr::Instance()->setupPropByServConfig(ioh);
+	
+	// 广播客户上线
 	string msgbody = _F("{\"%s\":[{", UPDATE_CLIPROP_UPKEY);
 	ioh->serialize(msgbody);
 	StrParse::PutOneJson(msgbody, "ERAN", ioh->m_era, false); // 无逗号结束

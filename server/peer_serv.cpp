@@ -179,7 +179,7 @@ int PeerServ::prepareWhoIam( void )
 
 	whoIamJson += "{";
 	StrParse::PutOneJson(whoIamJson, CONNTERID_KEY, s_my_svrid, true);
-	StrParse::PutOneJson(whoIamJson, "svrname", MYSERVNAME, true);
+	StrParse::PutOneJson(whoIamJson, SVRNAME_KEY, MYSERVNAME, true);
 	StrParse::PutOneJson(whoIamJson, CLISOCKET_KEY, Sock::sock_name(m_cliFd, true, false), true);
 	StrParse::PutOneJson(whoIamJson, "begin_time", (int)time(NULL), true);
 	

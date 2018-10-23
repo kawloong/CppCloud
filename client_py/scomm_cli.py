@@ -28,6 +28,7 @@ class ScommCli(object):
         self.step = 0
         self.progName = ""
         self.progDesc = ""
+        self.tag = ""
     
     
     # return 大于0正常; 0失败
@@ -123,16 +124,18 @@ class ScommCli(object):
         hhh, ppp = self.cli.getsockname()
         shellstr = ' '.join(sys.argv)
         shellstr = shellstr.replace('\\', '/')
-        return CMD_WHOAMI_REQ, seqid, {
+        rqbody = {
             "localsock": hhh+":"+str(ppp),
             "svrid": self.svrid,
             "pid": os.getpid(),
             "svrname": self.progName,
             "desc": self.progDesc,
             "clitype": self.clitype,
+            "tag": self.tag,
             "begin_time": int(time.time()),
             "shell": shellstr
         }
+        return CMD_WHOAMI_REQ, seqid, rqbody
 
 if __name__ == '__main__':
     cliobj = ScommCli(scomm_sevr_addr, 20)

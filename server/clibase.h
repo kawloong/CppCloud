@@ -30,6 +30,7 @@ public: // interface HEpBase
 	// 自定义属性的操作
 	int Json2Map( const Value* objnode );
     void setProperty( const string& key, const string& val );
+    void setProperty( const string& key, int val );
     string getProperty( const string& key ) const;
     void setIntProperty( const string& key, int val );
     int getIntProperty( const string& key ) const;

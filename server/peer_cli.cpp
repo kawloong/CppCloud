@@ -89,7 +89,7 @@ int PeerCli::on_CMD_IAMSERV_REQ( const Value* doc, unsigned seqid )
 
 	whoIamJson += "{";
 	StrParse::PutOneJson(whoIamJson, CONNTERID_KEY, s_my_svrid, true);
-	StrParse::PutOneJson(whoIamJson, "svrname", MYSERVNAME, true);
+	StrParse::PutOneJson(whoIamJson, SVRNAME_KEY, MYSERVNAME, true);
 	StrParse::PutOneJson(whoIamJson, CLISOCKET_KEY, m_iohand->getCliSockName(), true);
 	StrParse::PutOneJson(whoIamJson, "begin_time", (int)time(NULL), true);
 	

@@ -134,7 +134,7 @@ int Actmgr::appCloseFound( CliBase* son, int clitype, const CliInfo& cliinfo )
 		string jsonstr("{");
 		StrParse::PutOneJson(jsonstr, CONNTERID_KEY, strsvrid, true);
 		StrParse::PutOneJson(jsonstr, "name", son->m_cliProp["name"], true);
-		StrParse::PutOneJson(jsonstr, "svrname", son->m_cliProp["svrname"], true);
+		StrParse::PutOneJson(jsonstr, SVRNAME_KEY, son->m_cliProp[SVRNAME_KEY], true);
 		StrParse::PutOneJson(jsonstr, "shell", son->m_cliProp["shell"], true);
 		StrParse::PutOneJson(jsonstr, "progi", son->m_idProfile, true);
 		StrParse::PutOneJson(jsonstr, "begin_time", TimeF::StrFTime("%F %T", cliinfo.t0), true);

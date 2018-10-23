@@ -114,6 +114,7 @@ int IOHand::onRead( int p1, long p2 )
 		if (m_cliName.empty())
 		{
 			m_cliName = Sock::peer_name(m_cliFd, true);
+			setProperty("_ip", Sock::peer_name(m_cliFd, false));
 		}
 		
 		if (m_iBufItem->len < HEADER_LEN)
@@ -354,6 +355,7 @@ int IOHand::onEvent( int evtype, va_list ap )
 		m_cliName = Sock::peer_name(m_cliFd, true);
 		m_idProfile = m_cliName;
 		setIntProperty("fd", clifd);
+		setProperty("_ip", Sock::peer_name(m_cliFd, false));
 		ret = m_epCtrl.setEvt(EPOLLIN, this);
 
 		LOGINFO("IOHAND_INIT| msg=a client accept| fd=%d| mi=%s", m_cliFd, m_cliName.c_str());
@@ -384,7 +386,7 @@ int IOHand::onEvent( int evtype, va_list ap )
 			m_cliType = clity;
 			updateEra();
 			m_idProfile = StrParse::Format("%s@%s-%d@%s", m_cliName.c_str(), 
-				m_cliProp[CONNTERID_KEY].c_str(), m_cliType, m_cliProp["svrname"].c_str());
+				m_cliProp[CONNTERID_KEY].c_str(), m_cliType, m_cliProp[SVRNAME_KEY].c_str());
 		}
 
 	}
