@@ -87,22 +87,33 @@ def clidata(svrid):
 def onNotifyMsg(cmdid, seqid, msg):
     print(msg)
 
+@app.route('/runlog/<int:svrid>')
+def runlog(svrid):
+    return gweb_cli.request(CMD_APPRUNLOG_REQ, {"to": svrid, "type": 1})
+
+def onRunLogReq(cmdid, seqid, msg):
+    print(msg)
+    dictmsg = json.loads(msg);
+    gweb_cli.post_msg(CMD_APPRUNLOG_RSP, seqid, 
+        {"log": 1234, "to": dictmsg["from"]})
+
 if __name__ == '__main__':
     gweb_cli = ScommCli2( 
-        ('192.168.228.44', 4800),
+        ('192.168.228.44', 4802),
         clitype = 20,
-        svrid = 990,
+        svrid = 992,
         tag="tag1",
         progName = "Web-Ctrl",
         progDesc = "Web-Serv(monitor)"
     )
 
     gweb_cli.setCmdHandle(CMD_EVNOTIFY_REQ, onNotifyMsg);
+    gweb_cli.setCmdHandle(CMD_APPRUNLOG_REQ, onRunLogReq);
 
     if gweb_cli.run():
         # app.debug = True
         host = config.get('http_host', '0.0.0.0')
-        port = config.get('http_port', 80)
+        port = config.get('http_port', 82)
 
         app.response_class.default_mimetype = 'application/json; charset=utf-8'
         app.run(host=host,port=port) # , threaded=True

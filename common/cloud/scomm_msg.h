@@ -39,6 +39,7 @@ enum command_id_t
     CMD_SVRREGISTER2_REQ = 0x0017, // 服务注册(广播)
     CMD_SVRSEARCH_REQ = 0x0018, // 服务发现
     CMD_SVRSHOW_REQ = 0x0019, // 列出所有服务
+    CMD_APPRUNLOG_REQ = 0x001A,
 
     CMDID_MID = 0x1000,
 
@@ -67,6 +68,7 @@ enum command_id_t
     CMD_SVRREGISTER2_RSP = 0x1016,
     CMD_SVRSEARCH_RSP = 0x1018,
     CMD_SVRSHOW_RSP = 0x1019,
+    CMD_APPRUNLOG_RSP = 0x101A,
 };
 
 static const unsigned char g_msg_ver = 1;

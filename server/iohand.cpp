@@ -33,6 +33,8 @@ int IOHand::Init( void )
 	s_cmdid2interceptor[CMD_SETCONFIG2_REQ] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_SETCONFIG3_REQ] = "BroadCastCli::TransToAllPeer"; // 广播
 	s_cmdid2interceptor[CMD_SVRREGISTER2_REQ] = "BroadCastCli::TransToAllPeer";
+	s_cmdid2interceptor[CMD_APPRUNLOG_REQ] = "RouteExchage::TransMsg";
+	s_cmdid2interceptor[CMD_APPRUNLOG_RSP] = "RouteExchage::TransMsg";
 
 
 	// 消息->处理类
@@ -304,7 +306,7 @@ int IOHand::run( int p1, long p2 )
 	catch( RouteExException& exp )
 	{
 		string rsp = StrParse::Format(
-				"{ \"from\": %u, \"to\": %u, \"refer_path\":\"%s\", \"act_path\":\"%u>\" }", 
+				"{ \"code\": -1, \"from\": %u, \"to\": %u, \"refer_path\":\"%s\", \"act_path\":\"%u>\", \"error\": \"RouteExException\" }", 
 				exp.from, exp.to, exp.rpath.c_str(), exp.from);
 		LOGERROR("RouteExException| reson=%s | mi=%s| rsp=%s", 
 				exp.reson.c_str(), m_idProfile.c_str(), rsp.c_str());
@@ -314,7 +316,7 @@ int IOHand::run( int p1, long p2 )
 		}
 		IFDELETE(m_iBufItem);
 	}
-		
+
 	if (EPOLLOUT & p1) // 可写
 	{
 		ret = onWrite(p1, p2);

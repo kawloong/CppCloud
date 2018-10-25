@@ -108,8 +108,14 @@ int RouteExchage::TransMsg( void* ptr, unsigned cmdid, void* param )
     int ret;
     try 
     {
-        IFRETURN_N(!doc.HasMember(ROUTE_MSG_KEY_FROM) && !doc.HasMember(ROUTE_MSG_KEY_TO), 1); // 如果无from+to则直接本机处理
-        ret = TransMsg(doc, cmdid, seqid, -1, 0, 0, iohand);
+        IFRETURN_N(!doc.HasMember(ROUTE_MSG_KEY_TO), 1); // 如果无to则直接本机处理
+        int from = -1;
+        if (!doc.HasMember(ROUTE_MSG_KEY_FROM))
+        {
+            from = iohand->getIntProperty(CONNTERID_KEY);
+        }
+
+        ret = TransMsg(doc, cmdid, seqid, from, 0, 0, iohand);
     }
     catch ( RouteExException& exp )
     {
@@ -148,7 +154,7 @@ int RouteExchage::TransMsg( Document& doc, unsigned cmdid, unsigned seqid, int f
     RouteExException_IFTRUE_EASY(!doc.IsObject(), string("doc isnot jsonobject ")+Rjson::ToString(&doc));
     ret = AdjustRoutMsg(doc, fromSvr, &to, &belongTo);
     RouteExException_IFTRUE_EASY(ret, 
-        _F("msg invalid %d-%d-%d ", from, toSvr, bto)+Rjson::ToString(&doc));
+        _F("msg invalid %d-%d-%d ret%d ", from, toSvr, bto, ret)+Rjson::ToString(&doc));
     toSvr = to;
     
     string actpath;

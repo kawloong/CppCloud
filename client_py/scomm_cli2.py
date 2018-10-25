@@ -130,6 +130,8 @@ class ScommCli2(ScommCli):
         #waitq = Queue(1)
         self.waitRspQMap[seqid] = callback if callback else self._dumresp
         self.sndQ.put( (cmdid, seqid, reqboby) )
+    def post_msg(self, cmdid, seqid, reqbody):
+        self.sndQ.put( (cmdid, seqid, reqbody) )
     
     def run(self):
         if not self.running:
