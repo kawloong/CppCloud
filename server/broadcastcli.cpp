@@ -8,7 +8,7 @@
 #include "climanage.h"
 #include "outer_cli.h"
 #include "outer_serv.h"
-#include "exception.h"
+#include "cloud/exception.h"
 #include "hocfg_mgr.h"
 #include "provider_manage.h"
 

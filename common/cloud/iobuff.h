@@ -11,7 +11,7 @@ Modification :
 #define _IOBUFF_H_
 #include <string>
 #include <arpa/inet.h>
-#include "cloud/scomm_msg.h"
+#include "cloud/msgid.h"
 
 using std::string;
 typedef sc_msg_head_t head_t;

@@ -1,7 +1,7 @@
 #include "clibase.h"
 #include "comm/strparse.h"
 #include "comm/sock.h"
-#include "exception.h"
+#include "cloud/exception.h"
 #include <sys/epoll.h>
 #include <cstring>
 #include <cerrno>

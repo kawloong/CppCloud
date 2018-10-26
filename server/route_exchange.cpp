@@ -1,5 +1,5 @@
 #include "route_exchange.h"
-#include "exception.h"
+#include "cloud/exception.h"
 #include "comm/strparse.h"
 #include "climanage.h"
 #include "homacro.h"

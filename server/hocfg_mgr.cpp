@@ -1,6 +1,6 @@
 #include "hocfg_mgr.h"
 #include "homacro.h"
-#include "exception.h"
+#include "cloud/exception.h"
 #include "iohand.h"
 #include "broadcastcli.h"
 #include "climanage.h"

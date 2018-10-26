@@ -1,7 +1,7 @@
 #include "cloud/const.h"
 #include "comm/strparse.h"
 #include "climanage.h"
-#include "exception.h"
+#include "cloud/exception.h"
 #include "peer_cli.h"
 #include "iohand.h"
 #include "peer_serv.h"

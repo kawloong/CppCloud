@@ -3,81 +3,26 @@
 #include "comm/sock.h"
 #include "cloud/const.h"
 #include "cloud/exception.h"
-#include "climanage.h"
+//#include "climanage.h"
 #include <sys/epoll.h>
 #include <cstring>
 #include <cerrno>
 
-HEPMUTICLASS_IMPL(IOHand, IOHand, CliBase)
+HEPCLASS_IMPL(IOHand, IOHand)
 
-static map<unsigned, string> s_cmdid2interceptor; // 消息拦截器
-static map<unsigned, string> s_cmdid2clsname; // 事件处理器，滞后于拦截器
+static map<unsigned, ProcOneFunT> s_cmdid2interceptor; // 消息拦截器
+static map<unsigned, ProcOneFunT> s_cmdid2clsname; // 事件处理器，滞后于拦截器
 
 datasize_t IOHand::serv_recv_bytes = 0;
 datasize_t IOHand::serv_send_bytes = 0;
 int IOHand::serv_recvpkg_num = 0;
 int IOHand::serv_sendpkg_num = 0;
+PEVENT_FUNC IOHand::m_parentEvHandle = NULL;
 
 // static
-int IOHand::Init( void )
+int IOHand::Init( PEVENT_FUNC phand )
 {
-	// 前置拦截器
-	s_cmdid2interceptor[CMD_BROADCAST_REQ] = "BroadCastCli::TransToAllPeer";
-	s_cmdid2interceptor[CMD_UPDATEERA_REQ] = "BroadCastCli::TransToAllPeer";
-	s_cmdid2interceptor[CMD_TESTING_REQ] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_TESTING_RSP] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_CLIERA_REQ] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_CLIERA_RSP] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_HOCFGNEW_REQ] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_HOCFGNEW_RSP] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_SETCONFIG2_REQ] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_SETCONFIG3_REQ] = "BroadCastCli::TransToAllPeer"; // 广播
-	s_cmdid2interceptor[CMD_SVRREGISTER2_REQ] = "BroadCastCli::TransToAllPeer";
-	s_cmdid2interceptor[CMD_APPRUNLOG_REQ] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_APPRUNLOG_RSP] = "RouteExchage::TransMsg";
-
-
-	// 消息->处理类
-	s_cmdid2clsname[CMD_WHOAMI_REQ] = "BegnHand::ProcessOne"; // ->BegnHand
-	s_cmdid2clsname[CMD_GETCLI_REQ] = "QueryHand::ProcessOne";
-	s_cmdid2clsname[CMD_HUNGUP_REQ] = "BegnHand::ProcessOne";
-	s_cmdid2clsname[CMD_GETLOGR_REQ] = "QueryHand::ProcessOne";
-	s_cmdid2clsname[CMD_EXCHANG_REQ] = "BegnHand::ProcessOne";
-	s_cmdid2clsname[CMD_EXCHANG_RSP] = "BegnHand::ProcessOne";
-	s_cmdid2clsname[CMD_SETARGS_REQ] = "BegnHand::ProcessOne";
-	s_cmdid2clsname[CMD_GETWARN_REQ] = "QueryHand::ProcessOne";
-	s_cmdid2clsname[CMD_TESTING_REQ] = "QueryHand::ProcessOne";
-	s_cmdid2clsname[CMD_GETCONFIG_REQ] = "QueryHand::ProcessOne";
-
-	s_cmdid2clsname[CMD_HOCFGNEW_REQ] = "HocfgMgr::OnCMD_HOCFGNEW_REQ";
-	s_cmdid2clsname[CMD_SETCONFIG_REQ] = "HocfgMgr::OnSetConfigHandle";
-	s_cmdid2clsname[CMD_SETCONFIG2_REQ] = "HocfgMgr::OnSetConfigHandle";
-	s_cmdid2clsname[CMD_SETCONFIG3_REQ] = "HocfgMgr::OnSetConfigHandle";
-	s_cmdid2clsname[CMD_GETCFGNAME_REQ] = "HocfgMgr::OnGetAllCfgName";
-	s_cmdid2clsname[CMD_GETCFGNAME_RSP] = "BegnHand::DisplayMsg";
-	s_cmdid2clsname[CMD_BOOKCFGCHANGE_REQ] = "HocfgMgr::OnCMD_BOOKCFGCHANGE_REQ";
-	s_cmdid2clsname[CMD_KEEPALIVE_REQ] = "BegnHand::on_CMD_KEEPALIVE_REQ";
-	s_cmdid2clsname[CMD_KEEPALIVE_RSP] = "BegnHand::on_CMD_KEEPALIVE_RSP";
-
-	s_cmdid2clsname[CMD_IAMSERV_REQ] = "PeerCli"; // 中心端报告身份
-	s_cmdid2clsname[CMD_IAMSERV_RSP] = "PeerCli";
-
-	s_cmdid2clsname[CMD_BROADCAST_REQ] = "BroadCastCli::OnBroadCMD"; // 中心端报告身份
-	s_cmdid2clsname[CMD_BROADCAST_RSP] = "BegnHand::DisplayMsg";
-	s_cmdid2clsname[CMD_HOCFGNEW_RSP] = "BegnHand::DisplayMsg";
-	s_cmdid2clsname[CMD_CLIERA_REQ] = "BroadCastCli::OnBroadCMD"; 
-	s_cmdid2clsname[CMD_CLIERA_RSP] = "BroadCastCli::OnBroadCMD";
-	s_cmdid2clsname[CMD_UPDATEERA_REQ] = "BroadCastCli::OnBroadCMD";
-
-	// 分布式服务治理
-	s_cmdid2clsname[CMD_SVRREGISTER_REQ] = "ProviderMgr::OnCMD_SVRREGISTER_REQ";
-	s_cmdid2clsname[CMD_SVRREGISTER2_REQ] = "ProviderMgr::OnCMD_SVRREGISTER_REQ";
-	s_cmdid2clsname[CMD_SVRSEARCH_REQ] = "ProviderMgr::OnCMD_SVRSEARCH_REQ";
-	s_cmdid2clsname[CMD_SVRSHOW_REQ] = "ProviderMgr::OnCMD_SVRSHOW_REQ";
-	s_cmdid2clsname[CMD_SVRREGISTER_RSP] = "BegnHand::DisplayMsg";
-
-	s_cmdid2clsname[0] = "BegnHand::ProcessOne"; // default handle class
-
+	m_parentEvHandle = phand;
 	return 0;
 }
 
@@ -205,7 +150,7 @@ int IOHand::onRead( int p1, long p2 )
 				ret = cmdProcess(m_iBufItem);
 			}
 			
-			CliMgr::Instance()->updateCliTime(this);
+			NotifyParent(HEPNTF_UPDATE_TIME, this);
 		}
 	}
 	while (0);
@@ -376,22 +321,6 @@ int IOHand::onEvent( int evtype, va_list ap )
 		ret = m_epCtrl.addEvt(EPOLLOUT);
 		ERRLOG_IF1(ret, "IOHAND_SET_EPOU| msg=set out flag fail %d| mi=%s", ret, m_cliName.c_str());
 	}
-	else if (HEPNTF_INIT_FINISH == evtype)
-	{
-		int clity = atoi(m_cliProp[CLIENT_TYPE_KEY].c_str());
-		if (clity > 0)
-		{
-			ERRLOG_IF1RET_N(m_cliType>0&&clity!=m_cliType, -95,
-			  "IOHAND_INIT_FIN| msg=clitype not match first| cliType0=%d| cliType1=%d| mi=%s", 
-			   m_cliType, clity, m_idProfile.c_str());
-
-			m_cliType = clity;
-			updateEra();
-			m_idProfile = StrParse::Format("%s@%s-%d@%s", m_cliName.c_str(), 
-				m_cliProp[CONNTERID_KEY].c_str(), m_cliType, m_cliProp[SVRNAME_KEY].c_str());
-		}
-
-	}
 	else
 	{
 		ret = -99;
@@ -426,13 +355,12 @@ int IOHand::sendData( unsigned int cmdid, unsigned int seqid, const char* body, 
 }
 
 
-/*
 void IOHand::setProperty( const string& key, const string& val )
 {
 	m_cliProp[key] = val;
 }
 
-string IOHand::getProperty( const string& key )
+string IOHand::getProperty( const string& key ) const
 {
 	map<string, string>::const_iterator itr = m_cliProp.find(key);
 	if (itr != m_cliProp.end())
@@ -442,12 +370,15 @@ string IOHand::getProperty( const string& key )
 
 	return "";
 }
-*/
 
-string IOHand::getERAstr( void )
+void IOHand::setIntProperty( const string& key, int val )
 {
-	return _F("%s:%d:%d ", getProperty(CONNTERID_KEY).c_str(), 
-		m_era, getIntProperty("atime"));
+	m_cliProp[key] = StrParse::Itoa(val);
+}
+
+int IOHand::getIntProperty( const string& key ) const
+{
+	return atoi(getProperty(key).c_str());
 }
 
 int IOHand::driveClose( const string& reason )
@@ -472,7 +403,7 @@ int IOHand::onClose( int p1, long p2 )
 	ERRLOG_IF1(ret, "IOHAND_CLOSE| msg=rm EVflag fail %d| mi=%s| err=%s", ret, m_cliName.c_str(), strerror(errno));
 
 	IFCLOSEFD(m_cliFd);
-	ret = Notify(m_parent, HEPNTF_SOCK_CLOSE, this, m_cliType, (int)isExit);
+	ret = NotifyParent(HEPNTF_SOCK_CLOSE, this, 10, (int)isExit);
 	ERRLOG_IF1(ret, "IOHAND_CLOSE| msg=Notify ret %d| mi=%s| reason=%s", ret, m_cliName.c_str(), m_closeReason.c_str());
 
 	clearBuf();
@@ -480,18 +411,20 @@ int IOHand::onClose( int p1, long p2 )
 	return ret;
 }
 
+int IOHand::NotifyParent(int evtype, ...)
+{
+	int ret = 0;
+    va_list ap;
+    va_start(ap, evtype);
+    ret = m_parentEvHandle(evtype, ap);
+    va_end(ap);
+
+    return ret;
+}
+
 // 权限拦截器
 int IOHand::authCheck( IOBuffItem*& iBufItem )
 {
-	head_t* hdr = iBufItem->head();
-	if (CMD_WHOAMI_REQ == hdr->cmdid || CMD_WHOAMI_RSP == hdr->cmdid ||
-		CMD_IAMSERV_REQ == hdr->cmdid ||CMD_IAMSERV_RSP == hdr->cmdid)
-	{
-		return 0;
-	}
-
-	NormalExceptionOff_IFTRUE(0 == m_authFlag, 401, hdr->cmdid|CMDID_MID, hdr->seqid, 
-			StrParse::Format("Not Auth(0x%X-%d)", hdr->cmdid, hdr->seqid));
 	return 0;
 }
 
@@ -499,68 +432,82 @@ int IOHand::interceptorProcess( IOBuffItem*& iBufItem )
 {
 	int ret = 1; // 1 is continue
 	head_t* hdr = iBufItem->head();
-	map<unsigned,string>::iterator it;
+	map<unsigned, ProcOneFunT>::iterator it;
 
 	it = s_cmdid2interceptor.find(hdr->cmdid);
 	if (it != s_cmdid2interceptor.end())
 	{
-		string funcname = it->second;
-		HEpBase::ProcOneFunT procFunc = GetProcFunc(funcname.c_str());
-		if (procFunc)
-		{
-			ret = procFunc(this, hdr->cmdid, (void*)iBufItem);
-		}
+		ProcOneFunT func = it->second;
+		ret = func(this, hdr->cmdid, (void*)iBufItem);
 	}
 
 	return ret;
 }
 
+bool IOHand::addCmdHandle( unsigned cmdid, ProcOneFunT func, unsigned seqid/*=0*/ )
+{
+	if (seqid > 0)
+	{
+		cmdid |= (seqid << 16);
+	}
+
+	cmdhandle_t& val = m_cmdidHandle[cmdid];
+	bool bret = (NULL == val.handfunc);
+	val.handfunc = func;
+
+	return bret;
+}
+
+// 通用（类）消息处理
 int IOHand::cmdProcess( IOBuffItem*& iBufItem )
 {
 	int ret = 0;
 	do 
 	{
 		IFBREAK_N(NULL==iBufItem, -71);
+		IFBREAK(1 != selfCmdHandle(iBufItem));
+
 		head_t* hdr = iBufItem->head();
-		string procClsName;
-		map<unsigned,string>::iterator it;
-
+		ProcOneFunT handle_func;
+		map<unsigned, ProcOneFunT>::iterator it;
 		it = s_cmdid2clsname.find(hdr->cmdid);
-		procClsName = (s_cmdid2clsname.end() != it) ? it->second : s_cmdid2clsname[0];
-		WARNLOG_IF1(s_cmdid2clsname.end() == it, "CMDPROCESS| msg=an undefine cmdid recv| cmdid=0x%X| mi=%s", hdr->cmdid, m_cliName.c_str());
-
+		WARNLOG_IF1BRK(s_cmdid2clsname.end() == it, -72, "CMDPROCESS| msg=an undefine cmdid recv| "
+			"cmdid=0x%X| mi=%s", hdr->cmdid, m_cliName.c_str());
+		handle_func = it->second;
 		m_cliProp["clisock"] = m_cliName; // 设备ip:port作为其中属性
 
-		/* 首先从cmdid对应到处理类名procClsName,
-		   再看该类名有无处理函数ProcessOne(要注册到s_procfunc),用函数处理业备;
-		   如果没有就创建处理类对象,用对象处理业务.  */
-		HEpBase::ProcOneFunT procFunc = GetProcFunc(procClsName.c_str());
-		if (procFunc)
-		{
-			ret = procFunc(this, hdr->cmdid, (void*)iBufItem);
-			IFDELETE(iBufItem);
-			break;
-		}
-
-		if (m_child) break;
-		
-		HEpBase* procObj = New(procClsName.c_str());
-		if (NULL==procObj)
-		{
-			LOGERROR("CMDPROCESS| msg=unknow clsname %s| mi=%s", procClsName.c_str(), m_cliName.c_str());
-			m_closeReason = "not match process_hand class";
-			//m_bClose = true;
-			//ret = -72;
-			throw NormalExceptionOff(400, hdr->cmdid, hdr->seqid, m_closeReason);
-			break;
-		}
-
-		Notify(procObj, HEPNTF_INIT_PARAM, this);
-		BindSon(this, procObj);
-		Notify(m_child, HEPNTF_NOTIFY_CHILD, (IOBuffItem*)m_iBufItem);
+		ret = handle_func(this, hdr->cmdid, (void*)iBufItem);
 	}
 	while (0);
+	IFDELETE(iBufItem);
 
 
+	return ret;
+}
+
+// 实例的消息处理
+// return: 1 will continue
+int IOHand::selfCmdHandle( IOBuffItem*& iBufItem )
+{
+	int ret = 1;
+	head_t* hdr = iBufItem->head();
+	map<unsigned, cmdhandle_t>::iterator itr = m_cmdidHandle.find(hdr->cmdid);
+
+	if (m_cmdidHandle.end() == itr)
+	{
+		itr = m_cmdidHandle.find(hdr->cmdid | (hdr->seqid << 16));
+	}
+	if (m_cmdidHandle.end() != itr)
+	{
+		cmdhandle_t* cmdhand = &itr->second;
+		cmdhand->handfunc(this, hdr->cmdid, (void*)iBufItem);
+		if (1 == cmdhand->expire_time || cmdhand->expire_time < time(NULL))
+		{
+			m_cmdidHandle.erase(itr);
+		}
+
+		ret = 0;
+	}
+	
 	return ret;
 }

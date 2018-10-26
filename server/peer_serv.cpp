@@ -3,7 +3,7 @@
 #include "comm/strparse.h"
 #include "comm/sock.h"
 #include "cloud/const.h"
-#include "exception.h"
+#include "cloud/exception.h"
 #include "climanage.h"
 #include "switchhand.h"
 

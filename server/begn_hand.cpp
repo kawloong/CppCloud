@@ -4,7 +4,7 @@
 #include "cppcloud_config.h"
 #include "redis/redispooladmin.h"
 #include "cloud/const.h"
-#include "exception.h"
+#include "cloud/exception.h"
 #include "flowctrl.h"
 #include "climanage.h"
 #include "act_mgr.h"

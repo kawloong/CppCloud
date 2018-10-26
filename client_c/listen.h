@@ -24,6 +24,8 @@ public:
     Listen(void);
     virtual ~Listen(void);
 
+    int init( const string& host, int port, int lqueue, int epfd );
+    void uninit( void );
 
 public: // interface IEPollRun
     virtual int run( int flag, long p2 );

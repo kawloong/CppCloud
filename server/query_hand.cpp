@@ -7,7 +7,7 @@
 #include "act_mgr.h"
 #include "iohand.h"
 #include "homacro.h"
-#include "exception.h"
+#include "cloud/exception.h"
 #include "broadcastcli.h"
 #include "route_exchange.h"
 #include "hocfg_mgr.h"

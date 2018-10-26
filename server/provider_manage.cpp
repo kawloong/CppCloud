@@ -1,6 +1,6 @@
 #include "provider_manage.h"
 #include "clibase.h"
-#include "exception.h"
+#include "cloud/exception.h"
 #include "climanage.h"
 #include "homacro.h"
 #include "broadcastcli.h"
