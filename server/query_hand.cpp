@@ -6,7 +6,7 @@
 #include "flowctrl.h"
 #include "act_mgr.h"
 #include "iohand.h"
-#include "homacro.h"
+#include "cloud/homacro.h"
 #include "cloud/exception.h"
 #include "broadcastcli.h"
 #include "route_exchange.h"

@@ -2,7 +2,7 @@
 #include "cloud/exception.h"
 #include "comm/strparse.h"
 #include "climanage.h"
-#include "homacro.h"
+#include "cloud/homacro.h"
 #include "cloud/const.h"
 #include "outer_serv.h"
 #include "outer_cli.h"

@@ -1,13 +1,13 @@
 #include "flowctrl.h"
-#include "iohand.h"
 #include "comm/hep_base.h"
+#include "cloud/switchhand.h"
 #include "climanage.h"
 #include "cppcloud_config.h"
 #include "peer_mgr.h"
-#include "switchhand.h"
 #include "keepaliver.h"
 #include "route_exchange.h"
 #include "hocfg_mgr.h"
+#include "iohand.h"
 
 HEPCLASS_IMPL(PeerMgr, PeerMgr);
 

@@ -5,7 +5,7 @@
 #include "cloud/const.h"
 #include "cloud/exception.h"
 #include "climanage.h"
-#include "switchhand.h"
+#include "cloud/switchhand.h"
 
 
 HEPMUTICLASS_IMPL(PeerServ, PeerServ, IOHand)
@@ -100,8 +100,8 @@ int PeerServ::appendTimerq( void )
 	if (!m_inqueue)
 	{
 		// 连接正常时 下次检查就延长些; 连接不正常时,下次检查就频繁此
-		int wait_time_sec = m_existLink? PEERSERV_EXIST_CHKTIME: PEERSERV_NOEXIST_CHKTIME;
-		ret = SwitchHand::Instance()->appendQTask(this, wait_time_sec + s_my_svrid*200);
+		int wait_time_msec = m_existLink? PEERSERV_EXIST_CHKTIME: PEERSERV_NOEXIST_CHKTIME;
+		ret = SwitchHand::Instance()->appendQTask(this, wait_time_msec + s_my_svrid*200);
 		m_inqueue = (0 == ret);
 		ERRLOG_IF1(ret, "APPENDQTASK| msg=append fail| ret=%d", ret);
 	}

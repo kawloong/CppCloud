@@ -8,7 +8,7 @@
 #include "flowctrl.h"
 #include "climanage.h"
 #include "act_mgr.h"
-#include "homacro.h"
+#include "cloud/homacro.h"
 #include "broadcastcli.h"
 #include "hocfg_mgr.h"
 

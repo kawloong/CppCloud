@@ -1,4 +1,5 @@
-
+#ifndef _MSGID_H_
+#define _MSGID_H_
 
 // 服务间通信使用tcp方式，消息头定义如下
 #pragma pack(1)
@@ -73,3 +74,4 @@ enum command_id_t
 
 static const unsigned char g_msg_ver = 1;
 static const unsigned int g_maxpkg_len = (200*1024*1024); // 200M Limit
+#endif

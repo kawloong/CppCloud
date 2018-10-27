@@ -1,7 +1,7 @@
 #include "peer_mgr.h"
 
 #include "comm/strparse.h"
-#include "switchhand.h"
+#include "cloud/switchhand.h"
 #include "cppcloud_config.h"
 #include "peer_serv.h"
 #include "peer_cli.h"

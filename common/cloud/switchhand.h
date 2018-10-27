@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------
 FileName     : switchhand.h
 Description  : 线程切换过渡操作
-remark       : 主要实现cli的keepalive动作
+remark       : 主要实现定时等待的任务
 Modification :
 --------------------------------------------------------------------------
    1、Date  2018-09-10       create     hejl 
@@ -39,7 +39,7 @@ public: // interface ITaskRun2
 
 private:
     HEpEvFlag m_epCtrl;
-    int m_pipe[2];
+    int m_pipe[2]; // 通过pipe的方式和epoll线程通信
     
     static std::thread* s_thread;
     Queue<ITaskRun2*, false> tskwaitq; // 未到触发点的等待任务

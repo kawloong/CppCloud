@@ -1,7 +1,8 @@
-SubComCpp:=
-SrcCpp:=flowctrl.cpp climanage.cpp act_mgr.cpp listen.cpp iohand.cpp begn_hand.cpp query_hand.cpp clibase.cpp
-SrcCpp+=cppcloud_config.cpp exception.cpp main.cpp peer_serv.cpp switchhand.cpp peer_cli.cpp  
-SrcCpp+=peer_mgr.cpp outer_serv.cpp outer_cli.cpp keepaliver.cpp broadcastcli.cpp route_exchange.cpp
+CloudCpp:=switchhand.cpp exception.cpp 
+SrcCpp:=climanage.cpp flowctrl.cpp act_mgr.cpp listen.cpp iohand.cpp begn_hand.cpp query_hand.cpp clibase.cpp
+SrcCpp+=cppcloud_config.cpp main.cpp peer_serv.cpp peer_cli.cpp  hocfg_mgr.cpp 
+SrcCpp+=peer_mgr.cpp outer_serv.cpp outer_cli.cpp keepaliver.cpp broadcastcli.cpp route_exchange.cpp 
+SrcCpp+=service_provider.cpp provider_manage.cpp
 
 TARGET=cppcloud_serv
 
@@ -25,8 +26,8 @@ ALIBS=
 LOADLIBES+=-L/usr/local/lib -L$(LIBCOMMON) -Wl,-rpath,.
 LDLIBS+=-lhocomm -lpthread -lcrypto # CppCloud底层动态库
 
-SRC=$(SrcCpp) $(SubComCpp:%.cpp=../scomm/%.cpp)
-OBJ=$(SRC:.cpp=.o)
+SRC=$(SrcCpp) $(CloudCpp:%.cpp=../common/cloud/%.cpp)
+OBJ=$(SRC:.cpp=.o) 
 
 # linking operation from *.o and lib.
 $(TARGET): $(OBJ)
@@ -40,7 +41,10 @@ sinclude .depend
 .PHONY: clean depend
 clean:
 	@rm -rf $(TARGET) $(OBJ) $(COMMON_OBJ) $(LINKNAME)
+cleanall:
+	@rm -rf $(TARGET) $(OBJ) $(COMMON_OBJ) $(LINKNAME)
+	@rm .depend
 
 depend: $(SRC)
-	$(CXX) -MM $< $(INCLUDEDIR) $^ > .depend
+	$(CXX) -MM -std=c++11 $< $(INCLUDEDIR) $^ > .depend
 

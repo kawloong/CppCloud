@@ -2,7 +2,7 @@
 #include "clibase.h"
 #include "cloud/exception.h"
 #include "climanage.h"
-#include "homacro.h"
+#include "cloud/homacro.h"
 #include "broadcastcli.h"
 #include "rapidjson/json.hpp"
 #include "comm/strparse.h"

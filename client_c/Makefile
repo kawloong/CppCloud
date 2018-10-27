@@ -1,5 +1,5 @@
-SubComCpp:=
-SrcCpp:=climanage.cpp listen.cpp iohand.cpp
+CloudCpp:=switchhand.cpp exception.cpp 
+SrcCpp:=climanage.cpp listen.cpp iohand.cpp cloudapp.cpp
 
 LINKNAME:=libsdk_cppcloud.so
 TSONAME=$(LINKNAME).1
@@ -26,7 +26,7 @@ ALIBS=
 LOADLIBES+=-L/usr/local/lib -L$(LIBCOMMON) -Wl,-rpath,.
 # LDLIBS+=-lhocomm -lpthread -lcrypto # CppCloud底层动态库
 
-SRC=$(SrcCpp) $(SubComCpp:%.cpp=../scomm/%.cpp)
+SRC=$(SrcCpp)  $(CloudCpp:%.cpp=../common/cloud/%.cpp)
 OBJ=$(SRC:.cpp=.o)
 
 # linking operation from *.o and lib.
@@ -45,6 +45,10 @@ a: $(ATARGET) $(Alib)
 $(ATARGET): $(OBJ) $(Alib)
 	$(AR) $@ $^ $(ALIBS)	
 
+sinclude .depend
+.PHONY: clean depend
+clean:
+	@rm -rf $(TARGET) $(OBJ) $(COMMON_OBJ) $(LINKNAME) $(TSONAME)
 
 depend: $(SRC)
 	$(CXX) -MM -std=c++11 $< $(INCLUDEDIR) $^ > .depend

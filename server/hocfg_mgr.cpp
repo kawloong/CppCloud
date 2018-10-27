@@ -1,5 +1,5 @@
 #include "hocfg_mgr.h"
-#include "homacro.h"
+#include "cloud/homacro.h"
 #include "cloud/exception.h"
 #include "iohand.h"
 #include "broadcastcli.h"
