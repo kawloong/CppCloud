@@ -335,7 +335,7 @@ int Sock::connect(int& fd, const char* ip, int port, int timout_sec, bool nobloc
 
             svrfd = socket(AF_INET6, SOCK_STREAM, 0);
             if (noblock) sock_nonblock(svrfd);
-            if (timout_sec > 0) setSndTimeOut(timeout_sec);
+            if (timout_sec > 0) setSndTimeOut(svrfd, timout_sec);
 
             ret = ::connect(svrfd, (struct sockaddr*)&addr6, sizeof(addr6));
         }
@@ -351,7 +351,7 @@ int Sock::connect(int& fd, const char* ip, int port, int timout_sec, bool nobloc
 
             svrfd = socket(AF_INET, SOCK_STREAM, 0);
             if (noblock) sock_nonblock(svrfd);
-            if (timout_sec > 0) setSndTimeOut(timeout_sec);
+            if (timout_sec > 0) setSndTimeOut(svrfd, timout_sec);
 
             ret = ::connect(svrfd, (struct sockaddr*)&addr4, sizeof(addr4));
         }
@@ -396,13 +396,13 @@ int Sock::geterrno(int fd)
 int Sock::setRcvTimeOut(int fd, int sec)
 {
     struct timeval timeout={sec, 0};
-    int ret=setsockopt(sock_fd,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout));
+    int ret=setsockopt(fd,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout));
     return ret;
 }
 
 int Sock::setSndTimeOut(int fd, int sec)
 {
     struct timeval timeout={sec, 0};
-    int ret=setsockopt(sock_fd,SOL_SOCKET,SO_SNDTIMEO,&timeout,sizeof(timeout));
+    int ret=setsockopt(fd,SOL_SOCKET,SO_SNDTIMEO,&timeout,sizeof(timeout));
     return ret;
 }

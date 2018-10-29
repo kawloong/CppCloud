@@ -10,55 +10,55 @@ class RedisConnPool
 {
 public:
 	/***************************************
-	@summery: »ñÈ¡³ØÄÚÒ»¸öÁ¬½Ó, Í¨¹ıRedisÊä³ö²ÎÊı·µ»Ø
-	@param1:  Redis [out] µ÷ÓÃÕß´«Èë½ÓÊÕµÄÖ¸Õë
-	@param2:  only_pool [in] ÊÇ·ñ½öÏŞ·µ»Ø³ØÖĞ³¤Á¬½Ó; µ±trueÊ±,ÎŞ³¤Á¬½ÓÊ±·µ»Ø¶ÌÁ¬½Ó
-	@return:  0 ³É¹¦Ö´ĞĞ; ÆäËû³ö´í; 
-	@remark:  getConnectºÍrelConnect±ØĞëÆ¥ÅäÊ¹ÓÃ,Íâ²¿²»Òª¶ÔÆädelete
+	@summery: è·å–æ± å†…ä¸€ä¸ªè¿æ¥, é€šè¿‡Redisè¾“å‡ºå‚æ•°è¿”å›
+	@param1:  Redis [out] è°ƒç”¨è€…ä¼ å…¥æ¥æ”¶çš„æŒ‡é’ˆ
+	@param2:  only_pool [in] æ˜¯å¦ä»…é™è¿”å›æ± ä¸­é•¿è¿æ¥; å½“trueæ—¶,æ— é•¿è¿æ¥æ—¶è¿”å›çŸ­è¿æ¥
+	@return:  0 æˆåŠŸæ‰§è¡Œ; å…¶ä»–å‡ºé”™; 
+	@remark:  getConnectå’ŒrelConnectå¿…é¡»åŒ¹é…ä½¿ç”¨,å¤–éƒ¨ä¸è¦å¯¹å…¶delete
 	**************************************/	
 	int getConnect(Redis*& rds, bool only_pool = false);
 	
 	/***************************************
-	@summery: ÊÍ·Å»ØÒ»¸öÁ¬½Ó
-	@param1:  rds [in] ÓÉgetConnect»ñµÃµÄÖ¸Õë
-	@return:  0 ³É¹¦Ö´ĞĞ; ÆäËû³ö´í; 
-	@remark:  getConnectºÍrelConnect±ØĞëÆ¥ÅäÊ¹ÓÃ,Íâ²¿²»Òª¶ÔÆädelete
+	@summery: é‡Šæ”¾å›ä¸€ä¸ªè¿æ¥
+	@param1:  rds [in] ç”±getConnectè·å¾—çš„æŒ‡é’ˆ
+	@return:  0 æˆåŠŸæ‰§è¡Œ; å…¶ä»–å‡ºé”™; 
+	@remark:  getConnectå’ŒrelConnectå¿…é¡»åŒ¹é…ä½¿ç”¨,å¤–éƒ¨ä¸è¦å¯¹å…¶delete
 	**************************************/	
-	void relConnect(Redis* rds, bool check_connect) ; // ÊÍ·ÅÁ¬½Ó
+	void relConnect(Redis* rds, bool check_connect) ; // é‡Šæ”¾è¿æ¥
 
 public:
 	RedisConnPool(void);
 	~RedisConnPool(void);
 	
-	// ³õÊ¼»¯³Ø¶ÔÏó
+	// åˆå§‹åŒ–æ± å¯¹è±¡
 	int init(redis_pool_conf_t* conf);
-	// ·´³õÊ¼»¯³Ø¶ÔÏó
+	// ååˆå§‹åŒ–æ± å¯¹è±¡
 	void uninit(void);
 
-    // ²é¿´¶ÔÏóÔËĞĞ×´Ì¬ĞÅÏ¢
+    // æŸ¥çœ‹å¯¹è±¡è¿è¡ŒçŠ¶æ€ä¿¡æ¯
     void trace_stat(string& msg, bool includeFreeConn);
 
 private:
-	inline bool can_create_poolconn(void); // ÅĞ¶ÏÊÇ·ñÓĞÁ¬½ÓÓà¶î
+	inline bool can_create_poolconn(void); // åˆ¤æ–­æ˜¯å¦æœ‰è¿æ¥ä½™é¢
 	int init_pool(unsigned int count);
 	
 private: //const method
-	Redis* create_connect(void) const;         // ´´½¨Ò»¸öÁ¬½Ó
-	void destroy_connect(Redis* p) const;      // Ïú»ÙÒ»¸öÁ¬½Ó
+	Redis* create_connect(void) const;         // åˆ›å»ºä¸€ä¸ªè¿æ¥
+	void destroy_connect(Redis* p) const;      // é”€æ¯ä¸€ä¸ªè¿æ¥
 	
 private:
 	redis_pool_conf_t* m_conf;
-	int m_conn_count_process;    // ½ø³ÌÄÚµÄÒÑ¿ªµÄ³£Á¬½ÓÊı
-	int m_conn_max_process;      // ½ø³ÌÄÚµÄ³ØÖĞÔÊĞí×î´óÁ¬½ÓÊı
-	//int m_freeconn_count;      // ½ø³ÌÄÚÁ¬½Ó³ØÖĞµÄ¿ÉÓÃÁ¬½ÓÊı(¿ÉÓÉm_freeconn_list.size()µÃµ½)
-	int m_totalconn_count;       // ½ø³ÌÄÚµ±Ç°×Ü»î¶¯Á¬½ÓÊı(°üÀ¨¶ÌÁ¬½ÓºÍ³¤Á¬½Ó)
+	int m_conn_count_process;    // è¿›ç¨‹å†…çš„å·²å¼€çš„å¸¸è¿æ¥æ•°
+	int m_conn_max_process;      // è¿›ç¨‹å†…çš„æ± ä¸­å…è®¸æœ€å¤§è¿æ¥æ•°
+	//int m_freeconn_count;      // è¿›ç¨‹å†…è¿æ¥æ± ä¸­çš„å¯ç”¨è¿æ¥æ•°(å¯ç”±m_freeconn_list.size()å¾—åˆ°)
+	int m_totalconn_count;       // è¿›ç¨‹å†…å½“å‰æ€»æ´»åŠ¨è¿æ¥æ•°(åŒ…æ‹¬çŸ­è¿æ¥å’Œé•¿è¿æ¥)
 	int m_wait_timeout;
-    int m_peek_conn_count;       // ½ø³ÌÄÚÁ¬½ÓÊı·åÖµ(Ä³Ê±¼ä)
+    int m_peek_conn_count;       // è¿›ç¨‹å†…è¿æ¥æ•°å³°å€¼(æŸæ—¶é—´)
     static const int DEFAULT_TIMEOUT = 600;
 
-	bool m_inited;               // ÊÇ·ñÒÑ³õÊ¼»¯
-	ThreadLock m_lock;           //Ïß³ÌËø
-	list<Redis*> m_freeconn_list; //¿ÕÏĞÁ¬½Ó
+	bool m_inited;               // æ˜¯å¦å·²åˆå§‹åŒ–
+	ThreadLock m_lock;           //çº¿ç¨‹é”
+	list<Redis*> m_freeconn_list; //ç©ºé—²è¿æ¥
 };
 
 #endif //
