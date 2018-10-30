@@ -1,11 +1,14 @@
 #include "tcp_invoker.h"
 #include "comm/public.h"
-
+#include "comm/sock.h"
+#include "cloud/iobuff.h"
+#include "comm/strparse.h"
 #include <sys/types.h>
 #include <sys/socket.h>
 
 TcpInvoker::TcpInvoker( const string& hostport ): m_fd(INVALID_FD), 
-    m_reqcount(0), m_seqid(0), m_timeout_sec(3), m_begtime(0), m_atime(0), m_broker(true)
+    m_reqcount(0), m_seqid(0), m_timeout_sec(3), m_begtime(0), m_atime(0), 
+    m_broker(true), m_waitRsp(false)
 {
     size_t pos = hostport.find(":");
     if (pos > 0)
@@ -17,7 +20,7 @@ TcpInvoker::TcpInvoker( const string& hostport ): m_fd(INVALID_FD),
 
 TcpInvoker::TcpInvoker( const string& host, int port ): m_fd(INVALID_FD), 
     m_reqcount(0), m_seqid(0), m_timeout_sec(3), m_begtime(0), m_atime(0), 
-    m_rhost(host), m_port(port), m_broker(true)
+    m_rhost(host), m_port(port), m_broker(true), m_waitRsp(false)
 {
 }
 
@@ -47,23 +50,28 @@ int TcpInvoker::connect( bool force )
     {
         m_begtime = time(NULL);
         m_atime = m_begtime;
+        m_waitRsp = false;
         Sock::setRcvTimeOut(m_fd, m_timeout_sec);
         Sock::setSndTimeOut(m_fd, m_timeout_sec);
+        LOGDEBUG("INVOKERCONN| msg=connct to %s:%p ok", m_rhost.c_str(), m_port);
     }
 
     return ret;
 }
 
 // 返回是否连接正常
-bool TcpInvoker::check( void )
+// param: -1 忽略请求/响应状态检查；0 检查是否属等待发送状态； 1 检查是否是等待响应状态
+bool TcpInvoker::check( int flowFlag /*=-1*/ ) const
 {
-    return INVALID_FD != m_fd && !m_broker && 0 == Sock::geterrno(m_fd);
+    bool flowCheck = (flowFlag >= 0 ? (0==flowFlag? !m_waitRsp : m_waitRsp) : true);
+    return INVALID_FD != m_fd && !m_broker && 0 == Sock::geterrno(m_fd) && flowCheck;
 }
 
 void TcpInvoker::release( void )
 {
     IFCLOSEFD(m_fd);
     m_broker = true;
+    m_waitRsp = false;
     m_begtime = 0;
 }
 
@@ -83,7 +91,8 @@ int TcpInvoker::send( int cmdid, const string& msg )
     }
     else
     {
-        m_req_count++;
+        m_reqcount++;
+        m_waitRsp = true;
         m_atime = time(NULL);
     }
 
@@ -100,7 +109,7 @@ int TcpInvoker::recv( unsigned& rcmdid, string& msg )
     do
     {
         char buff[HEADER_LEN];
-        ret = ::recv(m_cliFd, buff, HEADER_LEN, 0);
+        ret = ::recv(m_fd, buff, HEADER_LEN, 0);
         IFBREAK_N(0 == ret, close_retcode);
         ERRLOG_IF1BRK(ret != HEADER_LEN, -92, "INVOKERRECV| host=%s:%d| ret=%d| sockerrno=%d| dt=%ds",
             m_rhost.c_str(), m_port, ret, Sock::geterrno(m_fd), int(time(NULL)-m_atime));
@@ -111,29 +120,39 @@ int TcpInvoker::recv( unsigned& rcmdid, string& msg )
         head_t* hdr = inbf.head();
 
         ERRLOG_IF1BRK(inbf.totalLen > g_maxpkg_len, -93, "INVOKERRECV| msg=head invalid| "
-            "host=%s:%d| cmd=0x%x| seq=%u| len=%u",  m_rhost.c_str(), m_port, hdr->cmdid, inbf.seqid, inbf.totalLen);
+            "host=%s:%d| cmd=0x%x| seq=%u| len=%u",  m_rhost.c_str(), m_port, hdr->cmdid, inbf.seqId, inbf.totalLen);
         
         rcmdid = hdr->cmdid;
         body = new char[hdr->body_len];
-        ret = ::recv(m_cliFd, body, hdr->body_len, 0);
+        ret = ::recv(m_fd, body, hdr->body_len, 0);
         IFBREAK_N(0 == ret, close_retcode);
 
-        ERRLOG_IF1BRK(ret != hdr->body_len, -94, "INVOKERRECV| msg=body recv fail host=%s:%d| ret=%d| sockerrno=%d| dt=%ds",
+        ERRLOG_IF1BRK(ret != (int)hdr->body_len, -94, "INVOKERRECV| msg=body recv fail host=%s:%d| ret=%d| sockerrno=%d| dt=%ds",
             m_rhost.c_str(), m_port, ret, Sock::geterrno(m_fd), int(time(NULL)-m_atime));
         WARNLOG_IF1(hdr->seqid != m_seqid, "INVOKERRECV| msg=resp seqid not match| host=%s:%d| %u!=%u", 
             m_rhost.c_str(), m_port, hdr->seqid, m_seqid);
         msg.assign(body, ret);
+        m_waitRsp = false;
         ret = 0;
     }while(0);
 
     IFDELETE_ARR(body);
-    int dt = endt - m_mtime;
     if (ret)
     {
-        time_t endt = time(NULL);
+        int dt = time(NULL) - m_atime;
         LOGOPT_EI(close_retcode!=ret, "INVOKERRECV| msg=close sock| host=%s:%d| dt=%ds", m_rhost.c_str(), m_port, dt);
         release();
     }
 
     return ret;
+}
+
+string TcpInvoker::getKey( void ) const
+{
+    return m_rhost + _N(m_port);
+}
+
+time_t TcpInvoker::getAtime( void ) const
+{
+    return m_atime > m_begtime? m_atime : m_begtime;
 }

@@ -1,5 +1,7 @@
 #include "tcp_invoker_mgr.h"
+#include "tcp_invoker.h"
 #include "comm/lock.h"
+#include "cloud/msgid.h"
 
 RWLock gLocker;
 
@@ -16,13 +18,16 @@ void TcpInvokerMgr::setLimitCount( int n )
 TcpInvoker* TcpInvokerMgr::getInvoker( const string& hostport )
 {
     TcpInvoker* ivk = NULL;
-    gLocker.WLock();
-    IOVOKER_POOLT::iterator it m_pool.find(hostport);
-    if (it != m_pool.end())
     {
-        if (!it->second.empty())
+        gLocker.WLock();
+        IOVOKER_POOLT::iterator it = m_pool.find(hostport);
+        if (it != m_pool.end())
         {
-            ivk = it->second.pop();
+            if (!it->second.empty())
+            {
+                ivk = it->second.front();
+                it->second.pop_front();
+            }
         }
     }
 
@@ -36,4 +41,58 @@ TcpInvoker* TcpInvokerMgr::getInvoker( const string& hostport )
     }
 
     return ivk;
+}
+
+void TcpInvokerMgr::relInvoker( TcpInvoker* ivk )
+{
+    if (ivk && ivk->check(0))
+    {
+        string key = ivk->getKey();
+        gLocker.WLock();
+        if (m_pool[key].size() < (unsigned)m_eachLimitCount)
+        {
+            m_pool[key].push_back(ivk);
+            ivk = NULL;
+        }
+    }
+    
+    IFDELETE(ivk);
+}
+
+int TcpInvokerMgr::request( string& resp, const string& reqmsg, const string& hostp )
+{
+    static const int check_more_dtsec = 30*60; // 超过此时间的连接可能会失败，增加一次重试
+    static const int max_trycount = 2;
+    int ret = -1;    
+    time_t atime;
+    time_t now = time(NULL);
+
+    TcpInvoker* ivker = getInvoker(hostp);
+    IFRETURN_N(NULL==ivker, -95)
+    atime = ivker->getAtime();
+    int trycnt = atime > now - check_more_dtsec ? 1 : max_trycount; // 缰久的连接可重次一次
+
+    while (trycnt-- > 0)
+    {
+        if (!ivker->check(0))
+        {
+            ret = ivker->connect(true);
+            ERRLOG_IF1RET_N(ret, -96, "INVOKERREQ| msg=connect to %s fail", hostp.c_str());
+        }
+
+        ret = ivker->send(CMD_TCP_SVR_REQ, reqmsg);
+        if (ret)
+        {
+            ivker->release();
+            continue;
+        }
+
+        unsigned int rspid = 0;
+        ret = ivker->recv(rspid, resp);
+        IFBREAK(0 == ret);
+        ivker->release();
+    }
+
+    relInvoker(ivker);
+    return ret;
 }

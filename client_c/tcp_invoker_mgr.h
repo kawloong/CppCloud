@@ -28,8 +28,12 @@ class TcpInvokerMgr
 public:
 	void setLimitCount( int n );
 
+	// 向服务提供者发出请求，并等待响应回复 （同步）
+	int request( string& resp, const string& reqmsg, const string& hostp );
+
 private:
-	TcpInvoker* getInvoker( void );
+	TcpInvoker* getInvoker( const string& hostport );
+	void relInvoker( TcpInvoker* ivk );
 
 private:
 	int m_eachLimitCount;

@@ -41,6 +41,7 @@ enum command_id_t
     CMD_SVRSEARCH_REQ = 0x0018, // 服务发现
     CMD_SVRSHOW_REQ = 0x0019, // 列出所有服务
     CMD_APPRUNLOG_REQ = 0x001A,
+    CMD_TCP_SVR_REQ = 0x001B, // tcp微服务请求命令
 
     CMDID_MID = 0x1000,
 
@@ -70,6 +71,7 @@ enum command_id_t
     CMD_SVRSEARCH_RSP = 0x1018,
     CMD_SVRSHOW_RSP = 0x1019,
     CMD_APPRUNLOG_RSP = 0x101A,
+    CMD_TCP_SVR_RSP = 0x101B,
 };
 
 static const unsigned char g_msg_ver = 1;

@@ -8,7 +8,7 @@ Modification :
 -------------------------------------------------------------------------*/
 #ifndef _TCP_INVOKER_H_
 #define _TCP_INVOKER_H_
-
+#include <string>
 
 
 using namespace std;
@@ -24,6 +24,15 @@ public:
 
 	int init( int rcvto_sec );
 	int connect( bool force );
+	bool check( int flowFlag = -1 ) const;
+	void release( void );
+	string getKey( void ) const;
+	time_t getAtime( void ) const;
+
+	int send( int cmdid, const string& msg );
+	int recv( unsigned& rcmdid, string& msg );
+
+protected:
 
 private:
 	int m_fd;
@@ -35,6 +44,7 @@ private:
 	string m_rhost;
 	int m_port;
 	bool m_broker;
+	bool m_waitRsp;
 
 };
 
