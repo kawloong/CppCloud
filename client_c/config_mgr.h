@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 FileName     : config_mgr.h
-Description  : 分布式配置客户端类
+Description  : 分布式配置管理类
 remark       : 线程安全
 Modification :
 --------------------------------------------------------------------------
@@ -12,6 +12,9 @@ Modification :
 #include <string>
 #include <map>
 
-
+class ConfigMgr
+{
+    
+};
 
 #endif
