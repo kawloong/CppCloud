@@ -30,8 +30,16 @@ public:
     int query( vector<int>& oval, const string& qkey );
 
 private:
-    const Value* _findNode( const string& qkey );
+    inline const Value* _findNode( const string& qkey );
+    inline int parseVal( int& oval, const Value* node );
+    inline int parseVal( string& oval, const Value* node );
 
+    template<class ValT>
+    int queryVector( vector<ValT>& oval, const string& qkey );
+    template<class ValT>
+    int queryMAP( map<string, ValT>& oval, const string& qkey );
+
+    
 private:
     time_t m_mtime;
     Document m_doc;

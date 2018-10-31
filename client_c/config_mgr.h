@@ -14,7 +14,22 @@ Modification :
 
 class ConfigMgr
 {
+public:
+	static int OnCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param );
+	int onCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param );
+	static int OnCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param );
+	int onCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param );
+
+
+public:
+    int initLoad( const string& confName );
+    int setMainName( const string& mainConf ); 
     
+private:
+    string m_mainConfName; // 主配置文件名
+    map<string, ConfJson*> m_jcfgs;
+    RWLock m_rwLock0;
+    static ConfigMgr* This;
 };
 
 #endif
