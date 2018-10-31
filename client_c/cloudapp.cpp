@@ -188,6 +188,20 @@ int CloudApp::onCMD_WHOAMI_RSP( void* ptr, unsigned cmdid, void* param )
 	return 0;
 }
 
+int CloudApp::OnSyncMsg( void* ptr, unsigned cmdid, void* param )
+{
+	return This->onSyncMsg(ptr, cmdid, param);
+}
+int CloudApp::onSyncMsg( void* ptr, unsigned cmdid, void* param )
+{
+	IOBuffItem* iBufItem = (IOBuffItem*)param;
+	unsigned seqid = iBufItem->head()->seqid;
+
+	int ret = m_syncHand.notify(cmdid, seqid, iBufItem->body());
+	ERRLOG_IF1(ret, "SYNCMSG| msg=maybe msg resp delay| cmdid=0x%x| seqid=%u", cmdid, seqid);
+	return 0;
+}
+
 bool CloudApp::isInitOk( void ) const
 {
 	return m_existLink && m_appid > 0 && m_stage > 1;
@@ -214,4 +228,43 @@ string CloudApp::whoamiMsg( void ) const
 
 	whoIamJson += "}";
 	return whoIamJson;
+}
+
+// 同步等待请求+响应全过程完成
+int CloudApp::syncRequest( string& resp, unsigned cmdid, const string& reqmsg, int tosec ) 
+{
+	int ret;
+	unsigned seqid = ++m_seqid;
+	unsigned rspid = (cmdid | CMDID_MID);
+
+	bool badd = addCmdHandle(rspid, OnSyncMsg, seqid);
+	ERRLOG_IF1RET_N(!badd, -80, "SYNCREQ| msg=addCmdHandle fail| cmdid=0x%x| seqid=%u", cmdid, seqid);
+	
+	do
+	{
+		ret = m_syncHand.putRequest(rspid, seqid, tosec);
+		if (ret)
+		{
+			delCmdHandle(rspid, seqid);
+			return -81;
+		}
+
+		ret = sendData(cmdid, seqid, reqmsg.c_str(), reqmsg.size(), true);
+		ERRLOG_IF1BRK(ret, -82, "SYNCREQ| msg=sendData fail %d| cmdid=0x%x| seqid=%u", ret, cmdid, seqid)
+
+		ret = m_syncHand.waitResponse(resp, rspid, seqid);
+	}
+	while (0);
+
+	// 结束清理中间过程数据
+	delCmdHandle(rspid, seqid);
+	m_syncHand.delRequest(rspid, seqid);
+
+	return ret;
+}
+
+// 发送消息后不等待响应就返回
+int CloudApp::postRequest( unsigned cmdid, const string& reqmsg )
+{
+	return sendData(cmdid, ++m_seqid, reqmsg.c_str(), reqmsg.size(), true);
 }

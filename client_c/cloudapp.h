@@ -10,7 +10,7 @@ Modification :
 #define _CLOUDAPP_H_
 #include "comm/public.h"
 #include "iohand.h"
-
+#include "synchand.h"
 
 using namespace std;
 
@@ -26,6 +26,8 @@ public:
 	// message handle
 	static int OnCMD_WHOAMI_RSP( void* ptr, unsigned cmdid, void* param );
 	int onCMD_WHOAMI_RSP( void* ptr, unsigned cmdid, void* param );
+	static int OnSyncMsg( void* ptr, unsigned cmdid, void* param );
+	int onSyncMsg( void* ptr, unsigned cmdid, void* param );
 
 public:
 	int init( int epfd, const string& svrhost_port );
@@ -35,6 +37,8 @@ public:
 	string whoamiMsg( void ) const;
 
 	void setSvrid( int svrid );
+	int syncRequest( string& resp, unsigned cmdid, const string& reqmsg, int tosec ); // 同步等待请求+响应全过程完成
+	int postRequest( unsigned cmdid, const string& reqmsg ); // 发送消息后不等待响应就返回
 
 	virtual int qrun( int flag, long p2 );
 	virtual int onClose( int p1, long p2 );
@@ -57,6 +61,8 @@ private:
 	string m_rhost;
 	string m_svrname;
 	string m_mconf;
+	SyncHand m_syncHand;
+
 	static CloudApp* This;
 };
 

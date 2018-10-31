@@ -11,7 +11,11 @@ Modification :
 #include "comm/public.h"
 #include "comm/lock.h"
 #include <string>
+#include <vector>
+#include <map>
 #include "rapidjson/json.hpp"
+
+using namespace std;
 
 class ConfJson
 {
@@ -25,10 +29,13 @@ public:
     int query( vector<string>& oval, const string& qkey );
     int query( vector<int>& oval, const string& qkey );
 
+private:
+    const Value* _findNode( const string& qkey );
 
 private:
     time_t m_mtime;
     Document m_doc;
+    string m_fname;
     RWLock m_rwLock;
 };
 

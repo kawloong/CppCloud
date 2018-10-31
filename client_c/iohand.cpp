@@ -1,6 +1,7 @@
 #include "iohand.h"
 #include "comm/strparse.h"
 #include "comm/sock.h"
+#include "comm/lock.h"
 #include "cloud/const.h"
 #include "cloud/exception.h"
 //#include "climanage.h"
@@ -12,6 +13,7 @@ HEPCLASS_IMPL(IOHand, IOHand)
 
 static map<unsigned, ProcOneFunT> s_cmdid2interceptor; // 消息拦截器
 static map<unsigned, ProcOneFunT> s_cmdid2clsname; // 事件处理器，滞后于拦截器
+static RWLock gCmdHandleLocker;
 
 datasize_t IOHand::serv_recv_bytes = 0;
 datasize_t IOHand::serv_send_bytes = 0;
@@ -451,11 +453,24 @@ bool IOHand::addCmdHandle( unsigned cmdid, ProcOneFunT func, unsigned seqid/*=0*
 		cmdid |= (seqid << 16);
 	}
 
+	RWLOCK_WRITE(gCmdHandleLocker);
 	cmdhandle_t& val = m_cmdidHandle[cmdid];
-	bool bret = (NULL == val.handfunc);
-	val.handfunc = func;
+	IFRETURN_N(val.handfunc, false);
 
-	return bret;
+	val.handfunc = func;
+	val.key = cmdid;
+	return true;
+}
+
+void IOHand::delCmdHandle( unsigned cmdid, unsigned seqid/*=0*/ )
+{
+	if (seqid > 0)
+	{
+		cmdid |= (seqid << 16);
+	}
+
+	RWLOCK_WRITE(gCmdHandleLocker);
+	m_cmdidHandle.erase(cmdid);
 }
 
 // 通用（类）消息处理
@@ -491,23 +506,33 @@ int IOHand::selfCmdHandle( IOBuffItem*& iBufItem )
 {
 	int ret = 1;
 	head_t* hdr = iBufItem->head();
-	map<unsigned, cmdhandle_t>::iterator itr = m_cmdidHandle.find(hdr->cmdid);
+
+	cmdhandle_t* cmdhand = NULL;
+	gCmdHandleLocker.RLock();
+	map<unsigned, cmdhandle_t>::iterator itr = m_cmdidHandle.find(hdr->cmdid | (hdr->seqid << 16));
 
 	if (m_cmdidHandle.end() == itr)
 	{
-		itr = m_cmdidHandle.find(hdr->cmdid | (hdr->seqid << 16));
+		itr = m_cmdidHandle.find(hdr->cmdid);
 	}
+
 	if (m_cmdidHandle.end() != itr)
 	{
-		cmdhandle_t* cmdhand = &itr->second;
+		cmdhand = &itr->second;
+	}
+	gCmdHandleLocker.UnLock();
+
+	if (cmdhand)
+	{
 		cmdhand->handfunc(this, hdr->cmdid, (void*)iBufItem);
 		if (1 == cmdhand->expire_time || cmdhand->expire_time < time(NULL))
 		{
-			m_cmdidHandle.erase(itr);
+			RWLOCK_WRITE(gCmdHandleLocker);
+			m_cmdidHandle.erase(cmdhand->key);
 		}
-
 		ret = 0;
-	}
+	}	
+
 	
 	return ret;
 }

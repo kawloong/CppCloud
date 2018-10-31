@@ -24,7 +24,10 @@ class IOHand: public HEpBase
 	struct cmdhandle_t
 	{
 		ProcOneFunT handfunc;
+		unsigned key;
 		time_t expire_time; // 1 一次性;
+
+		cmdhandle_t(): handfunc(NULL), key(0), expire_time(1){}
 	};
 
 public:
@@ -45,7 +48,8 @@ public: // interface HEpBase
     int getIntProperty( const string& key ) const;
 
 	// 消息处理
-	bool addCmdHandle( unsigned cmdid, ProcOneFunT func, unsigned seqid=0 );
+	bool addCmdHandle( unsigned cmdid, ProcOneFunT func, unsigned seqid=0 ); // 线程安全
+	void delCmdHandle( unsigned cmdid, unsigned seqid=0 ); // 线程安全
 
 	int driveClose( const string& reason );
 	void setAuthFlag( int auth );
