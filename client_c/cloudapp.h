@@ -14,7 +14,7 @@ Modification :
 
 using namespace std;
 
-
+typedef int (*NotifyCBFunc)( void* param );
 
 class CloudApp: public IOHand
 {
@@ -23,11 +23,15 @@ public:
 	SINGLETON_CLASS2(CloudApp)
 	CloudApp();
 
-	// message handle
+	// ****** message handle begin *******
 	static int OnCMD_WHOAMI_RSP( void* ptr, unsigned cmdid, void* param );
-	int onCMD_WHOAMI_RSP( void* ptr, unsigned cmdid, void* param );
 	static int OnSyncMsg( void* ptr, unsigned cmdid, void* param );
+	static int OnCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param );
+	
+	int onCMD_WHOAMI_RSP( void* ptr, unsigned cmdid, void* param );
 	int onSyncMsg( void* ptr, unsigned cmdid, void* param );
+	int onCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param );
+	// ****** message handle end *******
 
 public:
 	int init( int epfd, const string& svrhost_port );
@@ -37,6 +41,8 @@ public:
 	string whoamiMsg( void ) const;
 
 	void setSvrid( int svrid );
+	void setNotifyCB( const string& notify, NotifyCBFunc func ); // 订阅Serv的推送消息
+
 	int syncRequest( string& resp, unsigned cmdid, const string& reqmsg, int tosec ); // 同步等待请求+响应全过程完成
 	int postRequest( unsigned cmdid, const string& reqmsg ); // 发送消息后不等待响应就返回
 
@@ -61,7 +67,9 @@ private:
 	string m_rhost;
 	string m_svrname;
 	string m_mconf;
+
 	SyncHand m_syncHand;
+	map<string, NotifyCBFunc> m_ntfCB;
 
 	static CloudApp* This;
 };

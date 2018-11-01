@@ -68,6 +68,12 @@ void CloudApp::setSvrid( int svrid )
 	m_appid = svrid;
 }
 
+void CloudApp::setNotifyCB( const string& notify, NotifyCBFunc func )
+{
+	ERRLOG_IF1RET(m_ntfCB.end() != m_ntfCB.find(notify), "SETNTFCB| msg=exist notify %s CB", notify.c_str());
+	m_ntfCB[notify] = func;
+}
+
 void CloudApp::reset( void )
 {
 	m_stage = 0;
@@ -199,6 +205,28 @@ int CloudApp::onSyncMsg( void* ptr, unsigned cmdid, void* param )
 
 	int ret = m_syncHand.notify(cmdid, seqid, iBufItem->body());
 	ERRLOG_IF1(ret, "SYNCMSG| msg=maybe msg resp delay| cmdid=0x%x| seqid=%u", cmdid, seqid);
+	return 0;
+}
+
+int CloudApp::OnCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param )
+{
+    return This->onCMD_EVNOTIFY_REQ(ptr, cmdid, param);
+}
+int CloudApp::onCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param )
+{
+	MSGHANDLE_PARSEHEAD(false);
+	RJSON_GETSTR_D(notify, &doc);
+
+	map<string, NotifyCBFunc>::iterator itr = m_ntfCB.find(notify);
+	if (m_ntfCB.end() != itr)
+	{
+		(itr->second)(&doc);
+	}
+	else
+	{
+		LOGWARN("EVNOTIFY| msg=no callback| notify=%s", notify.c_str());
+	}
+
 	return 0;
 }
 

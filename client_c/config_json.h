@@ -29,6 +29,8 @@ public:
     int query( vector<string>& oval, const string& qkey );
     int query( vector<int>& oval, const string& qkey );
 
+    time_t getMtime( void );
+
 private:
     inline const Value* _findNode( const string& qkey );
     inline int parseVal( int& oval, const Value* node );

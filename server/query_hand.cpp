@@ -156,6 +156,7 @@ int QueryHand::on_CMD_GETCONFIG_REQ( IOHand* iohand, const Value* doc, unsigned 
 		result = "{";
 		StrParse::PutOneJson(result, "code", 0, true);
 		StrParse::PutOneJson(result, "mtime", curMtime, true);
+		StrParse::PutOneJson(result, HOCFG_FILENAME_KEY, file_pattern, true);
 		ret = HocfgMgr::Instance()->query(strtmp, file_pattern, key_pattern, incbase);
 		result += _F("\"contents\": %s }", strtmp.c_str());
 	}

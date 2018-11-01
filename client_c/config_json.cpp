@@ -1,13 +1,21 @@
 #include "config_json.h"
+#include "comm/strparse.h"
 
 int ConfJson::update( const Value* data )
 {
     ERRLOG_IF1RET_N(NULL==data || !data->IsObject(), -100,
-            "CONFUPDATE| msg=data invalid| data=%s", Rjson::ToString(data));
+            "CONFUPDATE| msg=data invalid| data=%s", Rjson::ToString(data).c_str());
     
+    RJSON_GETINT_D(mtime, data);
+    const Value* contents = NULL;
+    Rjson::GetValue(&contents, "contents", data);
+    ERRLOG_IF1RET_N(NULL==contents || 0 == mtime, -105,
+            "CONFUPDATE| msg=data invalid| data=%s", Rjson::ToString(data).c_str());
+    
+    m_mtime = mtime;
     RWLOCK_WRITE(m_rwLock);
     m_doc.SetObject();
-    m_doc.CopyFrom(*data, m_doc.GetAllocator());
+    m_doc.CopyFrom(*contents, m_doc.GetAllocator());
     return 0;
 }
 
@@ -75,7 +83,7 @@ int ConfJson::parseVal( int& oval, const Value* node )
         string chval = node->GetString();
         if (StrParse::IsNumberic(chval))
         {
-            oval = _N(chval);
+            oval = atoi(chval.c_str());
             ret = 0;
         }
     }
@@ -133,12 +141,12 @@ int ConfJson::queryMAP( map<string, ValT>& oval, const string& qkey )
 
 int ConfJson::query( map<string, string>& oval, const string& qkey )
 {
-    return queryT(oval, qkey);
+    return queryMAP(oval, qkey);
 }
 
 int ConfJson::query( map<string, int>& oval, const string& qkey )
 {
-    return queryT(oval, qkey);
+    return queryMAP(oval, qkey);
 }
 
 template<class ValT>
@@ -152,11 +160,13 @@ int ConfJson::queryVector( vector<ValT>& oval, const string& qkey )
     for (; itr != node->End(); ++itr)
     {
         ValT oval2;
-        if (0 == parseVal(oval2, *itr))
+        if (0 == parseVal(oval2, &(*itr)))
         {
             oval.push_back(oval2);
         }
     }
+
+    return 0;
 }
 
 int ConfJson::query( vector<string>& oval, const string& qkey )
@@ -167,4 +177,9 @@ int ConfJson::query( vector<string>& oval, const string& qkey )
 int ConfJson::query( vector<int>& oval, const string& qkey )
 {
     return queryVector(oval, qkey);
+}
+
+time_t ConfJson::getMtime( void )
+{
+    return m_mtime;
 }
