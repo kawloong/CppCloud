@@ -172,10 +172,13 @@ int ConfigMgr::onCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param )
 
 // ValT must be [string, int, map<string,string>, map<string,int>, vector<string>, vector<int>]
 template<class ValT>
-int ConfigMgr::query( ValT& oval, const string& fullqkey )
+int ConfigMgr::_query( ValT& oval, const string& fullqkey, map<string, ValT >& cacheMap )
 {
     static const char seperator_ch = '/';
-    IFRETURN_N(0 == tryGetFromCache(oval, fullqkey), 0);
+    {
+        RWLOCK_READ(g_rwLock0);
+        IFRETURN_N(0 == _tryGetFromCache(oval, fullqkey, cacheMap), 0);
+    }
     
     string fname;
     string qkey;
@@ -204,6 +207,10 @@ int ConfigMgr::query( ValT& oval, const string& fullqkey )
         map<string,ConfJson*>::iterator it = m_jcfgs.find(fname);
         ERRLOG_IF1RET_N(m_jcfgs.end() == it, -55, "CONFQUERY| msg=invalid filename| fullqkey=%s", fullqkey.c_str());
         ret = it->second->query(oval, qkey);
+        // if (0 == ret)
+        {
+            cacheMap[fullqkey] = oval;
+        }
     }
 
     return ret;
@@ -235,28 +242,28 @@ int ConfigMgr::_tryGetFromCache( ValT& oval, const string& fullqkey, const map<s
     return ret;
 }
 
-int ConfigMgr::tryGetFromCache( int& oval, const string& fullqkey )
+int ConfigMgr::query( int& oval, const string& fullqkey )
 {
-    return _tryGetFromCache(oval, fullqkey, m_cacheInt);
+    return _query(oval, fullqkey, m_cacheInt);
 }
-int ConfigMgr::tryGetFromCache( string& oval, const string& fullqkey )
+int ConfigMgr::query( string& oval, const string& fullqkey )
 {
-    return _tryGetFromCache(oval, fullqkey, m_cacheStr);
+    return _query(oval, fullqkey, m_cacheStr);
 }
 
-int ConfigMgr::tryGetFromCache( map<string, string>& oval, const string& fullqkey )
+int ConfigMgr::query( map<string, string>& oval, const string& fullqkey )
 {
-    return _tryGetFromCache(oval, fullqkey, m_cacheMapStr);
+    return _query(oval, fullqkey, m_cacheMapStr);
 }
-int ConfigMgr::tryGetFromCache( map<string, int>& oval, const string& fullqkey )
+int ConfigMgr::query( map<string, int>& oval, const string& fullqkey )
 {
-    return _tryGetFromCache(oval, fullqkey, m_cacheMapInt);
+    return _query(oval, fullqkey, m_cacheMapInt);
 }
-int ConfigMgr::tryGetFromCache( vector<string>& oval, const string& fullqkey )
+int ConfigMgr::query( vector<string>& oval, const string& fullqkey )
 {
-    return _tryGetFromCache(oval, fullqkey, m_cacheVecStr);
+    return _query(oval, fullqkey, m_cacheVecStr);
 }
-int ConfigMgr::tryGetFromCache( vector<int>& oval, const string& fullqkey )
+int ConfigMgr::query( vector<int>& oval, const string& fullqkey )
 {
-    return _tryGetFromCache(oval, fullqkey, m_cacheVecInt);
+    return _query(oval, fullqkey, m_cacheVecInt);
 }

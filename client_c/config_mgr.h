@@ -38,20 +38,21 @@ public:
      * @remart: thread-safe method
      * @return: if success return 0; 
     ***/
-    template<class ValT>
-    int query( ValT& oval, const string& qkey );
+    int query( int& oval, const string& fullqkey );
+    int query( string& oval, const string& fullqkey );
+    int query( map<string, string>& oval, const string& fullqkey );
+    int query( map<string, int>& oval, const string& fullqkey );
+    int query( vector<string>& oval, const string& fullqkey );
+    int query( vector<int>& oval, const string& fullqkey );
+    
 
 private:
     void clearCache( void );
-    int tryGetFromCache( int& oval, const string& fullqkey );
-    int tryGetFromCache( string& oval, const string& fullqkey );
-    int tryGetFromCache( map<string, string>& oval, const string& fullqkey );
-    int tryGetFromCache( map<string, int>& oval, const string& fullqkey );
-    int tryGetFromCache( vector<string>& oval, const string& fullqkey );
-    int tryGetFromCache( vector<int>& oval, const string& fullqkey );
 
+    // ValT must be [string, int, map<string,string>, map<string,int>, vector<string>, vector<int>]
     template<class ValT>
-    int _tryGetFromCache( ValT& oval, const string& fullqkey, const map<string, ValT >& cacheMap );
+    int _query( ValT& oval, const string& fullqkey, map<string, ValT >& cacheMap );
+
     
 private:
     string m_mainConfName; // 主配置文件名
