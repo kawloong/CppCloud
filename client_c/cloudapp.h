@@ -38,6 +38,7 @@ public:
 	void uninit( void );
 
 	bool isInitOk( void ) const;
+	string getMConf( void ) const;
 	string whoamiMsg( void ) const;
 
 	void setSvrid( int svrid );

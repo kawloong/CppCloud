@@ -4,15 +4,9 @@
 #include "cloud/const.h"
 #include "comm/strparse.h"
 
-ServiceItem::ServiceItem( void ): svrid(0), okcount(0), ngcount(0), tmpnum(0),
-	 protocol(0),version(0), weight(0), idc(0), rack(0), islocal(false), enable(false)
+ServiceItem::ServiceItem( void )
 {
 
-}
-
-bool ServiceItem::valid( void ) const
-{
-	return enable && protocol > 0 && svrid > 0 && weight > 0 && !url.empty();
 }
 
 int ServiceItem::parse0( const string& regname, CliBase* cli )

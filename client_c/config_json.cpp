@@ -19,7 +19,7 @@ int ConfJson::update( const Value* data )
     return 0;
 }
 
-const Value* ConfJson::_findNode( const string& qkey )
+const Value* ConfJson::_findNode( const string& qkey ) const
 {
     static const char seperator_ch = '/';
     int ret = 0;
@@ -68,7 +68,50 @@ const Value* ConfJson::_findNode( const string& qkey )
     return nodeRet;
 }
 
-int ConfJson::parseVal( int& oval, const Value* node )
+int ConfJson::query(int& oval, const string& qkey) const
+{
+    RWLOCK_READ(m_rwLock);
+    const Value* node = _findNode(qkey);
+    return _parseVal(oval, node);
+}
+
+int ConfJson::query(string& oval, const string& qkey) const
+{
+    RWLOCK_READ(m_rwLock);
+    const Value* node = _findNode(qkey);
+    return _parseVal(oval, node);
+}
+
+int ConfJson::query( map<string, string>& oval, const string& qkey ) const
+{
+    RWLOCK_READ(m_rwLock);
+    return queryMAP(oval, qkey);
+}
+
+int ConfJson::query( map<string, int>& oval, const string& qkey ) const
+{
+    RWLOCK_READ(m_rwLock);
+    return queryMAP(oval, qkey);
+}
+
+int ConfJson::query( vector<string>& oval, const string& qkey ) const
+{
+    RWLOCK_READ(m_rwLock);
+    return queryVector(oval, qkey);
+}
+
+int ConfJson::query( vector<int>& oval, const string& qkey ) const
+{
+    RWLOCK_READ(m_rwLock);
+    return queryVector(oval, qkey);
+}
+
+time_t ConfJson::getMtime( void ) const
+{
+    return m_mtime;
+}
+
+int ConfJson::_parseVal( int& oval, const Value* node ) const
 {
     IFRETURN_N(NULL == node, -1);
     int ret = -2;
@@ -91,7 +134,7 @@ int ConfJson::parseVal( int& oval, const Value* node )
     return ret;
 }
 
-int ConfJson::parseVal( string& oval, const Value* node )
+int ConfJson::_parseVal( string& oval, const Value* node ) const
 {
     IFRETURN_N(NULL == node, -1);
     int ret = -2;
@@ -104,24 +147,9 @@ int ConfJson::parseVal( string& oval, const Value* node )
     return ret;
 }
 
-int ConfJson::query(int& oval, const string& qkey)
-{
-    RWLOCK_READ(m_rwLock);
-    const Value* node = _findNode(qkey);
-    return parseVal(oval, node);
-}
-
-int ConfJson::query(string& oval, const string& qkey)
-{
-    RWLOCK_READ(m_rwLock);
-    const Value* node = _findNode(qkey);
-    return parseVal(oval, node);
-}
-
 template<class ValT>
-int ConfJson::queryMAP( map<string, ValT>& oval, const string& qkey )
+int ConfJson::queryMAP( map<string, ValT>& oval, const string& qkey ) const
 {
-    RWLOCK_READ(m_rwLock);
     const Value* node = _findNode(qkey);
     IFRETURN_N(NULL == node || !node->IsObject(), -2);
 
@@ -129,7 +157,7 @@ int ConfJson::queryMAP( map<string, ValT>& oval, const string& qkey )
     for (; itr != node->MemberEnd(); ++itr)
     {
         ValT oval2;
-        if (0 == parseVal(oval2, &itr->value))
+        if (0 == _parseVal(oval2, &itr->value))
         {
             const char* key = itr->name.GetString();
             oval[key] = oval2;
@@ -139,20 +167,9 @@ int ConfJson::queryMAP( map<string, ValT>& oval, const string& qkey )
     return 0;
 }
 
-int ConfJson::query( map<string, string>& oval, const string& qkey )
-{
-    return queryMAP(oval, qkey);
-}
-
-int ConfJson::query( map<string, int>& oval, const string& qkey )
-{
-    return queryMAP(oval, qkey);
-}
-
 template<class ValT>
-int ConfJson::queryVector( vector<ValT>& oval, const string& qkey )
+int ConfJson::queryVector( vector<ValT>& oval, const string& qkey ) const
 {
-    RWLOCK_READ(m_rwLock);
     const Value* node = _findNode(qkey);
     IFRETURN_N(NULL == node || !node->IsArray(), -2);
 
@@ -160,26 +177,11 @@ int ConfJson::queryVector( vector<ValT>& oval, const string& qkey )
     for (; itr != node->End(); ++itr)
     {
         ValT oval2;
-        if (0 == parseVal(oval2, &(*itr)))
+        if (0 == _parseVal(oval2, &(*itr)))
         {
             oval.push_back(oval2);
         }
     }
 
     return 0;
-}
-
-int ConfJson::query( vector<string>& oval, const string& qkey )
-{
-    return queryVector(oval, qkey);
-}
-
-int ConfJson::query( vector<int>& oval, const string& qkey )
-{
-    return queryVector(oval, qkey);
-}
-
-time_t ConfJson::getMtime( void )
-{
-    return m_mtime;
 }

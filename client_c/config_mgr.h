@@ -18,6 +18,7 @@ class ConfJson;
 
 class ConfigMgr
 {
+    SINGLETON_CLASS2(ConfigMgr)
 public:
 	static int OnCMD_EVNOTIFY_REQ( void* ptr );
 	int onCMD_EVNOTIFY_REQ( void* ptr );
@@ -29,7 +30,7 @@ public:
 
 public:
     int initLoad( const string& confName );
-    void setMainName( const string& mainConf );
+    //void setMainName( const string& mainConf );
     void uninit( void );
 
     /**
@@ -47,11 +48,13 @@ public:
     
 
 private:
-    void clearCache( void );
+    void _clearCache( void );
 
     // ValT must be [string, int, map<string,string>, map<string,int>, vector<string>, vector<int>]
     template<class ValT>
-    int _query( ValT& oval, const string& fullqkey, map<string, ValT >& cacheMap );
+    int _query( ValT& oval, const string& fullqkey, map<string, ValT >& cacheMap ) const;
+    template<class ValT>
+    int _tryGetFromCache( ValT& oval, const string& fullqkey, const map<string, ValT >& cacheMap ) const;
 
     
 private:

@@ -258,6 +258,11 @@ string CloudApp::whoamiMsg( void ) const
 	return whoIamJson;
 }
 
+string CloudApp::getMConf( void ) const
+{
+	return m_mconf;
+}
+
 // 同步等待请求+响应全过程完成
 int CloudApp::syncRequest( string& resp, unsigned cmdid, const string& reqmsg, int tosec ) 
 {

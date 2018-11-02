@@ -10,29 +10,15 @@ Modification :
 #define _SERVICE_PROVIDER_H_
 #include <string>
 #include <map>
+#include "cloud/svrprop.h"
 
 using namespace std;
 class CliBase;
 
-struct ServiceItem
+struct ServiceItem : public SvrProp
 {
-	string regname;
-	string url;
-	string desc;
-	int svrid;
-	int okcount; // 成功调用次数
-	int ngcount; // 失败调用次数
-	int tmpnum;
-	short protocol; // tcp=1 udp=2 http=3 https=4
-	short version;
-	short weight; // 服务权重
-	short idc;
-	short rack;
-	bool islocal;
-	bool enable;
-
 	ServiceItem( void );
-	bool valid( void ) const;
+
 	int parse0( const string& name, CliBase* cli );
 	int parse( CliBase* cli );
 	void getJsonStr( string& strjson, int oweight = 0 ) const;

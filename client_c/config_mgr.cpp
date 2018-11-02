@@ -63,6 +63,7 @@ int ConfigMgr::initLoad( const string& confName )
         ERRLOG_IF1BRK(code || !doc.HasMember("contents"), -52, 
             "CONFINIT| msg=maybe no file exist| name=%s| resp=%s", fname.c_str(), Rjson::ToString(&doc).c_str());
         CloudApp::Instance()->setNotifyCB("cfg_change", OnCMD_EVNOTIFY_REQ);
+        m_mainConfName = CloudApp::Instance()->getMConf();
 
         ConfJson* cjn = m_jcfgs[fname];
         if (NULL == cjn)
@@ -90,11 +91,6 @@ int ConfigMgr::initLoad( const string& confName )
     }
 
     return ret;
-}
-
-void ConfigMgr::setMainName( const string& mainConf )
-{
-    m_mainConfName = mainConf;
 }
 
 
@@ -162,7 +158,7 @@ int ConfigMgr::onCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param )
         else
         {
             cjn->update(&doc);
-            clearCache();
+            _clearCache();
         }
     }
     while(0);
@@ -172,7 +168,7 @@ int ConfigMgr::onCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param )
 
 // ValT must be [string, int, map<string,string>, map<string,int>, vector<string>, vector<int>]
 template<class ValT>
-int ConfigMgr::_query( ValT& oval, const string& fullqkey, map<string, ValT >& cacheMap )
+int ConfigMgr::_query( ValT& oval, const string& fullqkey, map<string, ValT >& cacheMap ) const
 {
     static const char seperator_ch = '/';
     {
@@ -204,7 +200,7 @@ int ConfigMgr::_query( ValT& oval, const string& fullqkey, map<string, ValT >& c
     int ret = 0;
     {
         RWLOCK_WRITE(g_rwLock0);
-        map<string,ConfJson*>::iterator it = m_jcfgs.find(fname);
+        map<string,ConfJson*>::const_iterator it = m_jcfgs.find(fname);
         ERRLOG_IF1RET_N(m_jcfgs.end() == it, -55, "CONFQUERY| msg=invalid filename| fullqkey=%s", fullqkey.c_str());
         ret = it->second->query(oval, qkey);
         // if (0 == ret)
@@ -216,7 +212,7 @@ int ConfigMgr::_query( ValT& oval, const string& fullqkey, map<string, ValT >& c
     return ret;
 }
 
-void ConfigMgr::clearCache( void )
+void ConfigMgr::_clearCache( void )
 {
     m_cacheStr.clear();
     m_cacheInt.clear();
@@ -226,8 +222,9 @@ void ConfigMgr::clearCache( void )
     m_cacheVecInt.clear();
 }
 
+// 在缓存当中查询，成功查到返回0，不存在返回1 
 template<class ValT>
-int ConfigMgr::_tryGetFromCache( ValT& oval, const string& fullqkey, const map<string, ValT >& cacheMap )
+int ConfigMgr::_tryGetFromCache( ValT& oval, const string& fullqkey, const map<string, ValT >& cacheMap ) const
 {
     int ret = 1;
     typedef typename map<string, ValT >::const_iterator CONST_INTERATOR;
