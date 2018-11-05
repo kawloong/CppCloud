@@ -8,6 +8,7 @@ Modification :
 -------------------------------------------------------------------------*/
 #include <string>
 #include <map>
+#include <vector>
 #include "comm/public.h"
 #include "comm/lock.h"
 
@@ -40,7 +41,7 @@ class SvrConsumer
         SvrItem(): weightSum(0), callcount(0) {}
     };
 
-    SINGLETON_CLASS2(SvrConsumer)
+    SINGLETON_CLASS2(SvrConsumer);
     SvrConsumer( void );
     ~SvrConsumer( void );
 
@@ -53,6 +54,9 @@ public:
 
     int init( const string& svrList );
     void uninit( void );
+
+private:
+    int parseResponse( string& msg );
 
 private:
     map<string, SvrItem*> m_allPrvds;

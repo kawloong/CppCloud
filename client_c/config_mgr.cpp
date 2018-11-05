@@ -33,11 +33,11 @@ void ConfigMgr::uninit( void )
 }
 
 // @summery: 启动时同步下载所需的配置文件到本地
-// @param: confName 以:分隔的配置文件名列表
+// @param: confName 以空格分隔的配置文件名列表
 // @return: 0成功；其他失败应退出进程
 int ConfigMgr::initLoad( const string& confName )
 {
-    static const char seperator = ':';
+    static const char seperator = ' ';
     static const int timeout_sec = 3;
     vector<string> vFname;
     int ret = StrParse::SpliteStr(vFname, confName, seperator);

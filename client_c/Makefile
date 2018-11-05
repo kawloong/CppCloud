@@ -1,5 +1,6 @@
-CloudCpp:=switchhand.cpp exception.cpp 
-SrcCpp:=climanage.cpp listen.cpp iohand.cpp cloudapp.cpp
+CloudCpp:=switchhand.cpp exception.cpp svrprop.cpp
+SrcCpp:=climanage.cpp listen.cpp iohand.cpp cloudapp.cpp tcp_invoker.cpp tcp_invoker_mgr.cpp 
+SrcCpp+=synchand.cpp config_json.cpp config_mgr.cpp provd_mgr.cpp svrconsumer.cpp
 
 LINKNAME:=libsdk_cppcloud.so
 TSONAME=$(LINKNAME).1
