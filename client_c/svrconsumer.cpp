@@ -218,13 +218,29 @@ void SvrConsumer::uninit( void )
     m_allPrvds.clear();
 }
 
- void SvrConsumer::setRefreshTO( int sec )
- {
-     m_refresh_sec = sec;
- }
+void SvrConsumer::setRefreshTO( int sec )
+{
+    m_refresh_sec = sec;
+}
 
 int SvrConsumer::getSvrPrvd( svr_item_t& pvd, const string& svrname )
 {
     RWLOCK_READ(m_rwLock);
-    
+    map<string, SvrItem*>::iterator it = m_allPrvds.find(svrname);
+    IFRETURN_N(it == m_allPrvds.end(), -1);
+    svr_item_t* itm = it->second->randItem();
+    IFRETURN_N(NULL == itm, -2);
+    pvd = *itm;
+
+    // refresh at timeout
+    if (it->second->ctime < time(NULL) - m_refresh_sec)
+    {
+        int ret = CloudApp::Instance()->postRequest( CMD_SVRSEARCH_REQ, 
+            _F("{\"regname\": \"%s\", \"bookchange\": 1}", 
+                    svrname.c_str()) );
+        ERRLOG_IF1(ret, "POSTREQ| msg=post CMD_SVRSEARCH_REQ fail| "
+                "ret=%d| regname=%s", regname.c_str());
+    }
+
+    return 0;
 }

@@ -1,5 +1,6 @@
 #include "tcp_invoker_mgr.h"
 #include "tcp_invoker.h"
+#include "svrconsumer.h"
 #include "comm/lock.h"
 #include "cloud/msgid.h"
 
@@ -59,7 +60,7 @@ void TcpInvokerMgr::relInvoker( TcpInvoker* ivk )
     IFDELETE(ivk);
 }
 
-int TcpInvokerMgr::request( string& resp, const string& reqmsg, const string& hostp )
+int TcpInvokerMgr::requestByHost( string& resp, const string& reqmsg, const string& hostp )
 {
     static const int check_more_dtsec = 30*60; // 超过此时间的连接可能会失败，增加一次重试
     static const int max_trycount = 2;
@@ -94,5 +95,19 @@ int TcpInvokerMgr::request( string& resp, const string& reqmsg, const string& ho
     }
 
     relInvoker(ivker);
+    return ret;
+}
+
+int TcpInvokerMgr::request( string& resp, const string& reqmsg, const string& svrname )
+{
+    int ret;
+    svr_item_t pvd;
+
+    ret = SvrConsumer::Instance()->getSvrPrvd(pvd, svrname);
+    ERRLOG_IF1RET_N(ret, ret, "GETPROVIDER| msg=getSvrPrvd fail %d| svrname=%s", ret, svrname.c_str());
+
+    string hostp = _F("%s:%p", pvd.host.c_str(), pvd.port);
+    ret = requestByHost(resp, reqmsg, hostp)；
+
     return ret;
 }
