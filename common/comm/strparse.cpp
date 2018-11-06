@@ -120,6 +120,45 @@ int StrParse::SpliteQueryString( map<string, string>& outPar, const string& quer
     return ret;
 }
 
+// 解析url各部分, proto://host:port/path?qparam
+int StrParse::SplitURL(string& proto, string& host, int& port, string& path, string& qparam, const string& url)
+{
+    string::size_type pos1 = url.find("://");
+    if (string::npos == pos1) return -1;
+    proto = url.substr(0, pos1);
+    
+    string hostend = url.substr(pos1 + 3);
+    string::size_type pos2 = hostend.find_first_of(":/");
+    if (string::npos == pos2 || '/' == hostend[pos2])
+    {
+        if (proto == "http") port = 80;
+        else if (proto == "https") port = 443;
+        else return false;
+    }
+    else
+    {
+        string portend = hostend.substr(pos2 + 1);
+        string::size_type pos3 = portend.find_first_of("/?");
+        string strport = portend.substr(0, pos3);
+        port = atoi(strport.c_str());
+    }
+
+    host = hostend.substr(0, pos2);
+    string::size_type pos4 = hostend.find("?");
+    string::size_type pos5 = hostend.find("/");
+    if (string::npos != pos4)
+    {
+        qparam = hostend.substr(pos4 + 1);
+    }
+
+    if (string::npos != pos5)
+    {
+        path = hostend.substr(pos5, pos4 - pos5);
+    }
+
+    return 0;
+}
+
 int StrParse::PickOneJson(string& ostr, const string& src, const string& name)
 {
     // תСд

@@ -24,6 +24,8 @@ public:
 
     // 解析http的url参数
     static int SpliteQueryString(map<string, string>& outPar, const string& qstr);
+    // 解析url各部分, proto://host:port/path?qparam
+    static int SplitURL(string& proto, string& host, int& port, string& path, string& qparam, const string& url);
     // 简单json解析, src全部转化成小写处理;
     static int PickOneJson(string& ostr, const string& src, const string& name);
     // 加入json中一项数据

@@ -63,7 +63,7 @@ int TcpInvokerMgr::request( string& resp, const string& reqmsg, const string& ho
 {
     static const int check_more_dtsec = 30*60; // 超过此时间的连接可能会失败，增加一次重试
     static const int max_trycount = 2;
-    int ret = -1;    
+    int ret = -1; 
     time_t atime;
     time_t now = time(NULL);
 
