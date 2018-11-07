@@ -6,29 +6,17 @@ Modification :
 --------------------------------------------------------------------------
    1、Date  2018-11-02       create     hejl 
 -------------------------------------------------------------------------*/
+#ifndef _SVRCONSUMER_H_
+#define _SVRCONSUMER_H_
 #include <string>
 #include <map>
 #include <vector>
 #include "comm/public.h"
 #include "comm/lock.h"
-
+#include "svr_item.h"
 
 using namespace std;
 
-struct svr_item_t
-{
-    string url;
-    string version;
-    string host;
-    
-    int port;
-    int svrid;
-    short protocol; // tcp=1 udp=2 http=3 https=4
-    short weight;
-
-    svr_item_t(): port(0), svrid(0), protocol(0), weight(0) {}
-    bool parseUrl( void );
-};
 
 class SvrConsumer
 {
@@ -72,3 +60,5 @@ private:
     RWLock m_rwLock;
     static SvrConsumer* This;
 };
+
+#endif

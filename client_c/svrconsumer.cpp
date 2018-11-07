@@ -6,14 +6,6 @@
 #include "cloud/exception.h"
 #include "cloudapp.h"
 
-// 把url里的主机和端口解析出来
-bool svr_item_t::parseUrl( void )
-{
-    // url example: http://192.168.1.12:8000/path
-    string tmp;
-    int ret = StrParse::SplitURL(tmp, host, port, tmp, tmp, url);
-    return 0 == ret;
-}
 
 void SvrConsumer::SvrItem::rmBySvrid( int svrid )
 {
@@ -239,7 +231,7 @@ int SvrConsumer::getSvrPrvd( svr_item_t& pvd, const string& svrname )
             _F("{\"regname\": \"%s\", \"bookchange\": 1}", 
                     svrname.c_str()) );
         ERRLOG_IF1(ret, "POSTREQ| msg=post CMD_SVRSEARCH_REQ fail| "
-                "ret=%d| regname=%s", regname.c_str());
+                "ret=%d| regname=%s", svrname.c_str());
     }
 
     return 0;

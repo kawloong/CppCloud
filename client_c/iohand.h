@@ -36,6 +36,7 @@ public:
     virtual ~IOHand(void);
 
 	static int Init( PEVENT_FUNC evFunc );
+	static void AddCmdHandle( unsigned cmdid, ProcOneFunT func );
 
 public: // interface HEpBase
     virtual int run( int flag, long p2 );

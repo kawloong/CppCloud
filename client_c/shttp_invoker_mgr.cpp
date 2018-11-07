@@ -1,6 +1,7 @@
 #include "shttp_invoker_mgr.h"
 #include "svrconsumer.h"
 #include "cloud/msgid.h"
+#include "comm/strparse.h"
 #include "comm/simplehttp.h"
 
 

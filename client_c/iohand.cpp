@@ -28,6 +28,11 @@ int IOHand::Init( PEVENT_FUNC phand )
 	return 0;
 }
 
+void IOHand::AddCmdHandle( unsigned cmdid, ProcOneFunT func )
+{
+	s_cmdid2clsname[cmdid] = func;
+}
+
 IOHand::IOHand(void): m_cliFd(INVALID_FD), m_closeFlag(0),
 		m_authFlag(0), m_recv_bytes(0), m_send_bytes(0), 
 		m_recvpkg_num(0), m_sendpkg_num(0), m_iBufItem(NULL), m_oBufItem(NULL)

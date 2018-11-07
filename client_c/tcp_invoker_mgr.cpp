@@ -1,6 +1,7 @@
 #include "tcp_invoker_mgr.h"
 #include "tcp_invoker.h"
 #include "svrconsumer.h"
+#include "comm/strparse.h"
 #include "comm/lock.h"
 #include "cloud/msgid.h"
 
@@ -107,7 +108,7 @@ int TcpInvokerMgr::request( string& resp, const string& reqmsg, const string& sv
     ERRLOG_IF1RET_N(ret, ret, "GETPROVIDER| msg=getSvrPrvd fail %d| svrname=%s", ret, svrname.c_str());
 
     string hostp = _F("%s:%p", pvd.host.c_str(), pvd.port);
-    ret = requestByHost(resp, reqmsg, hostp)；
+    ret = requestByHost(resp, reqmsg, hostp);
 
     return ret;
 }

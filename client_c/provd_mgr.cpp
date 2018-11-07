@@ -13,7 +13,7 @@ void ProvdMgr::uninit( void )
     map<string, ProviderItem*>::iterator itr = m_provider_apps.begin();
     for (; itr != m_provider_apps.end(); ++itr)
     {
-        IFDELETE(itr->second)
+        IFDELETE(itr->second);
     }
     m_provider_apps.clear();
 }

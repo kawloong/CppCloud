@@ -41,8 +41,6 @@ int CloudApp::init( int epfd, const string& svrhost_port )
 	m_idProfile = "connTO" + svrhost_port;
 	m_epCtrl.setEPfd(epfd);
 
-	addCmdHandle(CMD_WHOAMI_RSP, OnCMD_WHOAMI_RSP);
-
 	// 启动初始，同步方式进行连接
 	reset();
 	ret = Sock::connect(m_cliFd, m_rhost.c_str(), m_port, connect_timeout_sec, false, false);
@@ -54,10 +52,18 @@ int CloudApp::init( int epfd, const string& svrhost_port )
 		m_cliName = Sock::peer_name(m_cliFd, true);
 		m_idProfile = m_cliName;
 
+		string resp;
+		ret = syncRequest(resp, CMD_WHOAMI_REQ, whoamistr, connect_timeout_sec);
+		ERRLOG_IF1RET_N(ret, -5, "CLOUDAPPSEND| msg=send CMD_WHOAMI_REQ fail %d", ret);
+		ret = onCMD_WHOAMI_RSP(resp);
+
 		m_epCtrl.setActFd(m_cliFd);
 		m_epCtrl.setEvt(EPOLLOUT|EPOLLIN, this);
-		ret = sendData(CMD_WHOAMI_REQ, ++m_seqid, whoamistr.c_str(), whoamistr.length(), true);
+		//ret = sendData(CMD_WHOAMI_REQ, ++m_seqid, whoamistr.c_str(), whoamistr.length(), true);
 		ERRLOG_IF1(ret, "CLOUDAPPSEND| msg=tell whoami to %s fail| ret=%d", m_rhost.c_str(), ret);
+
+		addCmdHandle(CMD_WHOAMI_RSP, OnCMD_WHOAMI_RSP);
+		addCmdHandle(CMD_KEEPALIVE_REQ, OnCMD_KEEPALIVE_REQ);
 	}
 
 	return ret;
@@ -172,11 +178,27 @@ int CloudApp::taskRun( int flag, long p2 )
 
 int CloudApp::OnCMD_WHOAMI_RSP( void* ptr, unsigned cmdid, void* param )
 {
-	return This->onCMD_WHOAMI_RSP(ptr, cmdid, param);
+	IOBuffItem* iBufItem = (IOBuffItem*)param; 
+	//unsigned seqid = iBufItem->head()->seqid; 
+	string body = iBufItem->body();
+	return This->onCMD_WHOAMI_RSP(body);
 }
-int CloudApp::onCMD_WHOAMI_RSP( void* ptr, unsigned cmdid, void* param )
+
+int CloudApp::OnCMD_KEEPALIVE_REQ( void* ptr, unsigned cmdid, void* param )
 {
-	MSGHANDLE_PARSEHEAD(true)
+	IOBuffItem* iBufItem = (IOBuffItem*)param; 
+	unsigned seqid = iBufItem->head()->seqid;
+	return This->sendData(CMD_KEEPALIVE_RSP, seqid, "", 0, true);	
+}
+
+int CloudApp::onCMD_WHOAMI_RSP( string& whoamiResp )
+{
+	Document doc;
+	if (doc.ParseInsitu((char*)whoamiResp.data()).HasParseError())
+	{
+		return -3;
+	}
+	
 	int code = -1;
 	RJSON_GETINT(code, &doc);
 	if (0 == code) // success
@@ -190,8 +212,8 @@ int CloudApp::onCMD_WHOAMI_RSP( void* ptr, unsigned cmdid, void* param )
 		RJSON_VGETSTR(m_mconf, "mconf", &doc);
 	}
 
-	LOGOPT_EI(0 == m_appid, "WHOAMI_RSP| resp=%s", body);
-	return 0;
+	LOGOPT_EI(0 == m_appid, "WHOAMI_RSP| resp=%s", Rjson::ToString(&doc).c_str());
+	return m_appid > 0 ? 0 : -4;
 }
 
 int CloudApp::OnSyncMsg( void* ptr, unsigned cmdid, void* param )
