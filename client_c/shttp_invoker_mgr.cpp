@@ -10,6 +10,10 @@ SHttpInvokerMgr::SHttpInvokerMgr( void )
     m_eachLimitCount = 5;
 }
 
+SHttpInvokerMgr::~SHttpInvokerMgr( void )
+{
+}
+
 void SHttpInvokerMgr::setLimitCount( int n )
 {
      m_eachLimitCount = n;

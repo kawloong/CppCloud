@@ -31,7 +31,7 @@ int SyncHand::putRequest( unsigned rspid, unsigned seqid, int timeout_sec )
     if (msgitm.expire_time > 0) // 已存在
     {
         pthread_mutex_unlock(&m_mutex);
-        LOGWARN("SYNCREQ| msg=put req more| key=0x%x| expire_t=%d", key, msgitm.expire_time);
+        LOGWARN("SYNCREQ| msg=put req more| key=0x%x| expire_t=%d", key, (int)msgitm.expire_time);
         return -70;
     }
 
@@ -75,7 +75,7 @@ int SyncHand::waitResponse( string& resp, unsigned rspid, unsigned seqid )
         resp = it->second.resp;
         m_msgItems.erase(it);
         ret = (ETIMEDOUT == ret)? -71 : ret;
-        LOGDEBUG("SYNCREQ| msg=resp 0x%x(%u)| key=0x%x| rsplen=%zu| use_dt=%ds| ret=%d", 
+        LOGOPT_WD(ret, "SYNCREQ| msg=resp 0x%x(%u)| key=0x%x| rsplen=%zu| use_dt=%ds| ret=%d", 
             rspid, seqid, key, resp.size(), int(time(NULL)-now), ret);
     }
     else

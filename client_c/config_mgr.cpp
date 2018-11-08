@@ -10,6 +10,8 @@
 
 static RWLock g_rwLock0;
 
+ConfigMgr* ConfigMgr::This = NULL;
+
 
 ConfigMgr::ConfigMgr( void )
 {
@@ -38,7 +40,7 @@ void ConfigMgr::uninit( void )
 int ConfigMgr::initLoad( const string& confName )
 {
     static const char seperator = ' ';
-    static const int timeout_sec = 3;
+    //static const int timeout_sec = 3;
     vector<string> vFname;
     int ret = StrParse::SpliteStr(vFname, confName, seperator);
     ERRLOG_IF1RET_N(ret, -50, "CFGINIT| msg=splite to vector fail %d| confName=%s", ret, confName.c_str());
@@ -51,9 +53,9 @@ int ConfigMgr::initLoad( const string& confName )
         const string& fname = *cit;
         string resp;
         
-        ret = CloudApp::Instance()->syncRequest(resp, CMD_GETCONFIG_REQ, 
+        ret = CloudApp::Instance()->begnRequest(resp, CMD_GETCONFIG_REQ, 
                 _F("{\"%s\": \"%s\", \"%s\": 1}", 
-                HOCFG_FILENAME_KEY, fname.c_str(), HOCFG_INCLUDEBASE_KEY), timeout_sec); 
+                HOCFG_FILENAME_KEY, fname.c_str(), HOCFG_INCLUDEBASE_KEY)); 
         IFBREAK(ret);
 
         Document doc;
@@ -79,9 +81,8 @@ int ConfigMgr::initLoad( const string& confName )
             m_jcfgs[fname] = cjn;
 
             // 订阅变化推送
-            ret = CloudApp::Instance()->syncRequest(resp, CMD_BOOKCFGCHANGE_REQ, 
-                _F("{\"%s\": \"%s\", \"%s\": \"1\"}", HOCFG_FILENAME_KEY, fname.c_str(), HOCFG_INCLUDEBASE_KEY),
-                timeout_sec);
+            ret = CloudApp::Instance()->begnRequest( resp, CMD_BOOKCFGCHANGE_REQ, 
+                _F("{\"%s\": \"%s\", \"%s\": \"1\"}", HOCFG_FILENAME_KEY, fname.c_str(), HOCFG_INCLUDEBASE_KEY) );
             ERRLOG_IF1(ret, "CONFINIT| msg=book cfgchange fail %d| name=%s", ret, fname.c_str());
         }
         else
@@ -178,9 +179,9 @@ int ConfigMgr::_query( ValT& oval, const string& fullqkey, map<string, ValT >& c
     
     string fname;
     string qkey;
-    if (!qkey.empty())
+    if (!fullqkey.empty())
     {
-        if (seperator_ch == qkey[0]) // 使用主配置
+        if (seperator_ch == fullqkey[0]) // 使用主配置
         {
             fname = m_mainConfName;
             qkey = fullqkey;

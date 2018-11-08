@@ -35,18 +35,20 @@ public:
 	// ****** message handle end *******
 
 public:
-	int init( int epfd, const string& svrhost_port );
+	int init( int epfd, const string& svrhost_port, const string& appname );
 	void uninit( void );
 
 	bool isInitOk( void ) const;
 	string getMConf( void ) const;
 	string whoamiMsg( void ) const;
+	int setToEpollEv( void );
 
 	void setSvrid( int svrid );
 	void setNotifyCB( const string& notify, NotifyCBFunc func ); // 订阅Serv的推送消息
 
 	int syncRequest( string& resp, unsigned cmdid, const string& reqmsg, int tosec ); // 同步等待请求+响应全过程完成
 	int postRequest( unsigned cmdid, const string& reqmsg ); // 发送消息后不等待响应就返回
+	int begnRequest( string& resp, unsigned cmdid, const string& reqmsg ); // 示加入IO复用时用此方法代替syncRequest()
 
 	virtual int qrun( int flag, long p2 );
 	virtual int onClose( int p1, long p2 );
@@ -55,6 +57,7 @@ private:
 	void reset( void );
 	int taskRun( int flag, long p2 );
 	int appendTimerq( void );
+
 
 private:
 	int m_appid;

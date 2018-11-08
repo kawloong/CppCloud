@@ -179,7 +179,15 @@ int IOHand::onWrite( int p1, long p2 )
 		if (NULL == m_oBufItem)
 		{ // 同步问题... // 
 			bool bpopr = m_oBuffq.pop(m_oBufItem, 0);
-			WARNLOG_IF1BRK(!bpopr, 0, "IOHAND_WRITE| msg=obuff pop fail| mi=%s", m_cliName.c_str());
+			if (!bpopr)
+			{
+				if (m_oBuffq.size() <= 0)
+				{
+					ret = m_epCtrl.rmEvt(EPOLLOUT);
+				}
+				LOGWARN("IOHAND_WRITE| msg=obuff pop fail| mi=%s", m_cliName.c_str());
+				break;
+			}
 		}
 		
 		ret = Sock::send(m_cliFd, (char*)m_oBufItem->head(), m_oBufItem->len, m_oBufItem->totalLen);

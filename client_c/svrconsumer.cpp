@@ -6,6 +6,7 @@
 #include "cloud/exception.h"
 #include "cloudapp.h"
 
+SvrConsumer* SvrConsumer::This = NULL;
 
 void SvrConsumer::SvrItem::rmBySvrid( int svrid )
 {
@@ -231,7 +232,7 @@ int SvrConsumer::getSvrPrvd( svr_item_t& pvd, const string& svrname )
             _F("{\"regname\": \"%s\", \"bookchange\": 1}", 
                     svrname.c_str()) );
         ERRLOG_IF1(ret, "POSTREQ| msg=post CMD_SVRSEARCH_REQ fail| "
-                "ret=%d| regname=%s", svrname.c_str());
+                "ret=%d| regname=%s", ret, svrname.c_str());
     }
 
     return 0;

@@ -12,6 +12,20 @@ TcpInvokerMgr::TcpInvokerMgr( void )
     m_eachLimitCount = 5;
 }
 
+TcpInvokerMgr::~TcpInvokerMgr( void )
+{
+    //IOVOKER_POOLT::iterator it = m_pool.find(hostport);
+    for (auto it : m_pool)
+    {
+        for (TcpInvoker* itIn : it.second)
+        {
+            delete itIn;
+        }
+    }
+
+    m_pool.clear();
+}
+
 void TcpInvokerMgr::setLimitCount( int n )
 {
      m_eachLimitCount = n;
@@ -22,7 +36,7 @@ TcpInvoker* TcpInvokerMgr::getInvoker( const string& hostport )
     TcpInvoker* ivk = NULL;
     {
         gLocker.WLock();
-        IOVOKER_POOLT::iterator it = m_pool.find(hostport);
+        auto it = m_pool.find(hostport);
         if (it != m_pool.end())
         {
             if (!it->second.empty())

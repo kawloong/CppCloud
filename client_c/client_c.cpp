@@ -19,7 +19,7 @@ struct SdkMember
 {
     HEpoll hepo;
     Listen listen;
-    string mailconf;
+    string mainconf;
     std::thread* pthread;
 
     bool bCloudApp;
@@ -34,7 +34,7 @@ struct SdkMember
 
 
 // 初始化，连接cppcloud-serv，下载主配置文件
-int Init( const string& servHostPort, int appid /*=0*/ )
+int Init( const string& appName, const string& servHostPort, int appid /*=0*/ )
 {
     int ret;
 
@@ -44,18 +44,19 @@ int Init( const string& servHostPort, int appid /*=0*/ )
     }
 
     gsdk.hepo.init();
-    SwitchHand::Instance()->init(gsdk.hepo.getEPfd());
-    ret = CloudApp::Instance()->init(gsdk.hepo.getEPfd(), servHostPort);
+
+    //SwitchHand::Instance()->init(gsdk.hepo.getEPfd());
+    ret = CloudApp::Instance()->init(gsdk.hepo.getEPfd(), servHostPort, appName);
     if (0 == ret)
     {
         gsdk.bCloudApp = true;
-        gsdk.mailconf = CloudApp::Instance()->getMConf();
+        gsdk.mainconf = CloudApp::Instance()->getMConf();
 
         if (CloudApp::Instance()->isInitOk())
         {
-            if (!gsdk.mailconf.empty())
+            if (!gsdk.mainconf.empty())
             {
-                ret = ConfigMgr::Instance()->initLoad(gsdk.mailconf);
+                ret = ConfigMgr::Instance()->initLoad(gsdk.mainconf);
             }
         }
         else
@@ -74,11 +75,23 @@ int LoadConfFile( const string& fname )
     return ConfigMgr::Instance()->initLoad(fname);
 }
 
+string GetMConfName( void )
+{
+    return gsdk.mainconf;
+}
+
 // 配置查询T类型限于 [string, int, map<string,string>, map<string,int>, vector<string>, vector<int>]
 template<class T> int Query( T& oval, const string& fullqkey )
 {
     return ConfigMgr::Instance()->query(oval, fullqkey);
 }
+
+template int Query<string>(string&, const string&);
+template int Query<int>(int&, const string&);
+template int Query<map<string,string>>(map<string,string>&, const string&);
+template int Query<map<string,int>>(map<string,int>&, const string&);
+template int Query<vector<string>>(vector<string>&, const string&);
+template int Query<vector<int>>(vector<int>&, const string&);
 
 
 int InitTcpProvider( int listenPort )
@@ -188,9 +201,20 @@ void _Run( void )
     gsdk.hepo.run(gsdk.bExit);
 }
 
+int NotifyExit( void* ptr ) // 收到Serv通知本应用退出
+{
+    gsdk.bExit = true;
+    return 0;
+}
+
 int Run( bool runBackgroud )
 {
     int ret;
+
+    ret = CloudApp::Instance()->setToEpollEv();
+    ERRLOG_IF1RET_N(ret, ret, "RUN| msg=cloudapp setto ep fail %d", ret);
+
+    CloudApp::Instance()->setNotifyCB("exit", NotifyExit);
     if (runBackgroud)
     {
         gsdk.pthread = new std::thread(_Run);

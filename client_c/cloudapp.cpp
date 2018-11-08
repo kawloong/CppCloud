@@ -26,7 +26,7 @@ CloudApp::CloudApp()
 }
 
 // 读出配置文件, 构造出连接PeerServ的对象
-int CloudApp::init( int epfd, const string& svrhost_port )
+int CloudApp::init( int epfd, const string& svrhost_port, const string& appname )
 {
 	const int connect_timeout_sec = 3;
 	vector<string> vec;
@@ -37,6 +37,7 @@ int CloudApp::init( int epfd, const string& svrhost_port )
 	m_epfd = epfd;
 	m_rhost = vec[0];
 	m_port = atoi(vec[1].c_str());
+	m_svrname = appname;
 
 	m_idProfile = "connTO" + svrhost_port;
 	m_epCtrl.setEPfd(epfd);
@@ -47,24 +48,71 @@ int CloudApp::init( int epfd, const string& svrhost_port )
 	ERRLOG_IF1(ret, "CLOUDAPPCONNECT| msg=connect to %s fail| ret=%d", m_rhost.c_str(), ret);
 	if (0 == ret) // 连接成功
 	{
+		m_existLink = true;
 		string whoamistr = whoamiMsg();
 		m_stage = 1; // connecting
 		m_cliName = Sock::peer_name(m_cliFd, true);
 		m_idProfile = m_cliName;
 
 		string resp;
-		ret = syncRequest(resp, CMD_WHOAMI_REQ, whoamistr, connect_timeout_sec);
+		ret = begnRequest(resp, CMD_WHOAMI_REQ, whoamistr);
 		ERRLOG_IF1RET_N(ret, -5, "CLOUDAPPSEND| msg=send CMD_WHOAMI_REQ fail %d", ret);
 		ret = onCMD_WHOAMI_RSP(resp);
 
-		m_epCtrl.setActFd(m_cliFd);
-		m_epCtrl.setEvt(EPOLLOUT|EPOLLIN, this);
-		//ret = sendData(CMD_WHOAMI_REQ, ++m_seqid, whoamistr.c_str(), whoamistr.length(), true);
 		ERRLOG_IF1(ret, "CLOUDAPPSEND| msg=tell whoami to %s fail| ret=%d", m_rhost.c_str(), ret);
 
 		addCmdHandle(CMD_WHOAMI_RSP, OnCMD_WHOAMI_RSP);
 		addCmdHandle(CMD_KEEPALIVE_REQ, OnCMD_KEEPALIVE_REQ);
+		addCmdHandle(CMD_EVNOTIFY_REQ, OnCMD_EVNOTIFY_REQ);
 	}
+
+	return ret;
+}
+
+int CloudApp::setToEpollEv( void )
+{
+	int ret = m_epCtrl.setActFd(m_cliFd);
+	ret |= m_epCtrl.setEvt(EPOLLOUT|EPOLLIN, this);
+	return ret;
+}
+
+// 在同一线程中进行请求和接收一消息，不经过io复用过程
+// 调用条件： m_cliFd已连接且不加进epoll
+int CloudApp::begnRequest( string& resp, unsigned cmdid, const string& reqmsg )
+{
+	IFRETURN_N(0 != m_epCtrl.m_eventFg, -11);
+	IOBuffItem obf;
+	obf.setData(cmdid, ++m_seqid, reqmsg.c_str(), reqmsg.length());
+
+	int ret;
+	do
+	{
+		// 1. 发送请求
+		ret = ::send(m_cliFd, obf.head(), obf.totalLen, 0);
+		IFBREAK_N(ret != (int)obf.totalLen, -6);
+
+		// 2. 接收报文头
+		char buff[HEADER_LEN + 10240];
+		ret = ::recv(m_cliFd, buff, HEADER_LEN, 0);
+		IFBREAK_N(ret != HEADER_LEN, -7);
+
+		IOBuffItem ibf;
+		ibf.buff.append(buff, HEADER_LEN);
+		ibf.ntoh();
+		head_t* hdr = ibf.head();
+		ERRLOG_IF1BRK(hdr->head_len != HEADER_LEN || hdr->body_len > g_maxpkg_len, -8, 
+			"SYNCREQ| headlen=%u| bodylen=%u", hdr->head_len, hdr->body_len);
+
+		//3. 接收报文体
+		IFBREAK_N(hdr->body_len >= sizeof(buff), -8);
+		ret = ::recv(m_cliFd, buff, hdr->body_len, 0);
+		IFBREAK_N(ret != (int)hdr->body_len, -9);
+		buff[hdr->body_len] = '\0';
+		resp.append(buff);
+		ret = 0;
+	}
+	while(0);
+	ERRLOG_IF1(ret, "SYNCREQ| msg=send or recv fail %d| err=(%d)%s", ret, errno, strerror(errno));
 
 	return ret;
 }
@@ -188,6 +236,7 @@ int CloudApp::OnCMD_KEEPALIVE_REQ( void* ptr, unsigned cmdid, void* param )
 {
 	IOBuffItem* iBufItem = (IOBuffItem*)param; 
 	unsigned seqid = iBufItem->head()->seqid;
+	LOGDEBUG("CMD_KEEPALIVE| msg=kv resp");
 	return This->sendData(CMD_KEEPALIVE_RSP, seqid, "", 0, true);	
 }
 

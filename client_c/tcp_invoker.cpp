@@ -53,7 +53,7 @@ int TcpInvoker::connect( bool force )
         m_waitRsp = false;
         Sock::setRcvTimeOut(m_fd, m_timeout_sec);
         Sock::setSndTimeOut(m_fd, m_timeout_sec);
-        LOGDEBUG("INVOKERCONN| msg=connct to %s:%p ok", m_rhost.c_str(), m_port);
+        LOGDEBUG("INVOKERCONN| msg=connct to %s:%d ok", m_rhost.c_str(), m_port);
     }
 
     return ret;

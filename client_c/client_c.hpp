@@ -15,10 +15,11 @@ struct svr_item_t; // defind in "svr_item.h"
 namespace client_c
 {
     // 初始化，连接cppcloud-serv，获得主配置文件名
-    int Init( const string& servHostPort, int appid = 0 );
+    int Init( const string& appName, const string& servHostPort, int appid = 0 );
 
     // 加载配置指定文件(download)
     int LoadConfFile( const string& fname );
+    string GetMConfName( void ); // 获取主配置文件名
     // 配置查询 
     // T=[string, int, map<string,string>, map<string,int>, vector<string>, vector<int>]
     template<class T> int Query( T& oval, const string& fullqkey );
@@ -55,6 +56,7 @@ namespace client_c
     int HttpGet( string& resp, const string& reqmsg, const string& svrname );
     int HttpPost( string& resp, const string& reqmsg, const string& svrname );
 
+    int NotifyExit( void* ptr );
     int Run( bool runBackgroud );
 
     // 销毁和退出
