@@ -40,6 +40,7 @@ public:
 
 	bool isInitOk( void ) const;
 	string getMConf( void ) const;
+	string getLocalIP( void ) const;
 	string whoamiMsg( void ) const;
 	int setToEpollEv( void );
 

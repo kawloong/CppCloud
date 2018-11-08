@@ -14,9 +14,11 @@ Modification :
 #include "comm/queue.h"
 #include "cloud/iobuff.h"
 
+struct msg_prop_t;
 typedef long long datasize_t;
 typedef int (*PEVENT_FUNC)( int evtype, va_list ap );
 typedef HEpBase::ProcOneFunT ProcOneFunT;
+typedef int (*CMD_HAND_FUNC)(msg_prop_t*, const char*);
 const time_t INFINISH_TIME = INT_MAX;
 
 class IOHand: public HEpBase
@@ -36,7 +38,7 @@ public:
     virtual ~IOHand(void);
 
 	static int Init( PEVENT_FUNC evFunc );
-	static void AddCmdHandle( unsigned cmdid, ProcOneFunT func );
+	static void AddCmdHandle( unsigned cmdid, CMD_HAND_FUNC func );
 
 public: // interface HEpBase
     virtual int run( int flag, long p2 );

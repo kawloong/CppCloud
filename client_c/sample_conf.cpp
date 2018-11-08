@@ -19,9 +19,13 @@ static void sigdeal(int signo)
 
 int main( int argc, char* argv[] )
 {
-    if (argc < 2) return -1;
-    string serv = argv[1];
+    if (argc < 2) 
+    {
+        printf("usage: sample_conf <serv_ip:serv_port>\n");
+        return -1;
+    }
 
+    string serv = argv[1];
     int ret = client_c::Init(appName, serv);
 
     if (ret)
@@ -40,8 +44,21 @@ int main( int argc, char* argv[] )
     signal(SIGINT, sigdeal);
     signal(SIGTERM, sigdeal);
 
-    ret = client_c::Run(false);
+    ret = client_c::Run(true);
     printf("Run return %d\n", ret);
+
+    string line;
+    while (getline(std::cin, line)) // 测试运行时改变配置，app能实时得知变化
+    {
+        if (line == "q")
+        {
+            kill(SIGINT);
+            break;
+        }
+
+        ret = client_c::Query(oval, line);
+        printf("Query [%s] = %s (%d)\n", line.c_str(), oval.c_str(), ret);
+    }
 
     client_c::Destroy();
     return 0;

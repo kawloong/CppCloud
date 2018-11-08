@@ -1,4 +1,5 @@
 #include "iohand.h"
+#include "msgprop.h"
 #include "comm/strparse.h"
 #include "comm/sock.h"
 #include "comm/lock.h"
@@ -12,7 +13,7 @@
 HEPCLASS_IMPL(IOHand, IOHand)
 
 static map<unsigned, ProcOneFunT> s_cmdid2interceptor; // 消息拦截器
-static map<unsigned, ProcOneFunT> s_cmdid2clsname; // 事件处理器，滞后于拦截器
+static map<unsigned, CMD_HAND_FUNC> s_cmdid2clsname; // 事件处理器，滞后于拦截器
 static RWLock gCmdHandleLocker;
 
 datasize_t IOHand::serv_recv_bytes = 0;
@@ -28,7 +29,7 @@ int IOHand::Init( PEVENT_FUNC phand )
 	return 0;
 }
 
-void IOHand::AddCmdHandle( unsigned cmdid, ProcOneFunT func )
+void IOHand::AddCmdHandle( unsigned cmdid, CMD_HAND_FUNC func )
 {
 	s_cmdid2clsname[cmdid] = func;
 }
@@ -496,15 +497,16 @@ int IOHand::cmdProcess( IOBuffItem*& iBufItem )
 		IFBREAK(1 != selfCmdHandle(iBufItem));
 
 		head_t* hdr = iBufItem->head();
-		ProcOneFunT handle_func;
-		map<unsigned, ProcOneFunT>::iterator it;
+		CMD_HAND_FUNC handle_func;
+		map<unsigned, CMD_HAND_FUNC>::iterator it;
 		it = s_cmdid2clsname.find(hdr->cmdid);
 		WARNLOG_IF1BRK(s_cmdid2clsname.end() == it, -72, "CMDPROCESS| msg=an undefine cmdid recv| "
 			"cmdid=0x%X| mi=%s", hdr->cmdid, m_cliName.c_str());
 		handle_func = it->second;
 		m_cliProp["clisock"] = m_cliName; // 设备ip:port作为其中属性
 
-		ret = handle_func(this, hdr->cmdid, (void*)iBufItem);
+		msg_prop_t msgprop(hdr->cmdid, hdr->seqid, this);
+		ret = handle_func(&msgprop, hdr->body());
 	}
 	while (0);
 	IFDELETE(iBufItem);

@@ -109,19 +109,46 @@ int InitTcpProvider( const string& host, int listenPort, int lqueue )
 }
 
 // 针对CMD_TCP_SVR_REQ命令的处理函数
-int AddProvdFunction( FUNC_CMDHANDLE func )
+int AddProvdFunction( CMD_HAND_FUNC func )
 {
     return AddCmdFunction(CMD_TCP_SVR_REQ, func);
 }
 
-int AddCmdFunction( unsigned cmdid, FUNC_CMDHANDLE func )
+int AddCmdFunction( unsigned cmdid, CMD_HAND_FUNC func )
 {
     IOHand::AddCmdHandle(cmdid, func);
     return 0;
 }
 
+int ProvdSendMsg( const msg_prop_t* msgprop, const string& msg )
+{
+    int ret = -1;
+    // 检查目标是否存在
+    IOHand* iohand = (IOHand*)msgprop->iohand;
+    if (CliMgr::Instance()->getCliInfo(iohand)) // 有多线程风险
+    {
+        ret = iohand->sendData(msgprop->cmdid | CMDID_MID, msgprop->seqid, msg.c_str(), msg.length(), true);
+    }
+
+    return ret;
+}
+
+// param: protocol  tcp=1 udp=2 http=3 https=4
 int regProvider( const string& regname, short protocol, const string& url )
 {
+    return ProvdMgr::Instance()->regProvider(regname, protocol, url);
+}
+
+int regProvider( const string& regname, short protocol, int port, const string& path )
+{
+    static const int PROTOCOL_NUM = 4;
+    static const string protArr[PROTOCOL_NUM+1] = {"tcp://", "udp://", "http://", "https://", ""};
+    
+    IFRETURN_N(protocol < 1 || protocol > PROTOCOL_NUM, -1);
+    string url;
+    string localip = CloudApp::Instance()->getLocalIP();
+    url = protArr[protocol] + localip + ":" + _N(port) + path;
+    
     return ProvdMgr::Instance()->regProvider(regname, protocol, url);
 }
 

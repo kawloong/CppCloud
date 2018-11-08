@@ -334,6 +334,11 @@ string CloudApp::getMConf( void ) const
 	return m_mconf;
 }
 
+string CloudApp::getLocalIP( void ) const
+{
+	return Sock::sock_name(m_cliFd);
+}
+
 // 同步等待请求+响应全过程完成
 int CloudApp::syncRequest( string& resp, unsigned cmdid, const string& reqmsg, int tosec ) 
 {

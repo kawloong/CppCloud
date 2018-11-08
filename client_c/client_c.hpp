@@ -9,8 +9,9 @@ Modification :
 #include <string>
 
 using std::string;
-typedef int(*FUNC_CMDHANDLE)(void *, unsigned, void *);
 struct svr_item_t; // defind in "svr_item.h"
+struct msg_prop_t; // define in "msgprop.h"
+typedef int (*CMD_HAND_FUNC)(msg_prop_t*, const char*);
 
 namespace client_c
 {
@@ -29,10 +30,12 @@ namespace client_c
     int InitTcpProvider( const string& host, int listenPort, int qlen );
     
     // tcp服务提供CallBack
-    int AddProvdFunction( FUNC_CMDHANDLE func );
-    int AddCmdFunction( unsigned cmdid, FUNC_CMDHANDLE func );
+    int AddProvdFunction( CMD_HAND_FUNC func );
+    int AddCmdFunction( unsigned cmdid, CMD_HAND_FUNC func );
+    int ProvdSendMsg( msg_prop_t*, const string& msg );
     
     // 发布服务
+    int regProvider( const string& regname, short protocol, int port, const string& path="" );
     int regProvider( const string& regname, short protocol, const string& url );
     void setDesc( const string& regname, const string& desc );
     void setWeight( const string& regname, short weight );
