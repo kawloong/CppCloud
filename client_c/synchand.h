@@ -6,6 +6,9 @@ Modification :
 --------------------------------------------------------------------------
    1、Date  2018-10-31       create     hejl 
 -------------------------------------------------------------------------*/
+#ifndef _SYNC_HAND_H_
+#define _SYNC_HAND_H_
+
 #include <pthread.h>
 #include <string>
 #include <map>
@@ -40,3 +43,5 @@ private:
     map<unsigned, MsgItem> m_msgItems;
     pthread_mutex_t m_mutex;
 };
+
+#endif

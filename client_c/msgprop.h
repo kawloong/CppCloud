@@ -7,7 +7,7 @@ struct msg_prop_t
     unsigned seqid;
     void* iohand;
 
-    msg_prop_t(): cmdid(0), seqid(0), iohand(NULL){}
+    msg_prop_t(): cmdid(0), seqid(0), iohand(0){}
     msg_prop_t(unsigned c, unsigned s, void* i): 
         cmdid(c), seqid(s), iohand(i){}
 };

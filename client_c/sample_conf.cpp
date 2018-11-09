@@ -8,12 +8,14 @@ Modification :
 -------------------------------------------------------------------------*/
 #include "client_c.hpp"
 #include <csignal>
+#include <iostream>
 
 static const string appName = "TestConf";
-static const string testConfKey = "/key1";
+static const string testConfKey = "/key2";
 
 static void sigdeal(int signo)
 {
+    printf("sig happen\n");
     client_c::NotifyExit(NULL);
 }
 
@@ -52,7 +54,7 @@ int main( int argc, char* argv[] )
     {
         if (line == "q")
         {
-            kill(SIGINT);
+            kill(0, SIGTERM);
             break;
         }
 
@@ -61,5 +63,6 @@ int main( int argc, char* argv[] )
     }
 
     client_c::Destroy();
+    printf("prog exit\n");
     return 0;
 }

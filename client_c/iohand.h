@@ -65,7 +65,7 @@ protected:
 	virtual int onClose( int p1, long p2 );
 	void clearBuf( void );
 
-	static int NotifyParent(int evtype, ...);
+	virtual int notifyParent(int evtype, ...);
 
 	int authCheck( IOBuffItem*& iBufItem );
 	int interceptorProcess( IOBuffItem*& iBufItem );

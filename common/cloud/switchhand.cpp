@@ -34,7 +34,7 @@ void SwitchHand::init( int epFd )
 
         if (s_thread == NULL)
         {
-            s_thread = new std::thread(TimeWaitThreadFunc, this);
+            s_thread = new std::thread(TimeWaitThreadFunc, this); 
         }
     }
     else

@@ -1,4 +1,5 @@
 #include <thread>
+#include <csignal>
 #include "client_c.hpp"
 #include "cloudapp.h"
 #include "config_mgr.h"
@@ -8,8 +9,11 @@
 #include "tcp_invoker_mgr.h"
 #include "shttp_invoker_mgr.h"
 #include "climanage.h"
+#include "msgprop.h"
+#include "asyncprvdmsg.h"
 #include "cloud/switchhand.h"
 #include "comm/hepoll.h"
+#include "comm/strparse.h"
 #include "cloud/msgid.h"
 
 namespace client_c
@@ -133,6 +137,15 @@ int ProvdSendMsg( const msg_prop_t* msgprop, const string& msg )
     return ret;
 }
 
+// 异步发送(线程安全)
+int ProvdSendMsgAsync( const msg_prop_t* msgprop, const string& msg )
+{
+    static ASyncPrvdMsg asyncPrvd;
+    int ret = asyncPrvd.pushMessage(msgprop, msg);
+
+    return ret;
+}
+
 // param: protocol  tcp=1 udp=2 http=3 https=4
 int regProvider( const string& regname, short protocol, const string& url )
 {
@@ -230,7 +243,14 @@ void _Run( void )
 
 int NotifyExit( void* ptr ) // 收到Serv通知本应用退出
 {
+    static int count = 0;
     gsdk.bExit = true;
+    if (gsdk.pthread && count < 2)
+    {
+        pthread_kill(gsdk.pthread->native_handle(), SIGTERM);
+        ++count;
+    }
+
     return 0;
 }
 

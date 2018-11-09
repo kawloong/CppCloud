@@ -54,6 +54,9 @@ public:
 	virtual int qrun( int flag, long p2 );
 	virtual int onClose( int p1, long p2 );
 
+protected:
+	virtual int notifyParent(int evtype, ...);
+
 private:
 	void reset( void );
 	int taskRun( int flag, long p2 );

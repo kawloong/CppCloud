@@ -137,6 +137,10 @@ void CloudApp::reset( void )
 	IFCLOSEFD(m_cliFd);
 }
 
+int CloudApp::notifyParent(int evtype, ...)
+{
+	return 0;
+}
 
 int CloudApp::onClose( int p1, long p2 )
 {

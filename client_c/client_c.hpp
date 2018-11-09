@@ -32,7 +32,8 @@ namespace client_c
     // tcp服务提供CallBack
     int AddProvdFunction( CMD_HAND_FUNC func );
     int AddCmdFunction( unsigned cmdid, CMD_HAND_FUNC func );
-    int ProvdSendMsg( msg_prop_t*, const string& msg );
+    int ProvdSendMsg( const msg_prop_t* msgprop, const string& msg );
+    int ProvdSendMsgAsync( const msg_prop_t* msgprop, const string& msg );
     
     // 发布服务
     int regProvider( const string& regname, short protocol, int port, const string& path="" );

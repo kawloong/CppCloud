@@ -158,7 +158,7 @@ int IOHand::onRead( int p1, long p2 )
 				ret = cmdProcess(m_iBufItem);
 			}
 			
-			NotifyParent(HEPNTF_UPDATE_TIME, this);
+			notifyParent(HEPNTF_UPDATE_TIME, this);
 		}
 	}
 	while (0);
@@ -419,7 +419,7 @@ int IOHand::onClose( int p1, long p2 )
 	ERRLOG_IF1(ret, "IOHAND_CLOSE| msg=rm EVflag fail %d| mi=%s| err=%s", ret, m_cliName.c_str(), strerror(errno));
 
 	IFCLOSEFD(m_cliFd);
-	ret = NotifyParent(HEPNTF_SOCK_CLOSE, this, 10, (int)isExit);
+	ret = notifyParent(HEPNTF_SOCK_CLOSE, this, 10, (int)isExit);
 	ERRLOG_IF1(ret, "IOHAND_CLOSE| msg=Notify ret %d| mi=%s| reason=%s", ret, m_cliName.c_str(), m_closeReason.c_str());
 
 	clearBuf();
@@ -427,13 +427,16 @@ int IOHand::onClose( int p1, long p2 )
 	return ret;
 }
 
-int IOHand::NotifyParent(int evtype, ...)
+int IOHand::notifyParent(int evtype, ...)
 {
 	int ret = 0;
-    va_list ap;
-    va_start(ap, evtype);
-    ret = m_parentEvHandle(evtype, ap);
-    va_end(ap);
+	if (m_parentEvHandle)
+    {
+		va_list ap;
+		va_start(ap, evtype);
+		ret = m_parentEvHandle(evtype, ap);
+		va_end(ap);
+	}
 
     return ret;
 }
@@ -473,6 +476,11 @@ bool IOHand::addCmdHandle( unsigned cmdid, ProcOneFunT func, unsigned seqid/*=0*
 
 	val.handfunc = func;
 	val.key = cmdid;
+	if (0 == seqid)
+	{
+		val.expire_time = INFINISH_TIME;
+	}
+
 	return true;
 }
 
@@ -506,7 +514,7 @@ int IOHand::cmdProcess( IOBuffItem*& iBufItem )
 		m_cliProp["clisock"] = m_cliName; // 设备ip:port作为其中属性
 
 		msg_prop_t msgprop(hdr->cmdid, hdr->seqid, this);
-		ret = handle_func(&msgprop, hdr->body());
+		ret = handle_func(&msgprop, iBufItem->body());
 	}
 	while (0);
 	IFDELETE(iBufItem);

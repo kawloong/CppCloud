@@ -196,8 +196,8 @@ int HocfgMgr::getCfgMtime( const string& file_pattern, bool incBase ) const
     if (incBase && getBaseConfigName(baseStr, file_pattern))
     {
         vector<string> vecBase;
-        ret = StrParse::SpliteStr(vecBase, baseStr, ' ');
-        ERRLOG_IF1(ret, "HOCFGQUERY| msg=invalid basestr setting| "
+        int reti = StrParse::SpliteStr(vecBase, baseStr, ' ');
+        ERRLOG_IF1(reti, "HOCFGQUERY| msg=invalid basestr setting| "
                         "baseStr=%s| filep=%s", baseStr.c_str(), file_pattern.c_str());
         vector<string>::const_iterator vitr = vecBase.begin();
         for (; vitr != vecBase.end(); ++vitr)

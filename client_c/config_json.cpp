@@ -1,6 +1,11 @@
 #include "config_json.h"
 #include "comm/strparse.h"
 
+ConfJson::ConfJson( const string& fname )
+{
+    m_fname = fname;
+}
+
 int ConfJson::update( const Value* data )
 {
     ERRLOG_IF1RET_N(NULL==data || !data->IsObject(), -100,
@@ -14,8 +19,10 @@ int ConfJson::update( const Value* data )
     
     m_mtime = mtime;
     RWLOCK_WRITE(m_rwLock);
-    m_doc.SetObject();
-    m_doc.CopyFrom(*contents, m_doc.GetAllocator());
+    //m_doc.SetObject();
+    //m_doc.CopyFrom(*contents, m_doc.GetAllocator()); // 有个问题不用这样用
+    m_doc.Parse(Rjson::ToString(contents).c_str());
+    
     return 0;
 }
 
@@ -25,9 +32,12 @@ const Value* ConfJson::_findNode( const string& qkey ) const
     int ret = 0;
     const Value* nodeRet = NULL;
 
+
     do
     {
         vector<string> vecPattern;
+        string strdoc = Rjson::ToString(&m_doc);
+
         ret = StrParse::SpliteStr(vecPattern, qkey, seperator_ch);
         ERRLOG_IF1BRK(ret || vecPattern.empty(), -101, 
             "CONFJSON| msg=qkey invalid| key=%s| filep=%s", 
@@ -36,11 +46,14 @@ const Value* ConfJson::_findNode( const string& qkey ) const
         const Value* pval = &m_doc;
         const Value* ptmp = NULL;
         vector<string>::const_iterator vitr = vecPattern.begin();
+        
         for (; vitr != vecPattern.end(); ++vitr)
         {
             const string& token = *vitr;
             if (token.empty() || "/" == token || " " == token) continue;
+
             ret = Rjson::GetValue(&ptmp, token.c_str(), pval);
+            
             if (ret && StrParse::IsNumberic(token)) // Object不存在时尝试访问数组
             {
                 ret = Rjson::GetValue(&ptmp, atoi(token.c_str()), pval);

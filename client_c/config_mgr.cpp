@@ -15,7 +15,7 @@ ConfigMgr* ConfigMgr::This = NULL;
 
 ConfigMgr::ConfigMgr( void )
 {
-
+    This = this;
 }
 ConfigMgr::~ConfigMgr( void )
 {
@@ -45,6 +45,7 @@ int ConfigMgr::initLoad( const string& confName )
     int ret = StrParse::SpliteStr(vFname, confName, seperator);
     ERRLOG_IF1RET_N(ret, -50, "CFGINIT| msg=splite to vector fail %d| confName=%s", ret, confName.c_str());
 
+    m_mainConfName = CloudApp::Instance()->getMConf();
     vector<string>::const_iterator cit = vFname.begin();
     RWLOCK_WRITE(g_rwLock0);
     for (; cit != vFname.end(); ++cit)
@@ -65,12 +66,12 @@ int ConfigMgr::initLoad( const string& confName )
         ERRLOG_IF1BRK(code || !doc.HasMember("contents"), -52, 
             "CONFINIT| msg=maybe no file exist| name=%s| resp=%s", fname.c_str(), Rjson::ToString(&doc).c_str());
         CloudApp::Instance()->setNotifyCB("cfg_change", OnCMD_EVNOTIFY_REQ);
-        m_mainConfName = CloudApp::Instance()->getMConf();
+        CloudApp::Instance()->addCmdHandle(CMD_GETCONFIG_RSP, OnCMD_GETCONFIG_RSP);
 
         ConfJson* cjn = m_jcfgs[fname];
         if (NULL == cjn)
         {
-            cjn = new ConfJson;
+            cjn = new ConfJson(fname);
             ret = cjn->update(&doc);
             if (ret)
             {
@@ -113,6 +114,7 @@ int ConfigMgr::onCMD_EVNOTIFY_REQ( void* ptr )
         {
             if (it->second->getMtime() < mtime)
             {
+                LOGDEBUG("NEEDUPDATECFG| msg= %s mtime %d old than %d", filename.c_str(), (int)it->second->getMtime(), mtime);
                 CloudApp::Instance()->postRequest(CMD_GETCONFIG_REQ, 
                     _F("{\"%s\": \"%s\", \"%s\": 1, \"%s\": %d}", 
                     HOCFG_FILENAME_KEY, it->first.c_str(), HOCFG_INCLUDEBASE_KEY, 
@@ -146,7 +148,7 @@ int ConfigMgr::onCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param )
         ConfJson* cjn = m_jcfgs[fname];
         if (NULL == cjn)
         {
-            cjn =  new ConfJson;
+            cjn =  new ConfJson(fname);
             ret = cjn->update(&doc);
             LOGOPT_EI(ret, "CONFCHANGE| msg=a new cfgfile reach| fname=%s| ret=%d", fname.c_str(), ret);
 

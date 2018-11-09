@@ -20,6 +20,7 @@ using namespace std;
 class ConfJson
 {
 public:
+    ConfJson( const string& fname );
     int update( const Value* data );
 
     int query( int& oval, const string& qkey ) const;
