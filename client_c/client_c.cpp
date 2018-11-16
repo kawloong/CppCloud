@@ -49,7 +49,7 @@ int Init( const string& appName, const string& servHostPort, int appid /*=0*/ )
 
     gsdk.hepo.init();
 
-    //SwitchHand::Instance()->init(gsdk.hepo.getEPfd());
+    
     ret = CloudApp::Instance()->init(gsdk.hepo.getEPfd(), servHostPort, appName);
     if (0 == ret)
     {
@@ -160,7 +160,7 @@ int regProvider( const string& regname, short protocol, int port, const string& 
     IFRETURN_N(protocol < 1 || protocol > PROTOCOL_NUM, -1);
     string url;
     string localip = CloudApp::Instance()->getLocalIP();
-    url = protArr[protocol] + localip + ":" + _N(port) + path;
+    url = protArr[protocol-1] + localip + ":" + _N(port) + path;
     
     return ProvdMgr::Instance()->regProvider(regname, protocol, url);
 }
@@ -245,6 +245,10 @@ int NotifyExit( void* ptr ) // 收到Serv通知本应用退出
 {
     static int count = 0;
     gsdk.bExit = true;
+    
+    LOGDEBUG("CLIENTC_NOTIFYEXIT| msg=notify exit| count=%d", count);
+    SwitchHand::Instance()->notifyExit();
+    
     if (gsdk.pthread && count < 2)
     {
         pthread_kill(gsdk.pthread->native_handle(), SIGTERM);
@@ -262,6 +266,7 @@ int Run( bool runBackgroud )
     ERRLOG_IF1RET_N(ret, ret, "RUN| msg=cloudapp setto ep fail %d", ret);
 
     CloudApp::Instance()->setNotifyCB("exit", NotifyExit);
+    SwitchHand::Instance()->init(gsdk.hepo.getEPfd());
     if (runBackgroud)
     {
         gsdk.pthread = new std::thread(_Run);
@@ -277,6 +282,8 @@ int Run( bool runBackgroud )
 
 void Destroy( void )
 {
+    
+    SwitchHand::Instance()->join();
     if (gsdk.pthread)
     {
         gsdk.pthread->join();

@@ -48,6 +48,7 @@ void SwitchHand::join( void )
     if (s_thread)
     {
         s_thread->join();
+        IFDELETE(s_thread);
     }
 }
 

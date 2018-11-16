@@ -31,7 +31,7 @@ ProviderItem* ProvdMgr::_getProvider( const string& regname )
 }
 
 
-// 同步阻塞地注册一个服务
+// 启动阶段，同步阻塞地注册一个服务
 int ProvdMgr::regProvider( const string& regname, short protocol, const string& url )
 {
     int ret;
@@ -43,11 +43,12 @@ int ProvdMgr::regProvider( const string& regname, short protocol, const string& 
     pvd->url = url;
     pvd->protocol = protocol;
     pvd->enable = false;
+    pvd->weight = 100;
 
     string resp;
-    ret = CloudApp::Instance()->syncRequest(resp, CMD_SVRREGISTER_REQ,
-            _F("{\"regname\": \"%s\", \"svrprop\": %s }", regname.c_str(), pvd->jsonStr().c_str()),
-            m_timeout_sec);
+    ret = CloudApp::Instance()->begnRequest(resp, CMD_SVRREGISTER_REQ,
+            _F("{\"regname\": \"%s\", \"svrprop\": %s }", regname.c_str(), pvd->jsonStr().c_str())
+            );
     if (0 == ret)
     {
         LOGINFO("REGPROVIDER| msg=reg provider %s| response=%s", regname.c_str(), resp.c_str());
@@ -100,15 +101,29 @@ void ProvdMgr::addNgCount( const string& regname, int dcount )
     if (pvd) pvd->ngcount += dcount;
 }
 
+// param: noEpFlag 当启动阶段未进入io-epoll复用前传true； 有io-epoll复用的业务里传false
 int ProvdMgr::postOut( const string& regname )
 {
     ProviderItem* pvd = _getProvider(regname);
     ERRLOG_IF1RET_N(NULL == pvd, -63, "POSTPROVIDER| msg=post no provider| "
             "regname=%s", regname.c_str());
     
-    int ret = CloudApp::Instance()->postRequest(CMD_SVRREGISTER_REQ,
-            _F("{\"regname\": \"%s\", \"svrprop\": %s }", 
-            regname.c_str(), pvd->jsonStr().c_str()));
+    int ret;
+
+    string resp;
+    if (!CloudApp::Instance()->isInEpRun()) // 启动时
+    {
+        ret = CloudApp::Instance()->begnRequest(resp, CMD_SVRREGISTER_REQ,
+            _F("{\"regname\": \"%s\", \"svrprop\": %s }", regname.c_str(), pvd->jsonStr().c_str()),
+            false);
+    }
+    else
+    {
+        ret = CloudApp::Instance()->syncRequest(resp, CMD_SVRREGISTER_REQ,
+            _F("{\"regname\": \"%s\", \"svrprop\": %s }", regname.c_str(), pvd->jsonStr().c_str()),
+            1);
+    }
+
     return ret;
 }
 

@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------
 FileName     : sample_prvd.cpp
 Description  : sdk使用样例 -- 服务提供者
-remark       : 编译命令 g++ -Wall -g -std=c++11 sample_prvd.cpp  -o sample_prvd  ../common/libhocomm.so libsdk_cppcloud.so
+remark       : 编译命令 g++ -Wall -g -std=c++11 sample_prvd.cpp  -o sample_prvd libsdk_cppcloud.so  ../common/libhocomm.so
 Modification :
 --------------------------------------------------------------------------
    1、Date  2018-11-08       create     hejl 
@@ -16,6 +16,7 @@ int TcpProviderHandle(msg_prop_t*, const char*);
 
 static void sigdeal(int signo)
 {
+    printf("Signal happen %d\n", signo);
     client_c::NotifyExit(NULL);
 }
 
@@ -52,7 +53,7 @@ int main( int argc, char* argv[] )
         return -4;
     }
 
-    client_c::postOut(appName);
+    client_c::postOut(appName, true);
 
     ret = client_c::Run(false);
     printf("Run return %d\n", ret);

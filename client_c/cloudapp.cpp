@@ -22,6 +22,7 @@ CloudApp::CloudApp()
 	m_cliType = 100;
 	m_inqueue = false;
 	m_existLink = false;
+	m_inEpRun = false;
 	This = this;
 }
 
@@ -73,12 +74,14 @@ int CloudApp::setToEpollEv( void )
 {
 	int ret = m_epCtrl.setActFd(m_cliFd);
 	ret |= m_epCtrl.setEvt(EPOLLOUT|EPOLLIN, this);
+
+	m_inEpRun = true;
 	return ret;
 }
 
 // 在同一线程中进行请求和接收一消息，不经过io复用过程
 // 调用条件： m_cliFd已连接且不加进epoll
-int CloudApp::begnRequest( string& resp, unsigned cmdid, const string& reqmsg )
+int CloudApp::begnRequest( string& resp, unsigned cmdid, const string& reqmsg, bool noRcv )
 {
 	IFRETURN_N(0 != m_epCtrl.m_eventFg, -11);
 	IOBuffItem obf;
@@ -90,6 +93,7 @@ int CloudApp::begnRequest( string& resp, unsigned cmdid, const string& reqmsg )
 		// 1. 发送请求
 		ret = ::send(m_cliFd, obf.head(), obf.totalLen, 0);
 		IFBREAK_N(ret != (int)obf.totalLen, -6);
+		IFBREAK_N(noRcv, 0);
 
 		// 2. 接收报文头
 		char buff[HEADER_LEN + 10240];
@@ -310,6 +314,11 @@ bool CloudApp::isInitOk( void ) const
 	return m_existLink && m_appid > 0 && m_stage > 1;
 }
 
+bool CloudApp::isInEpRun( void ) const
+{
+	return m_inEpRun;
+}
+
 void CloudApp::uninit( void )
 {
 	m_epCtrl.setEvt(0, NULL);
@@ -346,6 +355,9 @@ string CloudApp::getLocalIP( void ) const
 // 同步等待请求+响应全过程完成
 int CloudApp::syncRequest( string& resp, unsigned cmdid, const string& reqmsg, int tosec ) 
 {
+	ERRLOG_IF1RET_N(!m_inEpRun, -79,
+			"SYNCREQ| msg=maybe should call begnRequest() instand| cmdid=0x%x", cmdid);
+
 	int ret;
 	unsigned seqid = ++m_seqid;
 	unsigned rspid = (cmdid | CMDID_MID);
@@ -376,8 +388,20 @@ int CloudApp::syncRequest( string& resp, unsigned cmdid, const string& reqmsg, i
 	return ret;
 }
 
-// 发送消息后不等待响应就返回
 int CloudApp::postRequest( unsigned cmdid, const string& reqmsg )
 {
+	return postRequest(cmdid, reqmsg, !m_inEpRun);
+}
+
+// 发送消息后不等待响应就返回
+// param: noEpFlag 当启动阶段未进入io-epoll复用前传true； 有io-epoll复用的业务里传false
+int CloudApp::postRequest( unsigned cmdid, const string& reqmsg, bool noEpFlag )
+{
+	if (noEpFlag)
+	{
+		string tmp;
+		return begnRequest(tmp, cmdid, reqmsg, true);
+	}
+
 	return sendData(cmdid, ++m_seqid, reqmsg.c_str(), reqmsg.size(), true);
 }

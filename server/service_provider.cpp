@@ -146,7 +146,7 @@ int ServiceProvider::getAllJson( string& strjson ) const
 	strjson.append("[");
 	int i = 0;
 	map<CliBase*, ServiceItem*>::const_iterator itr = m_svrItems.begin();
-	for (int i = 0; itr != m_svrItems.end(); ++itr, ++i)
+	for (i = 0; itr != m_svrItems.end(); ++itr, ++i)
 	{
 		if (i > 0) strjson.append(",");
 		itr->second->getJsonStr(strjson);

@@ -39,6 +39,7 @@ public:
 	void uninit( void );
 
 	bool isInitOk( void ) const;
+	bool isInEpRun( void ) const;
 	string getMConf( void ) const;
 	string getLocalIP( void ) const;
 	string whoamiMsg( void ) const;
@@ -49,7 +50,8 @@ public:
 
 	int syncRequest( string& resp, unsigned cmdid, const string& reqmsg, int tosec ); // 同步等待请求+响应全过程完成
 	int postRequest( unsigned cmdid, const string& reqmsg ); // 发送消息后不等待响应就返回
-	int begnRequest( string& resp, unsigned cmdid, const string& reqmsg ); // 示加入IO复用时用此方法代替syncRequest()
+	int postRequest( unsigned cmdid, const string& reqmsg, bool noEpFlag ); // 发送消息后不等待响应就返回
+	int begnRequest( string& resp, unsigned cmdid, const string& reqmsg, bool noRcv=false ); // 示加入IO复用时用此方法代替syncRequest()
 
 	virtual int qrun( int flag, long p2 );
 	virtual int onClose( int p1, long p2 );
@@ -73,6 +75,7 @@ private:
 	int m_cliType;
 	bool m_inqueue;
 	bool m_existLink; // 是否已连接中
+	bool m_inEpRun;
 	string m_rhost;
 	string m_svrname;
 	string m_mconf;

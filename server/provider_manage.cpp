@@ -247,7 +247,8 @@ int ProviderMgr::getOneProviderJson( string& strjson, const string& regname ) co
 	if (itr != m_providers.end())
 	{
 		strjson.append(_F("\"%s\":", itr->first.c_str()));
-		count = itr->second->getAllJson(strjson);
+		itr->second->getAllJson(strjson);
+		count = 1;
 	}
 	strjson.append("}");
 	return count;

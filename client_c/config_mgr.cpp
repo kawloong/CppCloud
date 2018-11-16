@@ -118,7 +118,7 @@ int ConfigMgr::onCMD_EVNOTIFY_REQ( void* ptr )
                 CloudApp::Instance()->postRequest(CMD_GETCONFIG_REQ, 
                     _F("{\"%s\": \"%s\", \"%s\": 1, \"%s\": %d}", 
                     HOCFG_FILENAME_KEY, it->first.c_str(), HOCFG_INCLUDEBASE_KEY, 
-                    HOCFG_GT_MTIME_KEY, it->second->getMtime()));
+                    HOCFG_GT_MTIME_KEY, it->second->getMtime()), false);
             }
         }
     }
