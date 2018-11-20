@@ -13,12 +13,13 @@ Modification :
 #include <vector>
 #include "comm/public.h"
 #include "comm/lock.h"
+#include "comm/i_taskrun.h"
 #include "svr_item.h"
 
 using namespace std;
 
 
-class SvrConsumer
+class SvrConsumer : public ITaskRun2
 {
     struct SvrItem
     {
@@ -43,6 +44,10 @@ public:
     int onCMD_SVRSEARCH_RSP( void* ptr, unsigned cmdid, void* param );
     int onCMD_EVNOTIFY_REQ( void* ptr ); // provider 下线通知
 
+    // interface ITaskRun2
+    virtual int qrun( int flag, long p2 );
+    virtual int run(int p1, long p2);
+
     int init( const string& svrList );
     void uninit( void );
     void setRefreshTO( int sec );
@@ -54,10 +59,14 @@ private:
     int parseResponse( string& msg );
     int parseResponse( const void* ptr );
 
+    int appendTimerq( void );
+    int _postSvrSearch( const string& regname ) const;
+
 private:
     map<string, SvrItem*> m_allPrvds;
     int m_refresh_sec;
     RWLock m_rwLock;
+    bool m_inqueue;
     static SvrConsumer* This;
 };
 

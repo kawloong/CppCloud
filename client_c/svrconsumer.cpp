@@ -4,21 +4,24 @@
 #include "cloud/msgid.h"
 #include "cloud/homacro.h"
 #include "cloud/exception.h"
+#include "cloud/switchhand.h"
 #include "cloudapp.h"
 
 SvrConsumer* SvrConsumer::This = NULL;
 
 void SvrConsumer::SvrItem::rmBySvrid( int svrid )
 {
-    vector<svr_item_t>::iterator it0 = svrItms.begin();
-    for (; it0 != svrItms.end(); )
+    vector<svr_item_t>::iterator it = svrItms.begin();
+    for (; it != svrItms.end(); )
     {
-        vector<svr_item_t>::iterator it = it0;
-        ++it0;
         if (svrid == it->svrid)
         {
             this->weightSum -= it->weight;
-            svrItms.erase(it);
+            it = svrItms.erase(it);
+        }
+        else
+        {
+            ++it;
         }
     }
 }
@@ -49,7 +52,8 @@ svr_item_t* SvrConsumer::SvrItem::randItem( void )
 SvrConsumer::SvrConsumer( void )
 {
     This = this;
-    m_refresh_sec = 5*60;
+    m_refresh_sec = 10;
+    m_inqueue = false;
 }
 
 SvrConsumer::~SvrConsumer( void )
@@ -135,6 +139,7 @@ int SvrConsumer::init( const string& svrList )
         // srand(time(NULL))
         CloudApp::Instance()->setNotifyCB("provider_down", OnCMD_EVNOTIFY_REQ);
         ret = CloudApp::Instance()->addCmdHandle(CMD_SVRSEARCH_RSP, OnCMD_SVRSEARCH_RSP)? 0 : -111;
+        appendTimerq();
     }
 
     return ret;
@@ -234,18 +239,72 @@ int SvrConsumer::getSvrPrvd( svr_item_t& pvd, const string& svrname )
     map<string, SvrItem*>::iterator it = m_allPrvds.find(svrname);
     IFRETURN_N(it == m_allPrvds.end(), -1);
     svr_item_t* itm = it->second->randItem();
-    IFRETURN_N(NULL == itm, -2);
-    pvd = *itm;
-
-    // refresh at timeout
-    if (it->second->ctime < time(NULL) - m_refresh_sec)
+    if (itm)
     {
-        int ret = CloudApp::Instance()->postRequest( CMD_SVRSEARCH_REQ, 
-            _F("{\"regname\": \"%s\", \"bookchange\": 1}", 
-                    svrname.c_str()) );
-        ERRLOG_IF1(ret, "POSTREQ| msg=post CMD_SVRSEARCH_REQ fail| "
-                "ret=%d| regname=%s", ret, svrname.c_str());
+        pvd = *itm;
     }
 
     return 0;
+}
+
+int SvrConsumer::_postSvrSearch( const string& svrname ) const
+{
+    int ret = CloudApp::Instance()->postRequest( CMD_SVRSEARCH_REQ, 
+        _F("{\"regname\": \"%s\", \"bookchange\": 1}", 
+                svrname.c_str()) );
+
+    ERRLOG_IF1(ret, "POSTREQ| msg=post CMD_SVRSEARCH_REQ fail| "
+            "ret=%d| regname=%s", ret, svrname.c_str());
+    
+    return ret;
+}
+
+// 驱动定时检查任务，qrun()
+int SvrConsumer::appendTimerq( void )
+{
+	int ret = 0;
+	if (!m_inqueue)
+	{
+		int wait_time_msec =m_refresh_sec*1000;
+		ret = SwitchHand::Instance()->appendQTask(this, wait_time_msec );
+		m_inqueue = (0 == ret);
+		ERRLOG_IF1(ret, "APPENDQTASK| msg=append fail| ret=%d", ret);
+	}
+	return ret;
+}
+
+// 定时任务：检查是否需刷新服务提供者信息
+int SvrConsumer::qrun( int flag, long p2 )
+{
+	int  ret = 0;
+	m_inqueue = false;
+	if (0 == flag)
+	{
+        time_t now = time(NULL);
+        RWLOCK_READ(m_rwLock);
+		auto itr = m_allPrvds.begin();
+        for (; itr != m_allPrvds.end(); ++itr)
+        {
+            SvrItem* svitm = itr->second;
+            if (svitm->svrItms.empty() || svitm->ctime < now - m_refresh_sec)
+            {
+                ret = _postSvrSearch(itr->first);
+            }
+        }
+
+        LOGDEBUG("SVRCONSUMER| msg=checking svr valid");
+        appendTimerq();
+	}
+	else if (1 == flag)
+	{
+		// exit handle
+	}
+
+	return ret;
+}
+
+int SvrConsumer::run(int p1, long p2)
+{
+    LOGERROR("INVALID_FLOW");
+    return -1;
 }
