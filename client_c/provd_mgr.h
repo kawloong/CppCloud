@@ -26,6 +26,9 @@ class ProvdMgr
     ProvdMgr( void );
 
 public:
+    static int ReconnectNotifyCB( void* param ); // 重连后回调
+
+public:
     // 服务注册
     int regProvider( const string& regname, short protocol, const string& url );
     void setDesc( const string& regname, const string& desc );
@@ -42,6 +45,7 @@ public:
 
 private:
     ProviderItem* _getProvider( const string& regname );
+    int reconnectNotifyCB( void* param );
 
 private:
     int m_svrid;

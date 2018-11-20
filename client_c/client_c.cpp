@@ -124,6 +124,7 @@ int AddCmdFunction( unsigned cmdid, CMD_HAND_FUNC func )
     return 0;
 }
 
+// 可在io线程中调用此方法比ProvdSendMsgAsync更高效
 int ProvdSendMsg( const msg_prop_t* msgprop, const string& msg )
 {
     int ret = -1;
@@ -238,6 +239,7 @@ int HttpPost( string& resp, const string& reqmsg, const string& svrname )
 
 void _Run( void )
 {
+    CloudApp::Instance()->setEpThreadID();
     gsdk.hepo.run(gsdk.bExit);
 }
 

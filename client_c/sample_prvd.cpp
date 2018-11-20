@@ -62,7 +62,17 @@ int main( int argc, char* argv[] )
     return 0;
 }
 
+// 服务提供处理
 int TcpProviderHandle( msg_prop_t* msgprop, const char* body )
 {
+    printf("Provider| msg=%s\n", body);
 
+    // do the job yourself hear
+    /// ...
+
+    // resp back to consumer
+    string echo = string("{\"code\": 0, \"desc\": \"debug provider handle\", \"echo_data\": ") + body + "}";
+    client_c::ProvdSendMsg(msgprop, echo);
+
+    return 0;
 }

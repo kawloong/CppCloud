@@ -34,7 +34,7 @@ void IOHand::AddCmdHandle( unsigned cmdid, CMD_HAND_FUNC func )
 	s_cmdid2clsname[cmdid] = func;
 }
 
-IOHand::IOHand(void): m_cliFd(INVALID_FD), m_closeFlag(0),
+IOHand::IOHand(void): m_cliFd(INVALID_FD), m_epThreadID(0), m_closeFlag(0),
 		m_authFlag(0), m_recv_bytes(0), m_send_bytes(0), 
 		m_recvpkg_num(0), m_sendpkg_num(0), m_iBufItem(NULL), m_oBufItem(NULL)
 {
@@ -446,6 +446,17 @@ int IOHand::authCheck( IOBuffItem*& iBufItem )
 {
 	return 0;
 }
+
+void IOHand::setEpThreadID( void )
+{
+	m_epThreadID = pthread_self();
+}
+
+void IOHand::setEpThreadID( pthread_t thid )
+{
+	m_epThreadID = thid;
+}
+
 
 int IOHand::interceptorProcess( IOBuffItem*& iBufItem )
 {

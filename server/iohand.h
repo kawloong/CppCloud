@@ -37,6 +37,7 @@ public: // interface HEpBase
 
 	int driveClose( const string& reason );
 	void setAuthFlag( int auth );
+
 	int sendData( unsigned int cmdid, unsigned int seqid, const char* body, 
 		unsigned int bodylen, bool setOutAtonce );
 

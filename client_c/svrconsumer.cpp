@@ -13,7 +13,8 @@ void SvrConsumer::SvrItem::rmBySvrid( int svrid )
     vector<svr_item_t>::iterator it0 = svrItms.begin();
     for (; it0 != svrItms.end(); )
     {
-        vector<svr_item_t>::iterator it = it0++;
+        vector<svr_item_t>::iterator it = it0;
+        ++it0;
         if (svrid == it->svrid)
         {
             this->weightSum -= it->weight;
@@ -99,7 +100,7 @@ int SvrConsumer::init( const string& svrList )
 {
     static const char seperator = ' ';
     static const char seperator2 = ':';
-    static const int timeout_sec = 3;
+    //static const int timeout_sec = 3;
     vector<string> vSvrName;
 
     int ret = StrParse::SpliteStr(vSvrName, svrList, seperator);
@@ -113,13 +114,16 @@ int SvrConsumer::init( const string& svrList )
         StrParse::SpliteStr(vSvrNver, *cit, seperator2);
 
         const string& svrname = vSvrNver[0];
-        int ver = (2 == vSvrNver.size()) ? atoi(vSvrNver[1].c_str()) : 1;
+        string verStr;
+        if (2 == vSvrNver.size())
+        {
+            StrParse::PutOneJson(verStr, "version", atoi(vSvrNver[1].c_str()), true);
+        }
 
         string resp;
-        ret = CloudApp::Instance()->syncRequest(resp, CMD_SVRSEARCH_REQ,
-                _F("{\"regname\": \"%s\", \"%s\": %d, \"bookchange\": 1}", 
-                    svrname.c_str(), ver), 
-                timeout_sec); 
+        ret = CloudApp::Instance()->begnRequest(resp, CMD_SVRSEARCH_REQ, 
+                _F("{\"regname\": \"%s\", %s \"bookchange\": 1}", svrname.c_str(), verStr.c_str()), 
+                false); 
         IFBREAK(ret);
 
         ret = parseResponse(resp);
@@ -130,7 +134,7 @@ int SvrConsumer::init( const string& svrList )
     {
         // srand(time(NULL))
         CloudApp::Instance()->setNotifyCB("provider_down", OnCMD_EVNOTIFY_REQ);
-        ret = CloudApp::Instance()->addCmdHandle(CMD_SVRSEARCH_RSP, OnCMD_SVRSEARCH_RSP);
+        ret = CloudApp::Instance()->addCmdHandle(CMD_SVRSEARCH_RSP, OnCMD_SVRSEARCH_RSP)? 0 : -111;
     }
 
     return ret;
@@ -159,9 +163,11 @@ int SvrConsumer::parseResponse( const void* ptr )
     int ret = 0;
     Value::ConstValueIterator itr = pdata->Begin();
     string regname;
+    string prvdLog;
     SvrItem* prvds = new SvrItem;
     prvds->ctime = time(NULL);
-    for (; itr != pdata->End(); ++itr)
+
+    for (int i = 0; itr != pdata->End(); ++itr, ++i)
     {
         svr_item_t svitm;
         const Value* node = &(*itr);
@@ -182,8 +188,14 @@ int SvrConsumer::parseResponse( const void* ptr )
         svitm.protocol = protocol;
         prvds->weightSum += weight;
         prvds->svrItms.push_back(svitm);
+
+        if (i <= 3)
+        {
+            StrParse::AppendFormat(prvdLog, "%d@%s,", svitm.svrid, svitm.url.c_str());
+        }
     }
 
+    LOGINFO("PROVDLIST| regname=%s| svitem=%s", regname.c_str(), prvdLog.c_str());
     if (ret)
     {
         IFDELETE(prvds);

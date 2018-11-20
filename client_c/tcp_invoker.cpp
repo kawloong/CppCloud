@@ -45,7 +45,7 @@ int TcpInvoker::connect( bool force )
     IFCLOSEFD(m_fd);
 
     int ret = Sock::connect(m_fd, m_rhost.c_str(), m_port, m_timeout_sec, false, false);
-    m_broker = 0==ret && INVALID_FD != m_fd;
+    m_broker = !(0==ret && INVALID_FD != m_fd);
     if (!m_broker)
     {
         m_begtime = time(NULL);
@@ -83,7 +83,7 @@ int TcpInvoker::send( int cmdid, const string& msg )
 
     int ret = 0;
     int sndbytes = ::send(m_fd, obf.head(), obf.totalLen, 0);
-    if (sndbytes != msglen )
+    if (sndbytes != (int)obf.totalLen )
     {
         LOGERROR("INVOKERSEND| host=%s:%d| cmdid=0x%x| ret=%d/%d| sockerrno=%d", 
             m_rhost.c_str(), m_port, cmdid, sndbytes, msglen, Sock::geterrno(m_fd));
@@ -109,6 +109,7 @@ int TcpInvoker::recv( unsigned& rcmdid, string& msg )
     do
     {
         char buff[HEADER_LEN];
+        ret = Sock::setRcvTimeOut(m_fd, m_timeout_sec);
         ret = ::recv(m_fd, buff, HEADER_LEN, 0);
         IFBREAK_N(0 == ret, close_retcode);
         ERRLOG_IF1BRK(ret != HEADER_LEN, -92, "INVOKERRECV| host=%s:%d| ret=%d| sockerrno=%d| dt=%ds",
@@ -149,7 +150,7 @@ int TcpInvoker::recv( unsigned& rcmdid, string& msg )
 
 string TcpInvoker::getKey( void ) const
 {
-    return m_rhost + _N(m_port);
+    return m_rhost + ":" + _N(m_port);
 }
 
 time_t TcpInvoker::getAtime( void ) const

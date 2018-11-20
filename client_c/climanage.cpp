@@ -49,9 +49,11 @@ CliMgr::~CliMgr(void)
 int CliMgr::newChild( int clifd, int epfd )
 {
 	int ret = 0;
+	static pthread_t epThreadid = pthread_self();
 	IOHand* worker = new IOHand;
 
 	ret = HEpBase::Notify(worker, HEPNTF_INIT_PARAM, clifd, epfd);
+	worker->setEpThreadID(epThreadid);
 
 	addChild(worker);
 	updateCliTime(worker);

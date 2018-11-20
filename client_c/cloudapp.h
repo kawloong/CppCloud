@@ -28,6 +28,7 @@ public:
 	static int OnSyncMsg( void* ptr, unsigned cmdid, void* param );
 	static int OnCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param );
 	static int OnCMD_KEEPALIVE_REQ( void* ptr, unsigned cmdid, void* param );
+	static int OnShowMsg( void* ptr, unsigned cmdid, void* param );
 	
 	int onCMD_WHOAMI_RSP( string& whoamiResp );
 	int onSyncMsg( void* ptr, unsigned cmdid, void* param );
@@ -81,7 +82,7 @@ private:
 	string m_mconf;
 
 	SyncHand m_syncHand;
-	map<string, NotifyCBFunc> m_ntfCB;
+	map<string, NotifyCBFunc> m_ntfCB; // 未做多个相同事件消费
 
 	static CloudApp* This;
 };

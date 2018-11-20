@@ -10,6 +10,7 @@ RWLock gLocker;
 TcpInvokerMgr::TcpInvokerMgr( void )
 {
     m_eachLimitCount = 5;
+    m_invokerTimOut_sec = 3; // default
 }
 
 TcpInvokerMgr::~TcpInvokerMgr( void )
@@ -71,8 +72,10 @@ void TcpInvokerMgr::relInvoker( TcpInvoker* ivk )
             ivk = NULL;
         }
     }
-    
-    IFDELETE(ivk);
+    else
+    {
+        IFDELETE(ivk);
+    }
 }
 
 int TcpInvokerMgr::requestByHost( string& resp, const string& reqmsg, const string& hostp )
@@ -121,7 +124,7 @@ int TcpInvokerMgr::request( string& resp, const string& reqmsg, const string& sv
     ret = SvrConsumer::Instance()->getSvrPrvd(pvd, svrname);
     ERRLOG_IF1RET_N(ret, ret, "GETPROVIDER| msg=getSvrPrvd fail %d| svrname=%s", ret, svrname.c_str());
 
-    string hostp = _F("%s:%p", pvd.host.c_str(), pvd.port);
+    string hostp = _F("%s:%d", pvd.host.c_str(), pvd.port);
     ret = requestByHost(resp, reqmsg, hostp);
 
     return ret;

@@ -56,6 +56,9 @@ public: // interface HEpBase
 
 	int driveClose( const string& reason );
 	void setAuthFlag( int auth );
+	void setEpThreadID( void );
+	void setEpThreadID( pthread_t thid );
+
 	int sendData( unsigned int cmdid, unsigned int seqid, const char* body, 
 		unsigned int bodylen, bool setOutAtonce );
 
@@ -75,6 +78,7 @@ protected:
 protected:
     int m_cliFd;
 	HEpEvFlag m_epCtrl;
+	pthread_t m_epThreadID; // epoll-IO复用的线程id
 	string m_cliName;
 	string m_closeReason; // 关掉原因
 	unsigned char m_closeFlag; // 结束标记: 0连接中, 1等待发完后关闭; 2立即要关; 3关闭

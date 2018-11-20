@@ -65,6 +65,7 @@ int CloudApp::init( int epfd, const string& svrhost_port, const string& appname 
 		addCmdHandle(CMD_WHOAMI_RSP, OnCMD_WHOAMI_RSP);
 		addCmdHandle(CMD_KEEPALIVE_REQ, OnCMD_KEEPALIVE_REQ);
 		addCmdHandle(CMD_EVNOTIFY_REQ, OnCMD_EVNOTIFY_REQ);
+		addCmdHandle(CMD_SVRREGISTER_RSP, OnShowMsg);
 	}
 
 	return ret;
@@ -237,7 +238,8 @@ int CloudApp::OnCMD_WHOAMI_RSP( void* ptr, unsigned cmdid, void* param )
 	IOBuffItem* iBufItem = (IOBuffItem*)param; 
 	//unsigned seqid = iBufItem->head()->seqid; 
 	string body = iBufItem->body();
-	return This->onCMD_WHOAMI_RSP(body);
+	int ret = This->onCMD_WHOAMI_RSP(body);
+	return ret;
 }
 
 int CloudApp::OnCMD_KEEPALIVE_REQ( void* ptr, unsigned cmdid, void* param )
@@ -267,6 +269,12 @@ int CloudApp::onCMD_WHOAMI_RSP( string& whoamiResp )
 			m_stage = 2;
 		}
 		RJSON_VGETSTR(m_mconf, "mconf", &doc);
+
+		map<string, NotifyCBFunc>::iterator itr = m_ntfCB.find(RECONNOK_NOTIFYKEY);
+		if (m_ntfCB.end() != itr)
+		{
+			(itr->second)(NULL);
+		}
 	}
 
 	LOGOPT_EI(0 == m_appid, "WHOAMI_RSP| resp=%s", Rjson::ToString(&doc).c_str());
@@ -284,6 +292,17 @@ int CloudApp::onSyncMsg( void* ptr, unsigned cmdid, void* param )
 
 	int ret = m_syncHand.notify(cmdid, seqid, iBufItem->body());
 	ERRLOG_IF1(ret, "SYNCMSG| msg=maybe msg resp delay| cmdid=0x%x| seqid=%u", cmdid, seqid);
+	return 0;
+}
+
+int CloudApp::OnShowMsg( void* ptr, unsigned cmdid, void* param )
+{
+	//IOHand* iohand = (IOHand*)ptr; 
+	IOBuffItem* iBufItem = (IOBuffItem*)param; 
+	unsigned seqid = iBufItem->head()->seqid; 
+	char* body = iBufItem->body();
+
+	LOGDEBUG("SHOWMSG| cmdid=0x%x| seqid=%u| body=%s", cmdid, seqid, body);
 	return 0;
 }
 
@@ -357,6 +376,8 @@ int CloudApp::syncRequest( string& resp, unsigned cmdid, const string& reqmsg, i
 {
 	ERRLOG_IF1RET_N(!m_inEpRun, -79,
 			"SYNCREQ| msg=maybe should call begnRequest() instand| cmdid=0x%x", cmdid);
+	ERRLOG_IF1RET_N(pthread_self() == m_epThreadID, -84,
+			"SYNCREQ| msg=ep-io thread call syncRequest| cmdid=0x%x", cmdid);
 
 	int ret;
 	unsigned seqid = ++m_seqid;

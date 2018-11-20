@@ -2,6 +2,7 @@
 #include "cloudapp.h"
 #include "comm/public.h"
 #include "comm/strparse.h"
+#include "cloud/const.h"
 
 ProvdMgr::ProvdMgr( void )
 {
@@ -30,6 +31,24 @@ ProviderItem* ProvdMgr::_getProvider( const string& regname )
     return NULL;
 }
 
+// 当cloudapp断开又重连成功后调用
+int ProvdMgr::ReconnectNotifyCB( void* param )
+{
+    return ProvdMgr::Instance()->reconnectNotifyCB(param);
+}
+
+int ProvdMgr::reconnectNotifyCB( void* param )
+{
+    int ret = 0;
+    map<string, ProviderItem*>::iterator itr = m_provider_apps.begin();
+    for (; itr != m_provider_apps.end(); ++itr)
+    {
+        ret |= postOut(itr->first);
+    }
+
+    ERRLOG_IF1(ret, "RECONNCB| msg=provd postOut| ret=%d", ret);
+    return ret;
+}
 
 // 启动阶段，同步阻塞地注册一个服务
 int ProvdMgr::regProvider( const string& regname, short protocol, const string& url )
@@ -64,6 +83,14 @@ int ProvdMgr::regProvider( const string& regname, short protocol, const string& 
         {
             ret = -61;
         }
+    }
+
+    // 重连时，要重新注册
+    static bool regCB = false;
+    if (!regCB)
+    {
+        CloudApp::Instance()->setNotifyCB(RECONNOK_NOTIFYKEY, ReconnectNotifyCB);
+        regCB = true;
     }
 
     IFDELETE(pvd);
@@ -119,9 +146,8 @@ int ProvdMgr::postOut( const string& regname )
     }
     else
     {
-        ret = CloudApp::Instance()->syncRequest(resp, CMD_SVRREGISTER_REQ,
-            _F("{\"regname\": \"%s\", \"svrprop\": %s }", regname.c_str(), pvd->jsonStr().c_str()),
-            1);
+        ret = CloudApp::Instance()->postRequest(CMD_SVRREGISTER_REQ,
+            _F("{\"regname\": \"%s\", \"svrprop\": %s }", regname.c_str(), pvd->jsonStr().c_str()) );
     }
 
     return ret;
