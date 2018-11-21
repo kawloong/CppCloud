@@ -12,6 +12,7 @@ using std::string;
 struct svr_item_t; // defind in "svr_item.h"
 struct msg_prop_t; // define in "msgprop.h"
 typedef int (*CMD_HAND_FUNC)(msg_prop_t*, const char*);
+typedef void (*CONF_CHANGE_CB)(const string& confname);
 
 namespace client_c
 {
@@ -24,6 +25,7 @@ namespace client_c
     // 配置查询 
     // T=[string, int, map<string,string>, map<string,int>, vector<string>, vector<int>]
     template<class T> int Query( T& oval, const string& fullqkey );
+    void SetConfChangeCallBack( CONF_CHANGE_CB cb ); // 设置变化回调（如果需要）
 
     // TCP服务提供者
     int InitTcpProvider( int listenPort );
@@ -60,8 +62,9 @@ namespace client_c
     int HttpGet( string& resp, const string& reqmsg, const string& svrname );
     int HttpPost( string& resp, const string& reqmsg, const string& svrname );
 
-    int NotifyExit( void* ptr );
+    // 运行和退出通知
     int Run( bool runBackgroud );
+    int NotifyExit( void* ptr );
 
     // 销毁和退出
     void Destroy( void );

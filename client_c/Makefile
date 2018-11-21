@@ -1,7 +1,7 @@
 CloudCpp:=switchhand.cpp exception.cpp svrprop.cpp 
 SrcCpp:=climanage.cpp listen.cpp iohand.cpp cloudapp.cpp tcp_invoker.cpp tcp_invoker_mgr.cpp 
 SrcCpp+=synchand.cpp config_json.cpp config_mgr.cpp provd_mgr.cpp svrconsumer.cpp client_c.cpp
-SrcCpp+=svr_item.cpp shttp_invoker_mgr.cpp
+SrcCpp+=svr_item.cpp shttp_invoker_mgr.cpp asyncprvdmsg.cpp
 
 LINKNAME:=libsdk_cppcloud.so
 TSONAME=$(LINKNAME).1
@@ -9,13 +9,13 @@ TARGET=$(TSONAME).1.0
 ATARGET:=$(LINKNAME).a
 
 MKLLOGFILE:=make.log
-CONF_HEAD_INC+=-DLOG2STDOUT -DDEBUG #日志输出至标准输出
+CONF_HEAD_INC+=-DLOG2STDOUT # -DDEBUG #日志输出至标准输出
 
 LIBCOMMON=../common
 
 INCLUDEDIR+=-I.. -I$(LIBCOMMON) 
 CXX=g++
-CXXFLAGS=-Wall -g -std=c++11 -fPIC -I$(INCLUDEDIR)
+CXXFLAGS=-Wall -g -std=c++11 -fPIC $(CONF_HEAD_INC) $(INCLUDEDIR)
 #AR=ar rcs
 
 LDFLAGS=-Wall -g 

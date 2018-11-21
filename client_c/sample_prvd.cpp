@@ -10,7 +10,7 @@ Modification :
 #include <csignal>
 
 static const string appName = "TestPrvd";
-static const int listenPort = 4900;
+static int listenPort = 4900;
 
 int TcpProviderHandle(msg_prop_t*, const char*);
 
@@ -40,6 +40,8 @@ int main( int argc, char* argv[] )
     signal(SIGINT, sigdeal);
     signal(SIGTERM, sigdeal);
 
+    srand(time(NULL));
+    listenPort += rand()%1000;
     if ( (ret = client_c::InitTcpProvider(listenPort)) )
     {
         printf("InitTcpProvider fail %d\n", ret);
@@ -72,7 +74,7 @@ int TcpProviderHandle( msg_prop_t* msgprop, const char* body )
 
     // resp back to consumer
     string echo = string("{\"code\": 0, \"desc\": \"debug provider handle\", \"echo_data\": ") + body + "}";
-    client_c::ProvdSendMsg(msgprop, echo);
+    client_c::ProvdSendMsgAsync(msgprop, echo);
 
     return 0;
 }

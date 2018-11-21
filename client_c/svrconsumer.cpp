@@ -169,15 +169,16 @@ int SvrConsumer::parseResponse( const void* ptr )
     Value::ConstValueIterator itr = pdata->Begin();
     string regname;
     string prvdLog;
-    SvrItem* prvds = new SvrItem;
-    prvds->ctime = time(NULL);
+    SvrItem* prvds = NULL;
 
     for (int i = 0; itr != pdata->End(); ++itr, ++i)
     {
         svr_item_t svitm;
         const Value* node = &(*itr);
-        if (regname.empty())
+        if (NULL == prvds)
         {
+            prvds = new SvrItem;
+            prvds->ctime = time(NULL);
             RJSON_GETSTR(regname, node);
         }
         
@@ -200,17 +201,20 @@ int SvrConsumer::parseResponse( const void* ptr )
         }
     }
 
-    LOGINFO("PROVDLIST| regname=%s| svitem=%s", regname.c_str(), prvdLog.c_str());
+    LOGOPT_EI(prvdLog.empty(), "PROVDLIST| regname=%s| svitem=%s", regname.c_str(), prvdLog.c_str());
     if (ret)
     {
         IFDELETE(prvds);
     }
     else
     {
-        RWLOCK_WRITE(m_rwLock);
-        SvrItem* oldi = m_allPrvds[regname];
-        IFDELETE(oldi);
-        m_allPrvds[regname] = prvds;        
+        if (prvds)
+        {
+            RWLOCK_WRITE(m_rwLock);
+            SvrItem* oldi = m_allPrvds[regname];
+            IFDELETE(oldi);
+            m_allPrvds[regname] = prvds;
+        }
     }
 
     return ret;

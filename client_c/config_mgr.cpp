@@ -15,6 +15,7 @@ ConfigMgr* ConfigMgr::This = NULL;
 
 ConfigMgr::ConfigMgr( void )
 {
+    m_changeCB = NULL;
     This = this;
 }
 ConfigMgr::~ConfigMgr( void )
@@ -32,6 +33,11 @@ void ConfigMgr::uninit( void )
     }
 
     m_jcfgs.clear();
+}
+
+void ConfigMgr::setChangeCallBack( CONF_CHANGE_CB cb )
+{
+    m_changeCB = cb;
 }
 
 // @summery: 启动时同步下载所需的配置文件到本地
@@ -134,10 +140,10 @@ int ConfigMgr::onCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param )
 {
     MSGHANDLE_PARSEHEAD(false);
     int ret = 0;
+    string fname;
 
     do
     {
-        string fname;
         RJSON_GETINT_D(code, &doc);
         RJSON_VGETSTR(fname, HOCFG_FILENAME_KEY, &doc);
 
@@ -157,6 +163,7 @@ int ConfigMgr::onCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param )
                 IFDELETE(cjn);
                 break;
             }
+            m_jcfgs[fname] = cjn;
         }
         else
         {
@@ -166,12 +173,17 @@ int ConfigMgr::onCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param )
     }
     while(0);
 
+    if (0 == ret && m_changeCB)
+    {
+        m_changeCB(fname);
+    }
+
     return 0;
 }
 
 // ValT must be [string, int, map<string,string>, map<string,int>, vector<string>, vector<int>]
 template<class ValT>
-int ConfigMgr::_query( ValT& oval, const string& fullqkey, map<string, ValT >& cacheMap ) const
+int ConfigMgr::_query( ValT& oval, const string& fullqkey, map<string, ValT >& cacheMap, bool wideStr ) const
 {
     static const char seperator_ch = '/';
     {
@@ -205,7 +217,7 @@ int ConfigMgr::_query( ValT& oval, const string& fullqkey, map<string, ValT >& c
         RWLOCK_WRITE(g_rwLock0);
         map<string,ConfJson*>::const_iterator it = m_jcfgs.find(fname);
         ERRLOG_IF1RET_N(m_jcfgs.end() == it, -55, "CONFQUERY| msg=invalid filename| fullqkey=%s", fullqkey.c_str());
-        ret = it->second->query(oval, qkey);
+        ret = it->second->query(oval, qkey, wideStr);
         // if (0 == ret)
         {
             cacheMap[fullqkey] = oval;

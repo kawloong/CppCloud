@@ -81,42 +81,42 @@ const Value* ConfJson::_findNode( const string& qkey ) const
     return nodeRet;
 }
 
-int ConfJson::query(int& oval, const string& qkey) const
+int ConfJson::query(int& oval, const string& qkey, bool wideStr) const
 {
     RWLOCK_READ(m_rwLock);
     const Value* node = _findNode(qkey);
-    return _parseVal(oval, node);
+    return _parseVal(oval, node, wideStr);
 }
 
-int ConfJson::query(string& oval, const string& qkey) const
+int ConfJson::query( string& oval, const string& qkey, bool wideStr ) const
 {
     RWLOCK_READ(m_rwLock);
     const Value* node = _findNode(qkey);
-    return _parseVal(oval, node);
+    return _parseVal(oval, node, wideStr);
 }
 
-int ConfJson::query( map<string, string>& oval, const string& qkey ) const
+int ConfJson::query( map<string, string>& oval, const string& qkey, bool wideStr ) const
 {
     RWLOCK_READ(m_rwLock);
-    return queryMAP(oval, qkey);
+    return queryMAP(oval, qkey, wideStr);
 }
 
-int ConfJson::query( map<string, int>& oval, const string& qkey ) const
+int ConfJson::query( map<string, int>& oval, const string& qkey, bool wideStr ) const
 {
     RWLOCK_READ(m_rwLock);
-    return queryMAP(oval, qkey);
+    return queryMAP(oval, qkey, wideStr);
 }
 
-int ConfJson::query( vector<string>& oval, const string& qkey ) const
+int ConfJson::query( vector<string>& oval, const string& qkey, bool wideStr ) const
 {
     RWLOCK_READ(m_rwLock);
-    return queryVector(oval, qkey);
+    return queryVector(oval, qkey, wideStr);
 }
 
-int ConfJson::query( vector<int>& oval, const string& qkey ) const
+int ConfJson::query( vector<int>& oval, const string& qkey, bool wideStr ) const
 {
     RWLOCK_READ(m_rwLock);
-    return queryVector(oval, qkey);
+    return queryVector(oval, qkey, wideStr);
 }
 
 time_t ConfJson::getMtime( void ) const
@@ -124,7 +124,7 @@ time_t ConfJson::getMtime( void ) const
     return m_mtime;
 }
 
-int ConfJson::_parseVal( int& oval, const Value* node ) const
+int ConfJson::_parseVal( int& oval, const Value* node, bool wideStr ) const
 {
     IFRETURN_N(NULL == node, -1);
     int ret = -2;
@@ -147,7 +147,7 @@ int ConfJson::_parseVal( int& oval, const Value* node ) const
     return ret;
 }
 
-int ConfJson::_parseVal( string& oval, const Value* node ) const
+int ConfJson::_parseVal( string& oval, const Value* node, bool wideStr ) const
 {
     IFRETURN_N(NULL == node, -1);
     int ret = -2;
@@ -156,12 +156,26 @@ int ConfJson::_parseVal( string& oval, const Value* node ) const
         oval = node->GetString();
         ret = 0;
     }
+    else
+    {
+        if (wideStr) // 可将其他类型转化成string
+        {
+            if (node->IsNumber()) oval = _N(node->GetInt());
+            else if (node->IsFloat()) oval = _F("%f", node->GetFloat());
+            else if (node->IsBool()) oval = node->IsTrue()? "true": "false";
+            else if (node->IsObject()) oval = "_Object";
+            else if (node->IsArray()) oval = "_Array";
+            else oval = "";
+            
+            ret = 0;
+        }
+    }
 
     return ret;
 }
 
 template<class ValT>
-int ConfJson::queryMAP( map<string, ValT>& oval, const string& qkey ) const
+int ConfJson::queryMAP( map<string, ValT>& oval, const string& qkey, bool wideStr ) const
 {
     const Value* node = _findNode(qkey);
     IFRETURN_N(NULL == node || !node->IsObject(), -2);
@@ -170,7 +184,7 @@ int ConfJson::queryMAP( map<string, ValT>& oval, const string& qkey ) const
     for (; itr != node->MemberEnd(); ++itr)
     {
         ValT oval2;
-        if (0 == _parseVal(oval2, &itr->value))
+        if (0 == _parseVal(oval2, &itr->value, wideStr))
         {
             const char* key = itr->name.GetString();
             oval[key] = oval2;
@@ -181,7 +195,7 @@ int ConfJson::queryMAP( map<string, ValT>& oval, const string& qkey ) const
 }
 
 template<class ValT>
-int ConfJson::queryVector( vector<ValT>& oval, const string& qkey ) const
+int ConfJson::queryVector( vector<ValT>& oval, const string& qkey, bool wideStr ) const
 {
     const Value* node = _findNode(qkey);
     IFRETURN_N(NULL == node || !node->IsArray(), -2);
@@ -190,7 +204,7 @@ int ConfJson::queryVector( vector<ValT>& oval, const string& qkey ) const
     for (; itr != node->End(); ++itr)
     {
         ValT oval2;
-        if (0 == _parseVal(oval2, &(*itr)))
+        if (0 == _parseVal(oval2, &(*itr), wideStr))
         {
             oval.push_back(oval2);
         }

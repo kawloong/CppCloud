@@ -97,6 +97,10 @@ template int Query<map<string,int>>(map<string,int>&, const string&);
 template int Query<vector<string>>(vector<string>&, const string&);
 template int Query<vector<int>>(vector<int>&, const string&);
 
+void SetConfChangeCallBack( CONF_CHANGE_CB cb )
+{
+    ConfigMgr::Instance()->setChangeCallBack(cb);
+}
 
 int InitTcpProvider( int listenPort )
 {
