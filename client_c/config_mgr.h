@@ -41,12 +41,12 @@ public:
      * @remart: thread-safe method
      * @return: if success return 0; 
     ***/
-    int query( int& oval, const string& fullqkey );
-    int query( string& oval, const string& fullqkey );
-    int query( map<string, string>& oval, const string& fullqkey );
-    int query( map<string, int>& oval, const string& fullqkey );
-    int query( vector<string>& oval, const string& fullqkey );
-    int query( vector<int>& oval, const string& fullqkey );
+    int query( int& oval, const string& fullqkey, bool wideVal );
+    int query( string& oval, const string& fullqkey, bool wideVal );
+    int query( map<string, string>& oval, const string& fullqkey, bool wideVal );
+    int query( map<string, int>& oval, const string& fullqkey, bool wideVal );
+    int query( vector<string>& oval, const string& fullqkey, bool wideVal );
+    int query( vector<int>& oval, const string& fullqkey, bool wideVal );
     
 
 private:
@@ -54,7 +54,7 @@ private:
 
     // ValT must be [string, int, map<string,string>, map<string,int>, vector<string>, vector<int>]
     template<class ValT>
-    int _query( ValT& oval, const string& fullqkey, map<string, ValT >& cacheMap, bool wideStr ) const;
+    int _query( ValT& oval, const string& fullqkey, map<string, ValT >& cacheMap, bool wideVal ) const;
     template<class ValT>
     int _tryGetFromCache( ValT& oval, const string& fullqkey, const map<string, ValT >& cacheMap ) const;
 

@@ -24,7 +24,7 @@ namespace client_c
     string GetMConfName( void ); // 获取主配置文件名
     // 配置查询 
     // T=[string, int, map<string,string>, map<string,int>, vector<string>, vector<int>]
-    template<class T> int Query( T& oval, const string& fullqkey );
+    template<class T> int Query( T& oval, const string& fullqkey, bool wideVal );
     void SetConfChangeCallBack( CONF_CHANGE_CB cb ); // 设置变化回调（如果需要）
 
     // TCP服务提供者

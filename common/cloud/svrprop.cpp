@@ -1,7 +1,7 @@
 #include "svrprop.h"
 #include "comm/strparse.h"
 
-SvrProp::SvrProp( void ): svrid(0), okcount(0), ngcount(0), tmpnum(0),
+SvrProp::SvrProp( void ): svrid(0), prvdid(0), okcount(0), ngcount(0), tmpnum(0),
 	 protocol(0),version(0), weight(0), idc(0), rack(0), islocal(false), enable(false)
 {
 

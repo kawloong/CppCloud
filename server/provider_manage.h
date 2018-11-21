@@ -30,7 +30,7 @@ public:
 
 	static void OnCliCloseHandle( CliBase* cli );
 	void onCliCloseHandle( CliBase* cli );
-	void updateProvider( CliBase* cli,  const string& regname);
+	void updateProvider( CliBase* cli,  const string& regname, int prvdid );
 
 private:
 	int getAllJson( string& strjson ) const;

@@ -19,7 +19,7 @@ struct ServiceItem : public SvrProp
 {
 	ServiceItem( void );
 
-	int parse0( const string& name, CliBase* cli );
+	int parse0( const string& name, CliBase* cli, int prvdid );
 	int parse( CliBase* cli );
 	void getJsonStr( string& strjson, int oweight = 0 ) const;
 	void getCalcJson( string& strjson , int oweight) const;
@@ -27,13 +27,15 @@ struct ServiceItem : public SvrProp
 	int score( short idc, short rack ) const;
 };
 
+typedef map<int, ServiceItem*> SVRITEM_MAP;
+
 class ServiceProvider
 {
 public:
 	ServiceProvider( const string& svrName );
 	~ServiceProvider( void );
 
-	int setItem( CliBase* cli );
+	int setItem( CliBase* cli, int prvdid );
 	bool removeItme( CliBase* cli );
 
 	// 计算返回可用服务
@@ -42,7 +44,7 @@ public:
 
 private:
 	const string m_regName;
-	map<CliBase*, ServiceItem*> m_svrItems;
+	map<CliBase*, SVRITEM_MAP> m_svrItems;
 };
 
 #endif

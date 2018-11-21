@@ -9,12 +9,14 @@ ServiceItem::ServiceItem( void )
 
 }
 
-int ServiceItem::parse0( const string& regname, CliBase* cli )
+int ServiceItem::parse0( const string& regname, CliBase* cli, int prvdid )
 {
 	svrid = cli->getIntProperty("svrid");
-	ERRLOG_IF1RET_N(regname.empty() || svrid <= 0, -70, "SERVITEMPARSE| msg=parse fail| cli=%s", cli->m_idProfile.c_str());
+	ERRLOG_IF1RET_N(regname.empty() || svrid <= 0, -70, 
+		"SERVITEMPARSE| msg=parse fail| cli=%s", cli->m_idProfile.c_str());
 
 	this->regname = regname;
+	this->prvdid = prvdid;
 	idc = cli->getIntProperty("idc");
 	rack = cli->getIntProperty("rack");
 	islocal = cli->isLocal();
@@ -37,6 +39,20 @@ int ServiceItem::parse( CliBase* cli )
 	ngcount = cli->getIntProperty(regname + ":ngcount");
 	weight = cli->getIntProperty(regname + ":weight");
 	enable = cli->getIntProperty(regname + ":enable");
+
+	if (prvdid > 0)
+	{
+		int ntmp = 0;
+		if ( (ntmp = cli->getIntProperty("idc") )
+		{
+			idc = ntmp;
+		}
+		if ( (ntmp = cli->getIntProperty("rack") )
+		{
+			rack = ntmp;
+		}
+	}
+
 	return 0;
 }
 
@@ -93,31 +109,39 @@ ServiceProvider::ServiceProvider( const string& svrName ): m_regName(svrName)
 
 ServiceProvider::~ServiceProvider( void )
 {
-	map<CliBase*, ServiceItem*>::iterator itr = m_svrItems.begin();
+	map<CliBase*, SVRITEM_MAP>::iterator itr = m_svrItems.begin();
 	for (; itr != m_svrItems.end(); ++itr)
 	{
 		//CliBase* first = itr->first;
-		ServiceItem* second = itr->second;
-		IFDELETE(second);
+		for (auto iit : itr->second)
+		{
+			IFDELETE(iit->second);
+		}
 	}
 }
 
-int ServiceProvider::setItem( CliBase* cli )
+int ServiceProvider::setItem( CliBase* cli, int prvdid )
 {
-	ServiceItem* pitem = NULL;
-	map<CliBase*, ServiceItem*>::iterator itr = m_svrItems.find(cli);
-	if (m_svrItems.end() == itr)
+	ServiceItem*& pitem = m_svrItems[cli][prvdid];
+
+	if (NULL == pitem)
 	{
+		string regname2 = _F("%s%s-%d", SVRPROP_PREFIX, m_regName.c_str(), prvdid);
+
 		pitem = new ServiceItem;
-		int ret = pitem->parse0(m_regName, cli);
+		int ret = pitem->parse0(regname2, cli, prvdid);
+
 		if (ret)
 		{
 			IFDELETE(pitem);
+			m_svrItems[cli].erase(prvdid);
 			return ret;
 		}
-		m_svrItems[cli] = pitem;
+
+		// 设置属性标记，以便在广播给其他serv时能够还原提供的服务
 		string provval = cli->getProperty(SVRPROVIDER_CLI_KEY);
-		cli->setProperty(SVRPROVIDER_CLI_KEY, provval.empty()? m_regName: string("+")+provval);
+		cli->setProperty( SVRPROVIDER_CLI_KEY, 
+			provval.empty()? regname2: (regname2 + "+" + provval) );
 	}
 	else
 	{
@@ -130,13 +154,18 @@ int ServiceProvider::setItem( CliBase* cli )
 bool ServiceProvider::removeItme( CliBase* cli )
 {
 	bool ret = false;
-	map<CliBase*, ServiceItem*>::iterator itr = m_svrItems.find(cli);
+	auto itr = m_svrItems.find(cli);
 	if (itr != m_svrItems.end())
 	{
-		IFDELETE(itr->second);
+		for (auto itMap : itr->second)
+		{
+			IFDELETE(itMap.second);
+		}
+		
 		m_svrItems.erase(itr);
 		ret = true;
 	}
+
 	return ret;
 }
 
@@ -145,11 +174,14 @@ int ServiceProvider::getAllJson( string& strjson ) const
 {
 	strjson.append("[");
 	int i = 0;
-	map<CliBase*, ServiceItem*>::const_iterator itr = m_svrItems.begin();
-	for (i = 0; itr != m_svrItems.end(); ++itr, ++i)
+
+	for (auto itr : m_svrItems)
 	{
-		if (i > 0) strjson.append(",");
-		itr->second->getJsonStr(strjson);
+		for (auto itMap : itr.second)
+		{
+			if (i > 0) strjson.append(",");
+			itMap.second->getJsonStr(strjson);
+		}
 	}
 
 	strjson.append("]");
@@ -166,20 +198,24 @@ int ServiceProvider::query( string& strjson, short idc, short rack, short versio
 {
 	// sort all item by score
 	map<int, ServiceItem*> sortItemMap;
-	map<CliBase*, ServiceItem*>::const_iterator itr = m_svrItems.begin();
+	map<CliBase*, SVRITEM_MAP>::const_iterator itr = m_svrItems.begin();
 	for (; itr != m_svrItems.end(); ++itr)
 	{
-		ServiceItem* ptr = itr->second;
-		if (!ptr->valid()) continue;
-		if (version > 0 && version != ptr->version) continue;
-
-		int score = ptr->score(idc, rack);
-		ptr->tmpnum = score;
-		while (NULL != sortItemMap[score])
+		for (auto itMap : itr->second)
 		{
-			score++;
+			ServiceItem* ptr = itMap.second;
+			if (!ptr->valid()) continue;
+			if (version > 0 && version != ptr->version) continue;
+
+			int score = ptr->score(idc, rack);
+			ptr->tmpnum = score;
+			while (NULL != sortItemMap[score])
+			{
+				score++;
+			}
+			sortItemMap[score] = ptr;			
 		}
-		sortItemMap[score] = ptr;
+
 	}
 	
 	short count = 0;

@@ -82,7 +82,8 @@ void ProviderMgr::notify2Invoker( const string& regname, int svrid )
 
 /** 服务提供者注册服务
  * request: by CMD_SVRREGISTER_REQ CMD_SVRREGISTER2_REQ
- * format: { "regname": "app1", "svrid": 100, "svrprop": {"okcount": 123, ..} }
+ * format: { "regname": "app1", "svrid": 100, 
+ * 		"svrprop": {"prvdid":1, "okcount": 123, ..} }
  **/
 int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
 {
@@ -107,22 +108,26 @@ int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
 		BroadCastCli::Instance()->toWorld(doc, CMD_SVRREGISTER2_REQ, ++This->m_seqid, false);
 	}
 
-	int enableBeforValue = cli->getIntProperty(regname + ":enable");
-	ret = This->setProviderProperty(cli, &doc, regname);
-	int enableAfterValue = cli->getIntProperty(regname + ":enable");
+	int prvdid = 0;
+	Rjson::GetInt(prvdid, SVRREG_PROP_KEY, "prvdid", &doc);
+
+	string regname2 = _F("%s%s-%d", SVRPROP_PREFIX, regname.c_str(), prvdid);
+	int enableBeforValue = cli->getIntProperty(regname2 + ":enable");
+	ret = This->setProviderProperty(cli, &doc, regname2);
+	int enableAfterValue = cli->getIntProperty(regname2 + ":enable");
 	if (0 == ret && 1 == enableBeforValue && 0 == enableAfterValue) // 禁用服务时触发
 	{
 		// 通知各个订阅者
-		This->notify2Invoker(regname, svrid);
+		This->notify2Invoker(regname, svrid, prvdid);
 	}
 
-	This->updateProvider(cli, regname);
-	string resp = _F("\"code\": 0, \"desc\": \"reg %s result %d\"", regname.c_str(), ret);
+	This->updateProvider(cli, regname, prvdid);
+	string resp = _F("\"code\": 0, \"desc\": \"reg %s result %d\"", regname2.c_str(), ret);
 	iohand->sendData(CMD_SVRREGISTER_RSP, seqid, resp.c_str(), resp.length(), true);
 	return ret;
 }
 
-void ProviderMgr::updateProvider( CliBase* cli,  const string& regname)
+void ProviderMgr::updateProvider( CliBase* cli,  const string& regname, int prvdid)
 {
 	ServiceProvider* provider = m_providers[regname];
 	if (NULL == provider)
@@ -131,14 +136,14 @@ void ProviderMgr::updateProvider( CliBase* cli,  const string& regname)
 		m_providers[regname] = provider;
 	}
 
-	provider->setItem(cli);
+	provider->setItem(cli, prvdid);
 }
 
 int ProviderMgr::setProviderProperty( CliBase* cli, const void* doc, const string& regname )
 {
 	int ret = -1;
 	const Value* svrprop = NULL;
-	if (0 == Rjson::GetObject(&svrprop, "svrprop", (const Value*)doc) && svrprop)
+	if (0 == Rjson::GetObject(&svrprop, SVRREG_PROP_KEY, (const Value*)doc) && svrprop)
 	{
 		Value::ConstMemberIterator itr = svrprop->MemberBegin();
     	for (; itr != svrprop->MemberEnd(); ++itr)

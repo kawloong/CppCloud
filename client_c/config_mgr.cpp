@@ -183,7 +183,7 @@ int ConfigMgr::onCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param )
 
 // ValT must be [string, int, map<string,string>, map<string,int>, vector<string>, vector<int>]
 template<class ValT>
-int ConfigMgr::_query( ValT& oval, const string& fullqkey, map<string, ValT >& cacheMap, bool wideStr ) const
+int ConfigMgr::_query( ValT& oval, const string& fullqkey, map<string, ValT >& cacheMap, bool wideVal ) const
 {
     static const char seperator_ch = '/';
     {
@@ -217,7 +217,7 @@ int ConfigMgr::_query( ValT& oval, const string& fullqkey, map<string, ValT >& c
         RWLOCK_WRITE(g_rwLock0);
         map<string,ConfJson*>::const_iterator it = m_jcfgs.find(fname);
         ERRLOG_IF1RET_N(m_jcfgs.end() == it, -55, "CONFQUERY| msg=invalid filename| fullqkey=%s", fullqkey.c_str());
-        ret = it->second->query(oval, qkey, wideStr);
+        ret = it->second->query(oval, qkey, wideVal);
         // if (0 == ret)
         {
             cacheMap[fullqkey] = oval;
@@ -254,28 +254,28 @@ int ConfigMgr::_tryGetFromCache( ValT& oval, const string& fullqkey, const map<s
     return ret;
 }
 
-int ConfigMgr::query( int& oval, const string& fullqkey )
+int ConfigMgr::query( int& oval, const string& fullqkey, bool wideVal )
 {
-    return _query(oval, fullqkey, m_cacheInt);
+    return _query(oval, fullqkey, m_cacheInt, wideVal);
 }
-int ConfigMgr::query( string& oval, const string& fullqkey )
+int ConfigMgr::query( string& oval, const string& fullqkey, bool wideVal )
 {
-    return _query(oval, fullqkey, m_cacheStr);
+    return _query(oval, fullqkey, m_cacheStr, wideVal);
 }
 
-int ConfigMgr::query( map<string, string>& oval, const string& fullqkey )
+int ConfigMgr::query( map<string, string>& oval, const string& fullqkey, bool wideVal )
 {
-    return _query(oval, fullqkey, m_cacheMapStr);
+    return _query(oval, fullqkey, m_cacheMapStr, wideVal);
 }
-int ConfigMgr::query( map<string, int>& oval, const string& fullqkey )
+int ConfigMgr::query( map<string, int>& oval, const string& fullqkey, bool wideVal )
 {
-    return _query(oval, fullqkey, m_cacheMapInt);
+    return _query(oval, fullqkey, m_cacheMapInt, wideVal);
 }
-int ConfigMgr::query( vector<string>& oval, const string& fullqkey )
+int ConfigMgr::query( vector<string>& oval, const string& fullqkey, bool wideVal )
 {
-    return _query(oval, fullqkey, m_cacheVecStr);
+    return _query(oval, fullqkey, m_cacheVecStr, wideVal);
 }
-int ConfigMgr::query( vector<int>& oval, const string& fullqkey )
+int ConfigMgr::query( vector<int>& oval, const string& fullqkey, bool wideVal )
 {
-    return _query(oval, fullqkey, m_cacheVecInt);
+    return _query(oval, fullqkey, m_cacheVecInt, wideVal);
 }

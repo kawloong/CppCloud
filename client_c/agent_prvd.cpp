@@ -14,7 +14,6 @@ Modification :
 using std::map;
 static const string appName = "AgentPrvd";
 static const string confFile = "agent_prvd.json";
-static const string testConfKey = confFile + "/0";
 
 static void sigdeal( int signo )
 {
@@ -26,7 +25,33 @@ static void conf_change_callback( const string& confname )
 {
 
     map<string, string> oval;
-    int ret = client_c::Query(oval, testConfKey);
+    int idx = 0;
+    int ret = 0;
+    
+    for (;;)
+    {
+        ret = client_c::Query(oval, testConfKey, true);
+        if (ret || oval.empty()) break;
+
+        string regname = oval["regname"];
+        string url = oval["url"];
+        string desc = oval["desc"];
+        int protocol = atoi(oval["protocol"].c_str());
+        int weight = atoi(oval["weight"].c_str());
+        bool enable = (oval["enable"] == "true" || oval["enable"] == "1");
+
+        if (!regname.empty() && !url.empty())
+        {
+            client_c::regProvider(regname, protocol, url);
+            client_c::setDesc(regname, desc);
+            client_c::setWeight(regname, weight);
+            client_c::setEnable(regname, enable);
+            client_c::postOut(regname);
+        }
+
+        oval.clear();
+    }
+    
     printf("Queue: size=%d, ret=%d\n", (int)oval.size(), ret);
 }
 
@@ -41,12 +66,14 @@ int main( int argc, char* argv[] )
     int ret;
     string serv = argv[1];
 
+    // 服务启动初始化，传入CloudServ的地址
     if ( (ret = client_c::Init(appName, serv)) )
     {
         printf("Init fail %d, serv=%s\n", ret, serv.c_str());
         return -2;
     }
 
+    // 加载后应用所需要的配置文件
     if ( (ret = client_c::LoadConfFile(confFile)) )
     {
         printf("LoadConfFile fail %d, confFile=%s\n", ret, confFile.c_str());
@@ -59,6 +86,7 @@ int main( int argc, char* argv[] )
     signal(SIGINT, sigdeal);
     signal(SIGTERM, sigdeal);
 
+    // 直到应用需要退出才返回
     ret = client_c::Run(false);
     printf("Run return %d\n", ret);
 

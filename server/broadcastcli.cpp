@@ -558,6 +558,9 @@ int BroadCastCli::UpdateCliProps( const Value* pdatas, int from )
 }
 
 // 客户（外部）属性改变的处理
+// remark: svrreg="prvd_REGNAME-10+prvd_REGNAME2-11"
+//         provname="prvd_REGNAME”
+//         regName="REGNAME"; prvdid=10;
 void BroadCastCli::AfterUpdatePropsHandle( CliBase* cli )
 {
     // 服务注册处理
@@ -569,7 +572,19 @@ void BroadCastCli::AfterUpdatePropsHandle( CliBase* cli )
         vector<string>::const_iterator it = vprovName.begin();
         for (; it != vprovName.end(); ++it)
         {
-            ProviderMgr::Instance()->updateProvider(cli, *it);
+            vector<string> vspli;
+            StrParse::SpliteStr(vspli, *it, '-');
+            if (vspli.empty()) continue;
+            string& provname = vspli[0];
+            if (provname.find(SVRPROP_PREFIX) != 0)
+            {
+                LOGERROR("SVRREG_UPDATEPROP| msg=provname invalid| svrreg=%s", svrreg.c_str());
+                break;
+            }
+            
+            string regName = provname.substr(sizeof(SVRPROP_PREFIX));
+            int prvdid = vspli.size() > 1 ? atoi(vspli[1].c_str()) : 0;
+            ProviderMgr::Instance()->updateProvider(cli, regName, prvdid);
         }
     }
 }

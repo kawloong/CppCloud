@@ -85,17 +85,17 @@ string GetMConfName( void )
 }
 
 // 配置查询T类型限于 [string, int, map<string,string>, map<string,int>, vector<string>, vector<int>]
-template<class T> int Query( T& oval, const string& fullqkey )
+template<class T> int Query( T& oval, const string& fullqkey, bool wideVal )
 {
-    return ConfigMgr::Instance()->query(oval, fullqkey);
+    return ConfigMgr::Instance()->query(oval, fullqkey, wideVal);
 }
 
-template int Query<string>(string&, const string&);
-template int Query<int>(int&, const string&);
-template int Query<map<string,string>>(map<string,string>&, const string&);
-template int Query<map<string,int>>(map<string,int>&, const string&);
-template int Query<vector<string>>(vector<string>&, const string&);
-template int Query<vector<int>>(vector<int>&, const string&);
+template int Query<string>(string&, const string&, bool);
+template int Query<int>(int&, const string&, bool);
+template int Query<map<string,string>>(map<string,string>&, const string&, bool);
+template int Query<map<string,int>>(map<string,int>&, const string&, bool);
+template int Query<vector<string>>(vector<string>&, const string&, bool);
+template int Query<vector<int>>(vector<int>&, const string&, bool);
 
 void SetConfChangeCallBack( CONF_CHANGE_CB cb )
 {

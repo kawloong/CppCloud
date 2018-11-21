@@ -23,24 +23,24 @@ public:
     ConfJson( const string& fname );
     int update( const Value* data );
 
-    int query( int& oval, const string& qkey, bool wideStr ) const;
-    int query( string& oval, const string& qkey, bool wideStr, bool wideStr ) const;
-    int query( map<string, string>& oval, const string& qkey, bool wideStr ) const;
-    int query( map<string, int>& oval, const string& qkey ) const;
-    int query( vector<string>& oval, const string& qkey, bool wideStr ) const;
-    int query( vector<int>& oval, const string& qkey, bool wideStr ) const;
+    int query( int& oval, const string& qkey, bool wideVal ) const;
+    int query( string& oval, const string& qkey, bool wideVal ) const;
+    int query( map<string, string>& oval, const string& qkey, bool wideVal ) const;
+    int query( map<string, int>& oval, const string& qkey, bool wideVal ) const;
+    int query( vector<string>& oval, const string& qkey, bool wideVal ) const;
+    int query( vector<int>& oval, const string& qkey, bool wideVal ) const;
 
     time_t getMtime( void ) const;
 
 private:
     inline const Value* _findNode( const string& qkey ) const;
-    inline int _parseVal( int& oval, const Value* node, bool wideStr ) const;
-    inline int _parseVal( string& oval, const Value* node, bool wideStr ) const;
+    inline int _parseVal( int& oval, const Value* node, bool wideVal ) const;
+    inline int _parseVal( string& oval, const Value* node, bool wideVal ) const;
 
     template<class ValT>
-    int queryMAP( map<string, ValT>& oval, const string& qkey, bool wideStr ) const;
+    int queryMAP( map<string, ValT>& oval, const string& qkey, bool wideVal ) const;
     template<class ValT>
-    int queryVector( vector<ValT>& oval, const string& qkey, bool wideStr ) const;
+    int queryVector( vector<ValT>& oval, const string& qkey, bool wideVal ) const;
 
     
 private:
