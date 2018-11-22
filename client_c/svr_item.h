@@ -21,10 +21,11 @@ struct svr_item_t
     
     int port;
     int svrid;
+    int prvdid;
     short protocol; // tcp=1 udp=2 http=3 https=4
     short weight;
 
-    svr_item_t(): port(0), svrid(0), protocol(0), weight(0) {}
+    svr_item_t(): port(0), svrid(0), prvdid(0), protocol(0), weight(0) {}
     bool parseUrl( void );
 };
 

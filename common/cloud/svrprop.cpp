@@ -20,6 +20,7 @@ string SvrProp::jsonStr( void ) const
 	StrParse::PutOneJson(strjson, "url", url, true);
 	if(!desc.empty()>0) StrParse::PutOneJson(strjson, "desc", desc, true);
 	if(svrid>0) StrParse::PutOneJson(strjson, "svrid", svrid, true);
+	if(prvdid>0) StrParse::PutOneJson(strjson, "prvdid", prvdid, true);
 	if(okcount>0) StrParse::PutOneJson(strjson, "okcount", okcount, true);
 	if(ngcount>0) StrParse::PutOneJson(strjson, "ngcount", ngcount, true);
 	StrParse::PutOneJson(strjson, "protocol", protocol, true);

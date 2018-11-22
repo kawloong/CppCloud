@@ -152,12 +152,12 @@ int ProvdSendMsgAsync( const msg_prop_t* msgprop, const string& msg )
 }
 
 // param: protocol  tcp=1 udp=2 http=3 https=4
-int regProvider( const string& regname, short protocol, const string& url )
+int regProvider( const string& regname, int prvdid, short protocol, const string& url )
 {
-    return ProvdMgr::Instance()->regProvider(regname, protocol, url);
+    return ProvdMgr::Instance()->regProvider(regname, prvdid, protocol, url);
 }
 
-int regProvider( const string& regname, short protocol, int port, const string& path )
+int regProvider( const string& regname, int prvdid, short protocol, int port, const string& path )
 {
     static const int PROTOCOL_NUM = 4;
     static const string protArr[PROTOCOL_NUM+1] = {"tcp://", "udp://", "http://", "https://", ""};
@@ -167,47 +167,47 @@ int regProvider( const string& regname, short protocol, int port, const string& 
     string localip = CloudApp::Instance()->getLocalIP();
     url = protArr[protocol-1] + localip + ":" + _N(port) + path;
     
-    return ProvdMgr::Instance()->regProvider(regname, protocol, url);
+    return ProvdMgr::Instance()->regProvider(regname, prvdid, protocol, url);
 }
 
-void setDesc( const string& regname, const string& desc )
+void setDesc( const string& regname, int prvdid, const string& desc )
 {
-    ProvdMgr::Instance()->setDesc(regname, desc);
+    ProvdMgr::Instance()->setDesc(regname, prvdid, desc);
 }
 
-void setWeight( const string& regname, short weight )
+void setWeight( const string& regname, int prvdid, short weight )
 {
-    ProvdMgr::Instance()->setWeight(regname, weight);
+    ProvdMgr::Instance()->setWeight(regname, prvdid, weight);
 }
 
-void setVersion( const string& regname, short ver )
+void setVersion( const string& regname, int prvdid, short ver )
 {
-    ProvdMgr::Instance()->setVersion(regname, ver);
+    ProvdMgr::Instance()->setVersion(regname, prvdid, ver);
 }
 
-void setEnable( const string& regname, bool enable )
+void setEnable( const string& regname, int prvdid, bool enable )
 {
-    ProvdMgr::Instance()->setEnable(regname, enable);
+    ProvdMgr::Instance()->setEnable(regname, prvdid, enable);
 }
 
-void addOkCount( const string& regname, int dcount )
+void addOkCount( const string& regname, int prvdid, int dcount )
 {
-    ProvdMgr::Instance()->addOkCount(regname, dcount);
+    ProvdMgr::Instance()->addOkCount(regname, prvdid, dcount);
 }
 
-void addNgCount( const string& regname, int dcount )
+void addNgCount( const string& regname, int prvdid, int dcount )
 {
-    ProvdMgr::Instance()->addNgCount(regname, dcount);
+    ProvdMgr::Instance()->addNgCount(regname, prvdid, dcount);
 }
 
-int postOut( const string& regname )
+int postOut( const string& regname, int prvdid )
 {
-    return ProvdMgr::Instance()->postOut(regname);
+    return ProvdMgr::Instance()->postOut(regname, prvdid);
 }
 
-int postOut( const string& regname, bool enable )
+int postEnable( const string& regname, int prvdid, bool enable ) // 为避免与postOut重载引2义
 {
-    return ProvdMgr::Instance()->postOut(regname, enable);
+    return ProvdMgr::Instance()->postOut(regname, prvdid, enable);
 }
 
 int InitInvoker( const string& svrList )

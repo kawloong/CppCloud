@@ -49,13 +49,13 @@ int main( int argc, char* argv[] )
     }
 
     client_c::AddProvdFunction(TcpProviderHandle);
-    if ( (ret = client_c::regProvider(appName, 1, listenPort)) )
+    if ( (ret = client_c::regProvider(appName, 1, 1, listenPort)) )
     {
         printf("regProvider fail %d\n", ret);
         return -4;
     }
 
-    client_c::postOut(appName, true);
+    client_c::postEnable(appName, 1, true);
 
     ret = client_c::Run(false);
     printf("Run return %d\n", ret);
@@ -75,6 +75,9 @@ int TcpProviderHandle( msg_prop_t* msgprop, const char* body )
     // resp back to consumer
     string echo = string("{\"code\": 0, \"desc\": \"debug provider handle\", \"echo_data\": ") + body + "}";
     client_c::ProvdSendMsgAsync(msgprop, echo);
+    
+    client_c::addOkCount(appName, 1, 1);
+    client_c::postOut(appName, 1);
 
     return 0;
 }

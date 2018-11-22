@@ -29,7 +29,7 @@ class SvrConsumer : public ITaskRun2
         time_t ctime;
 
         SvrItem(): weightSum(0), callcount(0) {}
-        void rmBySvrid( int svrid );
+        void rmBySvrid( int svrid, int prvdid );
         svr_item_t* randItem( void );
     };
 
@@ -55,6 +55,10 @@ public:
     // 获取一个服务提供者信息，用于之后发起调用。
     int getSvrPrvd( svr_item_t& pvd, const string& svrname );
 
+    // 统计调用信息
+    void addOkCount( const string& regname, int prvdid, int dcount = 1 );
+    void addNgCount( const string& regname, int prvdid, int dcount = 1 );
+
 private:
     int parseResponse( string& msg );
     int parseResponse( const void* ptr );
@@ -67,6 +71,12 @@ private:
     int m_refresh_sec;
     RWLock m_rwLock;
     bool m_inqueue;
+
+    map<string, unsigned> m_okDCount;
+    map<string, unsigned> m_ngDCount;
+    unsigned m_totalDOkCount;
+    unsigned m_totalDNgCount;
+
     static SvrConsumer* This;
 };
 

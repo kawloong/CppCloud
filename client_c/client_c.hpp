@@ -38,16 +38,16 @@ namespace client_c
     int ProvdSendMsgAsync( const msg_prop_t* msgprop, const string& msg );
     
     // 发布服务
-    int regProvider( const string& regname, short protocol, int port, const string& path="" );
-    int regProvider( const string& regname, short protocol, const string& url );
-    void setDesc( const string& regname, const string& desc );
-    void setWeight( const string& regname, short weight );
-    void setVersion( const string& regname, short ver );
-    void setEnable( const string& regname, bool enable );
-    void addOkCount( const string& regname, int dcount );
-    void addNgCount( const string& regname, int dcount );
-    int postOut( const string& regname );
-    int postOut( const string& regname, bool enable );
+    int regProvider( const string& regname, int prvdid, short protocol, int port, const string& path="" );
+    int regProvider( const string& regname, int prvdid, short protocol, const string& url );
+    void setDesc( const string& regname, int prvdid, const string& desc );
+    void setWeight( const string& regname, int prvdid, short weight );
+    void setVersion( const string& regname, int prvdid, short ver );
+    void setEnable( const string& regname, int prvdid, bool enable );
+    void addOkCount( const string& regname, int prvdid, int dcount );
+    void addNgCount( const string& regname, int prvdid, int dcount );
+    int postOut( const string& regname, int prvdid );
+    int postEnable( const string& regname, int prvdid, bool enable );
 
 
     // 服务消费者

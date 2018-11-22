@@ -17,6 +17,7 @@ class CliBase;
 
 struct ServiceItem : public SvrProp
 {
+	string regname2;
 	ServiceItem( void );
 
 	int parse0( const string& name, CliBase* cli, int prvdid );

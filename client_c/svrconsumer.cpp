@@ -9,15 +9,18 @@
 
 SvrConsumer* SvrConsumer::This = NULL;
 
-void SvrConsumer::SvrItem::rmBySvrid( int svrid )
+void SvrConsumer::SvrItem::rmBySvrid( int svrid, int prvdid )
 {
     vector<svr_item_t>::iterator it = svrItms.begin();
     for (; it != svrItms.end(); )
     {
         if (svrid == it->svrid)
         {
-            this->weightSum -= it->weight;
-            it = svrItms.erase(it);
+            if (0 == prvdid || prvdid == it->prvdid)
+            {
+                this->weightSum -= it->weight;
+                it = svrItms.erase(it);
+            }
         }
         else
         {
@@ -54,6 +57,8 @@ SvrConsumer::SvrConsumer( void )
     This = this;
     m_refresh_sec = 10;
     m_inqueue = false;
+    m_totalDOkCount = 0;
+    m_totalDNgCount = 0;
 }
 
 SvrConsumer::~SvrConsumer( void )
@@ -74,7 +79,7 @@ int SvrConsumer::OnCMD_EVNOTIFY_REQ( void* ptr ) // provider 下线通知
 int SvrConsumer::onCMD_SVRSEARCH_RSP( void* ptr, unsigned cmdid, void* param )
 {
     MSGHANDLE_PARSEHEAD(false);
-    int ret = parseResponse(&doc); 
+    int ret = parseResponse(&doc);
 
     return ret;
 }
@@ -85,6 +90,7 @@ int SvrConsumer::onCMD_EVNOTIFY_REQ( void* ptr )
     RJSON_GETSTR_D(notify, doc);
     RJSON_GETSTR_D(regname, doc);
     RJSON_GETINT_D(svrid, doc);
+    RJSON_GETINT_D(prvdid, doc);
 
     ERRLOG_IF1RET_N(notify!="provider_down" || 0==svrid, -113, 
         "EVNOTIFY| msg=%s", Rjson::ToString(doc).c_str());
@@ -93,7 +99,7 @@ int SvrConsumer::onCMD_EVNOTIFY_REQ( void* ptr )
     map<string, SvrItem*>::iterator it = m_allPrvds.find(regname);
     if (it != m_allPrvds.end())
     {
-        it->second->rmBySvrid(svrid);
+        it->second->rmBySvrid(svrid, prvdid);
     }
 
     return 0;
@@ -184,6 +190,7 @@ int SvrConsumer::parseResponse( const void* ptr )
         
         RJSON_VGETSTR(svitm.url, "url", node);
         RJSON_VGETINT(svitm.svrid, "svrid", node);
+        RJSON_VGETINT(svitm.prvdid, "prvdid", node);
         RJSON_GETINT_D(weight, node);
         RJSON_GETINT_D(protocol, node);
         bool validurl = svitm.parseUrl();
@@ -243,12 +250,26 @@ int SvrConsumer::getSvrPrvd( svr_item_t& pvd, const string& svrname )
     map<string, SvrItem*>::iterator it = m_allPrvds.find(svrname);
     IFRETURN_N(it == m_allPrvds.end(), -1);
     svr_item_t* itm = it->second->randItem();
+    int ret = -114;
     if (itm)
     {
         pvd = *itm;
+        ret = 0;
     }
 
-    return 0;
+    return ret;
+}
+
+void SvrConsumer::addOkCount( const string& regname, int prvdid, int dcount = 1 )
+{
+    m_totalDOkCount += dcount;
+    m_okDCount[regname + "-" + _N(prvdid)] += dcount;
+}
+
+void SvrConsumer::addNgCount( const string& regname, int prvdid, int dcount = 1 )
+{
+    m_totalDNgCount += dcount;
+    m_ngDCount[regname + "-" + _N(prvdid)] += dcount;
 }
 
 int SvrConsumer::_postSvrSearch( const string& svrname ) const

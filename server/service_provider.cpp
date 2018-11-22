@@ -16,6 +16,7 @@ int ServiceItem::parse0( const string& regname, CliBase* cli, int prvdid )
 		"SERVITEMPARSE| msg=parse fail| cli=%s", cli->m_idProfile.c_str());
 
 	this->regname = regname;
+	this->regname2 = _F("%s%s-%d", SVRPROP_PREFIX, regname.c_str(), prvdid);
 	this->prvdid = prvdid;
 	idc = cli->getIntProperty("idc");
 	rack = cli->getIntProperty("rack");
@@ -28,26 +29,26 @@ int ServiceItem::parse( CliBase* cli )
 	// 固定部份-不会随运行过程改变的
 	if (0 == version || 0 == protocol || url.empty())
 	{
-		url = cli->getProperty(regname + ":url");
-		protocol = cli->getIntProperty(regname + ":protocol");
-		version = cli->getIntProperty(regname + ":version");
+		url = cli->getProperty(regname2 + ":url");
+		protocol = cli->getIntProperty(regname2 + ":protocol");
+		version = cli->getIntProperty(regname2 + ":version");
 	}
 
 	// 变化部分
-	desc = cli->getProperty(regname + ":desc");
-	okcount = cli->getIntProperty(regname + ":okcount");
-	ngcount = cli->getIntProperty(regname + ":ngcount");
-	weight = cli->getIntProperty(regname + ":weight");
-	enable = cli->getIntProperty(regname + ":enable");
+	desc = cli->getProperty(regname2 + ":desc");
+	okcount = cli->getIntProperty(regname2 + ":okcount");
+	ngcount = cli->getIntProperty(regname2 + ":ngcount");
+	weight = cli->getIntProperty(regname2 + ":weight");
+	enable = cli->getIntProperty(regname2 + ":enable");
 
 	if (prvdid > 0)
 	{
 		int ntmp = 0;
-		if ( (ntmp = cli->getIntProperty("idc") )
+		if ( (ntmp = cli->getIntProperty(regname2 + "idc")) )
 		{
 			idc = ntmp;
 		}
-		if ( (ntmp = cli->getIntProperty("rack") )
+		if ( (ntmp = cli->getIntProperty(regname2 + "rack")) )
 		{
 			rack = ntmp;
 		}
@@ -63,6 +64,7 @@ void ServiceItem::getJsonStr( string& strjson, int oweight ) const
 	StrParse::PutOneJson(strjson, "url", url, true);
 	StrParse::PutOneJson(strjson, "desc", desc, true);
 	StrParse::PutOneJson(strjson, "svrid", svrid, true);
+	StrParse::PutOneJson(strjson, "prvdid", prvdid, true);
 	StrParse::PutOneJson(strjson, "okcount", okcount, true);
 	StrParse::PutOneJson(strjson, "ngcount", ngcount, true);
 	StrParse::PutOneJson(strjson, "protocol", protocol, true);
@@ -115,7 +117,7 @@ ServiceProvider::~ServiceProvider( void )
 		//CliBase* first = itr->first;
 		for (auto iit : itr->second)
 		{
-			IFDELETE(iit->second);
+			IFDELETE(iit.second);
 		}
 	}
 }
@@ -129,7 +131,7 @@ int ServiceProvider::setItem( CliBase* cli, int prvdid )
 		string regname2 = _F("%s%s-%d", SVRPROP_PREFIX, m_regName.c_str(), prvdid);
 
 		pitem = new ServiceItem;
-		int ret = pitem->parse0(regname2, cli, prvdid);
+		int ret = pitem->parse0(m_regName, cli, prvdid);
 
 		if (ret)
 		{
@@ -142,10 +144,6 @@ int ServiceProvider::setItem( CliBase* cli, int prvdid )
 		string provval = cli->getProperty(SVRPROVIDER_CLI_KEY);
 		cli->setProperty( SVRPROVIDER_CLI_KEY, 
 			provval.empty()? regname2: (regname2 + "+" + provval) );
-	}
-	else
-	{
-		pitem = itr->second;
 	}
 	
 	return  pitem->parse(cli);

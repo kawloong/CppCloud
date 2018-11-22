@@ -51,13 +51,13 @@ void ProviderMgr::onCliCloseHandle( CliBase* cli )
 			bool exist = second->removeItme(cli);
 			if (exist)
 			{
-				notify2Invoker(itr->first, cli->getIntProperty(CONNTERID_KEY));
+				notify2Invoker(itr->first, cli->getIntProperty(CONNTERID_KEY), 0);
 			}
 		}
 	}
 }
 
-void ProviderMgr::notify2Invoker( const string& regname, int svrid )
+void ProviderMgr::notify2Invoker( const string& regname, int svrid, int prvdid )
 {
 	string preKey(SVRBOOKCH_ALIAS_PREFIX);
 	preKey += "_" + regname + "@";
@@ -70,8 +70,8 @@ void ProviderMgr::notify2Invoker( const string& regname, int svrid )
 		if (NULL == invokerIO) continue;
 		if (msg.empty())
 		{
-			msg = _F("{\"notify\": \"provider_down\", \"svrid\": %d, \"regname\": \"%s\"}",
-					 svrid, regname.c_str());
+			msg = _F("{\"notify\": \"provider_down\", \"svrid\": %d, \"prvdid\": %d, \"regname\": \"%s\"}",
+					 svrid, prvdid, regname.c_str());
 		}
 
 		int ret = invokerIO->sendData(CMD_EVNOTIFY_REQ, ++m_seqid, msg.c_str(), msg.length(), true);
@@ -139,7 +139,7 @@ void ProviderMgr::updateProvider( CliBase* cli,  const string& regname, int prvd
 	provider->setItem(cli, prvdid);
 }
 
-int ProviderMgr::setProviderProperty( CliBase* cli, const void* doc, const string& regname )
+int ProviderMgr::setProviderProperty( CliBase* cli, const void* doc, const string& regname2 )
 {
 	int ret = -1;
 	const Value* svrprop = NULL;
@@ -152,16 +152,16 @@ int ProviderMgr::setProviderProperty( CliBase* cli, const void* doc, const strin
 			if (itr->value.IsString())
 			{
 				const char* val = itr->value.GetString();
-				cli->setProperty(regname + ":" + key, val);
+				cli->setProperty(regname2 + ":" + key, val);
 			}
 			else if (itr->value.IsInt())
 			{
 				string val = StrParse::Itoa(itr->value.GetInt());
-				cli->setProperty(regname + ":" + key, val);
+				cli->setProperty(regname2 + ":" + key, val);
 			}
 			else if (itr->value.IsBool()) // true -> "1", false -> "0"
 			{
-				cli->setProperty(regname + ":" + key, itr->value.IsTrue()? "1": "0");
+				cli->setProperty(regname2 + ":" + key, itr->value.IsTrue()? "1": "0");
 			}
 		}
 		ret = 0;
