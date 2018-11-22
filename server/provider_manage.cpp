@@ -12,6 +12,7 @@ HEPCLASS_IMPL_FUNCX_BEG(ProviderMgr)
 HEPCLASS_IMPL_FUNCX_MORE(ProviderMgr, OnCMD_SVRREGISTER_REQ)
 HEPCLASS_IMPL_FUNCX_MORE(ProviderMgr, OnCMD_SVRSEARCH_REQ)
 HEPCLASS_IMPL_FUNCX_MORE(ProviderMgr, OnCMD_SVRSHOW_REQ)
+HEPCLASS_IMPL_FUNCX_MORE(ProviderMgr, OnCMD_SVRSTAT_REQ)
 HEPCLASS_IMPL_FUNCX_END(ProviderMgr)
 
 ProviderMgr* ProviderMgr::This = ProviderMgr::Instance();
@@ -224,6 +225,71 @@ int ProviderMgr::OnCMD_SVRSHOW_REQ( void* ptr, unsigned cmdid, void* param )
 	resp.append("}");
 
 	return iohand->sendData(CMD_SVRSHOW_RSP, seqid, resp.c_str(), resp.length(), true);
+}
+
+// format: [{"prvdid": 1, "pvd_ok": 10}]
+int ProviderMgr::OnCMD_SVRSTAT_REQ( void* ptr, unsigned cmdid, void* param )
+{
+	MSGHANDLE_PARSEHEAD(false);
+	int i = 0;
+	const Value* svrItm = NULL;
+
+	for (; 0 == Rjson::GetObject(&svrItm, i, &doc); ++i )
+	{
+		RJSON_GETSTR_D(regname, svrItm);
+		RJSON_VGETINT_D(svrid, CONNTERID_KEY, svrItm); 
+		RJSON_GETINT_D(prvdid, svrItm);
+		RJSON_GETINT_D(pvd_ok, svrItm);
+		RJSON_GETINT_D(pvd_ng, svrItm);
+		RJSON_GETINT_D(ivk_ok, svrItm);
+		RJSON_GETINT_D(ivk_ng, svrItm);
+		RJSON_GETINT_D(ivk_dok, svrItm);
+		RJSON_GETINT_D(ivk_dng, svrItm);
+
+		if (regname.empty()) continue;
+		if ((ivk_dok > 0 || ivk_dng) && 0 == svrid)
+		{
+			throw NormalExceptionOn(400, CMD_SVRSTAT_RSP, seqid, 
+				"leak of svrid on ivk_ok or ivk_ng");
+		}
+
+		if (pvd_ok || pvd_ng || ivk_dok || ivk_dng)
+		{
+			CliBase* provider = iohand;
+			if (svrid > 0)
+			{
+				provider = CliMgr::Instance()->getChildBySvrid(svrid);
+				if (NULL == provider) continue;
+			}
+
+			ServiceProvider* svrPrvder = This->getProviderPtr(regname);
+			if (svrPrvder)
+			{
+				svrPrvder->setStat(provider, prvdid, pvd_ok, pvd_ng, ivk_dok, ivk_dng);
+			}			
+		}
+
+		if (ivk_ok || ivk_ng)
+		{
+			string regname2 = _F("%s%s-%d", SVRPROP_PREFIX, regname.c_str(), prvdid);
+			if (ivk_ok) iohand->setProperty(regname2 + ":ivk_ok", ivk_ok);
+			if (ivk_ng) iohand->setProperty(regname2 + ":ivk_ng", ivk_ng);
+		}
+	}
+
+	return 0;
+}
+
+ServiceProvider* ProviderMgr::getProviderPtr( const string& regname ) const
+{
+	ServiceProvider* ret = NULL;
+	map<string, ServiceProvider*>::const_iterator itr = m_providers.find(regname);
+	if (itr != m_providers.end())
+	{
+		ret = itr->second;
+	}
+
+	return ret;
 }
 
 // return provider个数

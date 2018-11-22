@@ -10,6 +10,7 @@
 #include "shttp_invoker_mgr.h"
 #include "climanage.h"
 #include "msgprop.h"
+#include "svr_stat.h"
 #include "asyncprvdmsg.h"
 #include "cloud/switchhand.h"
 #include "comm/hepoll.h"
@@ -152,12 +153,12 @@ int ProvdSendMsgAsync( const msg_prop_t* msgprop, const string& msg )
 }
 
 // param: protocol  tcp=1 udp=2 http=3 https=4
-int regProvider( const string& regname, int prvdid, short protocol, const string& url )
+int RegProvider( const string& regname, int prvdid, short protocol, const string& url )
 {
     return ProvdMgr::Instance()->regProvider(regname, prvdid, protocol, url);
 }
 
-int regProvider( const string& regname, int prvdid, short protocol, int port, const string& path )
+int RegProvider( const string& regname, int prvdid, short protocol, int port, const string& path )
 {
     static const int PROTOCOL_NUM = 4;
     static const string protArr[PROTOCOL_NUM+1] = {"tcp://", "udp://", "http://", "https://", ""};
@@ -190,22 +191,18 @@ void setEnable( const string& regname, int prvdid, bool enable )
     ProvdMgr::Instance()->setEnable(regname, prvdid, enable);
 }
 
-void addOkCount( const string& regname, int prvdid, int dcount )
+void AddProviderStat( const string& regname, int prvdid, bool isOk, int dcount )
 {
-    ProvdMgr::Instance()->addOkCount(regname, prvdid, dcount);
+    //ProvdMgr::Instance()->addOkCount(regname, prvdid, dcount);
+    SvrStat::Instance()->addPrvdCount(regname, isOk, prvdid, 0, dcount);
 }
 
-void addNgCount( const string& regname, int prvdid, int dcount )
-{
-    ProvdMgr::Instance()->addNgCount(regname, prvdid, dcount);
-}
-
-int postOut( const string& regname, int prvdid )
+int PostOut( const string& regname, int prvdid )
 {
     return ProvdMgr::Instance()->postOut(regname, prvdid);
 }
 
-int postEnable( const string& regname, int prvdid, bool enable ) // 为避免与postOut重载引2义
+int PostEnable( const string& regname, int prvdid, bool enable ) // 为避免与postOut重载引2义
 {
     return ProvdMgr::Instance()->postOut(regname, prvdid, enable);
 }
@@ -221,9 +218,20 @@ void SetRefreshTimeOut( int sec )
     SvrConsumer::Instance()->setRefreshTO(sec);
 }
 
+void SetReportStatTime( int sec )
+{
+    SvrStat::Instance()->setDelaySecond(sec);
+}
+
 int GetSvrPrvd( svr_item_t& pvd, const string& svrname )
 {
     return SvrConsumer::Instance()->getSvrPrvd(pvd, svrname); 
+}
+
+// 更新接口调用的统计信息
+void AddStat( const svr_item_t& pvd, bool isOk, int dcount )
+{
+    return SvrConsumer::Instance()->addStat(pvd, isOk, dcount);
 }
 
 int TcpRequest( string& resp, const string& reqmsg, const string& svrname )

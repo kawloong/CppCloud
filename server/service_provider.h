@@ -18,6 +18,8 @@ class CliBase;
 struct ServiceItem : public SvrProp
 {
 	string regname2;
+	unsigned ivk_ok; // 调用者统计 全量
+    unsigned ivk_ng; // 调用者统计 全量
 	ServiceItem( void );
 
 	int parse0( const string& name, CliBase* cli, int prvdid );
@@ -37,6 +39,7 @@ public:
 	~ServiceProvider( void );
 
 	int setItem( CliBase* cli, int prvdid );
+	void setStat( CliBase* cli, int prvdid, int pvd_ok, int pvd_ng, int ivk_dok, int ivk_dng );
 	bool removeItme( CliBase* cli );
 
 	// 计算返回可用服务

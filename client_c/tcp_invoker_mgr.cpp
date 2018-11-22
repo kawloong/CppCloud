@@ -126,6 +126,7 @@ int TcpInvokerMgr::request( string& resp, const string& reqmsg, const string& sv
 
     string hostp = _F("%s:%d", pvd.host.c_str(), pvd.port);
     ret = requestByHost(resp, reqmsg, hostp);
-
+    SvrConsumer::Instance()->addStat(pvd, 0 == ret);
+    
     return ret;
 }

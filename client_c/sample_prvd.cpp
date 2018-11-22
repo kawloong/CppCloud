@@ -49,9 +49,9 @@ int main( int argc, char* argv[] )
     }
 
     client_c::AddProvdFunction(TcpProviderHandle);
-    if ( (ret = client_c::regProvider(appName, 1, 1, listenPort)) )
+    if ( (ret = client_c::RegProvider(appName, 1, 1, listenPort)) )
     {
-        printf("regProvider fail %d\n", ret);
+        printf("RegProvider fail %d\n", ret);
         return -4;
     }
 
@@ -77,7 +77,7 @@ int TcpProviderHandle( msg_prop_t* msgprop, const char* body )
     client_c::ProvdSendMsgAsync(msgprop, echo);
     
     client_c::addOkCount(appName, 1, 1);
-    client_c::postOut(appName, 1);
+    client_c::PostOut(appName, 1);
 
     return 0;
 }

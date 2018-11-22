@@ -54,10 +54,8 @@ public:
 
     // 获取一个服务提供者信息，用于之后发起调用。
     int getSvrPrvd( svr_item_t& pvd, const string& svrname );
-
-    // 统计调用信息
-    void addOkCount( const string& regname, int prvdid, int dcount = 1 );
-    void addNgCount( const string& regname, int prvdid, int dcount = 1 );
+    // 更新接口调用的统计信息
+    void addStat( const svr_item_t& pvd, bool isOk, int dcount=1 );
 
 private:
     int parseResponse( string& msg );
@@ -72,10 +70,6 @@ private:
     RWLock m_rwLock;
     bool m_inqueue;
 
-    map<string, unsigned> m_okDCount;
-    map<string, unsigned> m_ngDCount;
-    unsigned m_totalDOkCount;
-    unsigned m_totalDNgCount;
 
     static SvrConsumer* This;
 };

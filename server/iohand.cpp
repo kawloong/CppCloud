@@ -74,6 +74,7 @@ int IOHand::Init( void )
 	s_cmdid2clsname[CMD_SVRREGISTER2_REQ] = "ProviderMgr::OnCMD_SVRREGISTER_REQ";
 	s_cmdid2clsname[CMD_SVRSEARCH_REQ] = "ProviderMgr::OnCMD_SVRSEARCH_REQ";
 	s_cmdid2clsname[CMD_SVRSHOW_REQ] = "ProviderMgr::OnCMD_SVRSHOW_REQ";
+	s_cmdid2clsname[CMD_SVRSTAT_REQ] = "ProviderMgr::OnCMD_SVRSTAT_REQ";
 	s_cmdid2clsname[CMD_SVRREGISTER_RSP] = "BegnHand::DisplayMsg";
 
 	s_cmdid2clsname[0] = "BegnHand::ProcessOne"; // default handle class

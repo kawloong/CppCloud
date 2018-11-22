@@ -15,6 +15,7 @@ using std::string;
 
 struct svr_item_t
 {
+    string regname;
     string url;
     string version;
     string host;

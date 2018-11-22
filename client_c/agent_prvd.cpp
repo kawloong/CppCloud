@@ -42,11 +42,11 @@ static void conf_change_callback( const string& confname )
 
         if (!regname.empty() && !url.empty())
         {
-            client_c::regProvider(regname, protocol, url);
+            client_c::RegProvider(regname, protocol, url);
             client_c::setDesc(regname, desc);
             client_c::setWeight(regname, weight);
             client_c::setEnable(regname, enable);
-            client_c::postOut(regname);
+            client_c::PostOut(regname);
         }
 
         oval.clear();

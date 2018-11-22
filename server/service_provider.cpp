@@ -4,7 +4,7 @@
 #include "cloud/const.h"
 #include "comm/strparse.h"
 
-ServiceItem::ServiceItem( void )
+ServiceItem::ServiceItem( void ): ivk_ok(0), ivk_ng(0)
 {
 
 }
@@ -147,6 +147,23 @@ int ServiceProvider::setItem( CliBase* cli, int prvdid )
 	}
 	
 	return  pitem->parse(cli);
+}
+
+void ServiceProvider::setStat( CliBase* cli, int prvdid, int pvd_ok, int pvd_ng, int ivk_dok, int ivk_dng )
+{
+	auto itr = m_svrItems.find(cli);
+	if (itr != m_svrItems.end())
+	{
+		auto itr2 = itr->second.find(prvdid);
+		if ( itr2 != itr->second.end() )
+		{
+			ServiceItem* itm = itr2->second;
+			if (pvd_ok > 0) itm->okcount = pvd_ok;
+			if (pvd_ng > 0) itm->ngcount = pvd_ng;
+			if (ivk_dok > 0) itm->ivk_ok += ivk_dok;
+			if (ivk_dng > 0) itm->ivk_ng += ivk_dng;
+		}
+	}
 }
 
 bool ServiceProvider::removeItme( CliBase* cli )

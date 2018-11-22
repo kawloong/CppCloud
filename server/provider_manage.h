@@ -27,12 +27,14 @@ public:
 	static int OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param ); // 服务注册/更新
 	static int OnCMD_SVRSEARCH_REQ( void* ptr, unsigned cmdid, void* param ); // 服务发现
 	static int OnCMD_SVRSHOW_REQ( void* ptr, unsigned cmdid, void* param ); // 服务展示
+	static int OnCMD_SVRSTAT_REQ( void* ptr, unsigned cmdid, void* param ); // 服务统计上报
 
 	static void OnCliCloseHandle( CliBase* cli );
 	void onCliCloseHandle( CliBase* cli );
 	void updateProvider( CliBase* cli,  const string& regname, int prvdid );
 
 private:
+	ServiceProvider* getProviderPtr( const string& regname ) const;
 	int getAllJson( string& strjson ) const;
 	int getOneProviderJson( string& strjson, const string& regname ) const;
 	int getOneProviderJson( string& strjson, const string& regname, short idc, short rack, short version, short limit ) const;

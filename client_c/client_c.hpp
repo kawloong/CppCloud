@@ -38,22 +38,25 @@ namespace client_c
     int ProvdSendMsgAsync( const msg_prop_t* msgprop, const string& msg );
     
     // 发布服务
-    int regProvider( const string& regname, int prvdid, short protocol, int port, const string& path="" );
-    int regProvider( const string& regname, int prvdid, short protocol, const string& url );
+    int RegProvider( const string& regname, int prvdid, short protocol, int port, const string& path="" );
+    int RegProvider( const string& regname, int prvdid, short protocol, const string& url );
     void setDesc( const string& regname, int prvdid, const string& desc );
     void setWeight( const string& regname, int prvdid, short weight );
     void setVersion( const string& regname, int prvdid, short ver );
     void setEnable( const string& regname, int prvdid, bool enable );
-    void addOkCount( const string& regname, int prvdid, int dcount );
-    void addNgCount( const string& regname, int prvdid, int dcount );
-    int postOut( const string& regname, int prvdid );
-    int postEnable( const string& regname, int prvdid, bool enable );
+    int PostOut( const string& regname, int prvdid );
+    int PostEnable( const string& regname, int prvdid, bool enable );
+    void AddProviderStat( const string& regname, int prvdid, bool isOk, int dcount );
 
 
     // 服务消费者
     int InitInvoker( const string& svrList );
-    void SetRefreshTimeOut( int sec );
-    int GetSvrPrvd( svr_item_t& pvd, const string& svrname );
+    void SetRefreshTimeOut( int sec ); // 不设置默认5min
+    void SetReportStatTime( int sec ); // 不设置默认15sec, sec=0时关闭
+
+    // 自定义的服务消费者方法
+    int GetSvrPrvd( svr_item_t& pvd, const string& svrname ); // 获取一个服务提供者
+    void AddStat( const svr_item_t& pvd, bool isOk, int dcount=1 );// 更新接口调用的统计信息
 
     // tcp服务消费者
     int TcpRequest( string& resp, const string& reqmsg, const string& svrname );

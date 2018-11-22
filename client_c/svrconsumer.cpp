@@ -5,6 +5,7 @@
 #include "cloud/homacro.h"
 #include "cloud/exception.h"
 #include "cloud/switchhand.h"
+#include "svr_stat.h"
 #include "cloudapp.h"
 
 SvrConsumer* SvrConsumer::This = NULL;
@@ -57,8 +58,6 @@ SvrConsumer::SvrConsumer( void )
     This = this;
     m_refresh_sec = 10;
     m_inqueue = false;
-    m_totalDOkCount = 0;
-    m_totalDNgCount = 0;
 }
 
 SvrConsumer::~SvrConsumer( void )
@@ -188,6 +187,7 @@ int SvrConsumer::parseResponse( const void* ptr )
             RJSON_GETSTR(regname, node);
         }
         
+        svitm.regname = regname;
         RJSON_VGETSTR(svitm.url, "url", node);
         RJSON_VGETINT(svitm.svrid, "svrid", node);
         RJSON_VGETINT(svitm.prvdid, "prvdid", node);
@@ -260,16 +260,9 @@ int SvrConsumer::getSvrPrvd( svr_item_t& pvd, const string& svrname )
     return ret;
 }
 
-void SvrConsumer::addOkCount( const string& regname, int prvdid, int dcount = 1 )
+void SvrConsumer::addStat( const svr_item_t& pvd, bool isOk, int dcount )
 {
-    m_totalDOkCount += dcount;
-    m_okDCount[regname + "-" + _N(prvdid)] += dcount;
-}
-
-void SvrConsumer::addNgCount( const string& regname, int prvdid, int dcount = 1 )
-{
-    m_totalDNgCount += dcount;
-    m_ngDCount[regname + "-" + _N(prvdid)] += dcount;
+    SvrStat::Instance()->addInvkCount(pvd.regname, isOk, pvd.prvdid, pvd.svrid, dcount);
 }
 
 int SvrConsumer::_postSvrSearch( const string& svrname ) const
