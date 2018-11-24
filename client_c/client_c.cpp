@@ -229,7 +229,7 @@ int GetSvrPrvd( svr_item_t& pvd, const string& svrname )
 }
 
 // 更新接口调用的统计信息
-void AddStat( const svr_item_t& pvd, bool isOk, int dcount )
+void AddInvokerStat( const svr_item_t& pvd, bool isOk, int dcount )
 {
     return SvrConsumer::Instance()->addStat(pvd, isOk, dcount);
 }
@@ -239,14 +239,14 @@ int TcpRequest( string& resp, const string& reqmsg, const string& svrname )
     return TcpInvokerMgr::Instance()->request(resp, reqmsg, svrname);
 }
 
-int HttpGet( string& resp, const string& reqmsg, const string& svrname )
+int HttpGet( string& resp, const string& path, const string& queryStr, const string& svrname )
 {
-    return SHttpInvokerMgr::Instance()->get(resp, reqmsg, svrname);
+    return SHttpInvokerMgr::Instance()->get(resp, path, queryStr, svrname);
 }
 
-int HttpPost( string& resp, const string& reqmsg, const string& svrname )
+int HttpPost( string& resp, const string& path, const string& reqBody, const string& svrname )
 {
-    return SHttpInvokerMgr::Instance()->post(resp, reqmsg, svrname);
+    return SHttpInvokerMgr::Instance()->post(resp, path, reqBody, svrname);
 }
 
 void _Run( void )

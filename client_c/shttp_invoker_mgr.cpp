@@ -19,8 +19,29 @@ void SHttpInvokerMgr::setLimitCount( int n )
      m_eachLimitCount = n;
 }
 
+string SHttpInvokerMgr::adjustUrlPath( const string& url, const string& path ) const
+{
+    if (path.empty()) return url;
+    if (url.empty()) return path;
+    char ch1 = *url.rbegin();
+    char ch2 = *path.begin();
 
-int SHttpInvokerMgr::get( string& resp, const string& reqmsg, const string& svrname )
+    string ret;
+    if ('/' == ch1)
+    {
+        ret = url + (('/'==ch2)? path.substr(1) : path);
+    }
+    else
+    {
+        ret = url + (('/'==ch2)? "": "/") + path;
+    }
+
+    return ret;
+}
+
+// example: http://ip:port/method/pa?param1=v1&param2=v2
+// param: path="/pa"; qstr="param1=v1&param2=v2"
+int SHttpInvokerMgr::get( string& resp, const string& path, const string& qstr, const string& svrname )
 {
     int ret;
     svr_item_t pvd;
@@ -31,7 +52,7 @@ int SHttpInvokerMgr::get( string& resp, const string& reqmsg, const string& svrn
     do
     {
         string hostp = _F("%s:%p", pvd.host.c_str(), pvd.port);
-        CSimpleHttp http(pvd.url + "?" + reqmsg);
+        CSimpleHttp http(adjustUrlPath(pvd.url, path) + "?" + qstr);
         http.setTimeout(m_invokerTimOut_sec*1000);
         ret = http.doGet();
         ERRLOG_IF1BRK(ret, ret, "GETPROVIDER| msg=http.doGet fail %d| svrname=%s", ret, svrname.c_str());
@@ -49,7 +70,7 @@ int SHttpInvokerMgr::get( string& resp, const string& reqmsg, const string& svrn
 }
 
 
-int SHttpInvokerMgr::post( string& resp, const string& reqmsg, const string& svrname )
+int SHttpInvokerMgr::post( string& resp, const string& path, const string& reqbody, const string& svrname )
 {
     int ret;
     svr_item_t pvd;
@@ -60,9 +81,9 @@ int SHttpInvokerMgr::post( string& resp, const string& reqmsg, const string& svr
     do
     {
         string hostp = _F("%s:%p", pvd.host.c_str(), pvd.port);
-        CSimpleHttp http(pvd.url);
+        CSimpleHttp http(adjustUrlPath(pvd.url, path));
         http.setTimeout(m_invokerTimOut_sec*1000);
-        ret = http.doPost(reqmsg);
+        ret = http.doPost(reqbody);
         ERRLOG_IF1BRK(ret, ret, "GETPROVIDER| msg=http.doPost fail %d| svrname=%s", ret, svrname.c_str());
 
         resp = http.getResponse();

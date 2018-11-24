@@ -46,7 +46,10 @@ namespace client_c
     void setEnable( const string& regname, int prvdid, bool enable );
     int PostOut( const string& regname, int prvdid );
     int PostEnable( const string& regname, int prvdid, bool enable );
-    void AddProviderStat( const string& regname, int prvdid, bool isOk, int dcount );
+
+    // 更新接口调用的统计信息
+    void AddProviderStat( const string& regname, int prvdid, bool isOk, int dcount=1 );
+    void AddInvokerStat( const svr_item_t& pvd, bool isOk, int dcount=1 );
 
 
     // 服务消费者
@@ -56,14 +59,13 @@ namespace client_c
 
     // 自定义的服务消费者方法
     int GetSvrPrvd( svr_item_t& pvd, const string& svrname ); // 获取一个服务提供者
-    void AddStat( const svr_item_t& pvd, bool isOk, int dcount=1 );// 更新接口调用的统计信息
 
     // tcp服务消费者
     int TcpRequest( string& resp, const string& reqmsg, const string& svrname );
 
     // http服务消费者
-    int HttpGet( string& resp, const string& reqmsg, const string& svrname );
-    int HttpPost( string& resp, const string& reqmsg, const string& svrname );
+    int HttpGet( string& resp, const string& path, const string& queryStr, const string& svrname );
+    int HttpPost( string& resp, const string& path, const string& reqBody, const string& svrname );
 
     // 运行和退出通知
     int Run( bool runBackgroud );

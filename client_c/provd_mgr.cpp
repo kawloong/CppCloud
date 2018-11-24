@@ -21,7 +21,7 @@ void ProvdMgr::uninit( void )
 
 ProviderItem* ProvdMgr::_getProvider( const string& regname, int prvdid )
 {
-    string key = regname + "-" + _N(prvdid);
+    string key = regname + "%" + _N(prvdid);
     map<string, ProviderItem*>::const_iterator itr = m_provider_apps.find(key);
     if (m_provider_apps.end() != itr)
     {
@@ -55,7 +55,7 @@ int ProvdMgr::reconnectNotifyCB( void* param )
 int ProvdMgr::regProvider( const string& regname, int prvdid, short protocol, const string& url )
 {
     int ret;
-    string key = regname + "-" + _N(prvdid);
+    string key = regname + "%" + _N(prvdid);
     ProviderItem* pvd = m_provider_apps[key];
     ERRLOG_IF1RET_N(pvd, -60, "REGPROVIDER| msg=reg provider exist| regname=%s", regname.c_str());
 
@@ -67,25 +67,11 @@ int ProvdMgr::regProvider( const string& regname, int prvdid, short protocol, co
     pvd->enable = false;
     pvd->weight = 100;
 
-    string resp;
-    ret = CloudApp::Instance()->begnRequest(resp, CMD_SVRREGISTER_REQ,
-            _F("{\"regname\": \"%s\", \"svrprop\": %s }", regname.c_str(), pvd->jsonStr().c_str())
-            );
+    ret = registRequest(pvd);
     if (0 == ret)
     {
-        LOGINFO("REGPROVIDER| msg=reg provider %s| response=%s", regname.c_str(), resp.c_str());
-        string retcode;
-        StrParse::PickOneJson(retcode, resp, "code");
-        if (retcode == "0")
-        {
-            m_provider_apps[key] = pvd;
-            pvd = NULL;
-            ret = 0;
-        }
-        else
-        {
-            ret = -61;
-        }
+        m_provider_apps[key] = pvd;
+        pvd = NULL;
     }
 
     // 重连时，要重新注册
@@ -138,14 +124,31 @@ int ProvdMgr::postOut( const string& regname, int prvdid )
     ERRLOG_IF1RET_N(NULL == pvd, -63, "POSTPROVIDER| msg=post no provider| "
             "regname=%s", regname.c_str());
     
-    int ret;
+    int ret = registRequest(pvd);
+    return ret;
+}
 
+int ProvdMgr::postOut( const string& regname, int prvdid, bool enable )
+{
+    setEnable(regname, prvdid, enable);
+    return postOut(regname, prvdid);
+}
+
+int ProvdMgr::registRequest( ProviderItem* pvd ) const
+{
     string resp;
+    int ret;
     if (!CloudApp::Instance()->isInEpRun()) // 启动时
     {
-        ret = CloudApp::Instance()->begnRequest(resp, CMD_SVRREGISTER_REQ,
+        int ret1 = CloudApp::Instance()->begnRequest(resp, CMD_SVRREGISTER_REQ,
             _F("{\"regname\": \"%s\", \"svrprop\": %s }", pvd->regname.c_str(), pvd->jsonStr().c_str()),
             false);
+        string retcode;
+        StrParse::PickOneJson(retcode, resp, "code");
+        ret = ("0" == retcode)? 0 : -66;
+
+        LOGOPT_EI(ret, "SVRREGISTER_REQ| msg=regist provider %s| ret1=%d resp=%s| regname=%s", 
+                ret?"fail":"success", ret1, resp.c_str(), pvd->regname.c_str());
     }
     else
     {
@@ -154,10 +157,4 @@ int ProvdMgr::postOut( const string& regname, int prvdid )
     }
 
     return ret;
-}
-
-int ProvdMgr::postOut( const string& regname, int prvdid, bool enable )
-{
-    setEnable(regname, prvdid, enable);
-    return postOut(regname, prvdid);
 }

@@ -10,22 +10,22 @@
 
 using namespace std;
 const int INVALID_SOCKFD = -1;
-#define SIMPLEHTTP_INIT_MEMBER {m_port = 0; m_parsed = false; m_timeout_ms = 0;\
+/*#define SIMPLEHTTP_INIT_MEMBER {m_port = 0; m_parsed = false; m_jsonMime=true, m_timeout_ms = 0;\
      m_sockfd = INVALID_SOCKFD; m_connect_count = 0;m_req_count = 0;}
+*/
+#define SIMPLEHTTP_INIT_MEMBER m_port(0), m_parsed(false), m_jsonMime(true), \
+     m_timeout_ms(0), m_sockfd(INVALID_SOCKFD), m_connect_count(0),m_req_count(0)
 
-CSimpleHttp::CSimpleHttp() {
-    SIMPLEHTTP_INIT_MEMBER
+CSimpleHttp::CSimpleHttp():SIMPLEHTTP_INIT_MEMBER {
+
 }
 
-CSimpleHttp::CSimpleHttp(const std::string &url) {
-    SIMPLEHTTP_INIT_MEMBER
-
+CSimpleHttp::CSimpleHttp(const std::string &url):SIMPLEHTTP_INIT_MEMBER {
     parseUrl(url);
 }
 
-CSimpleHttp::CSimpleHttp(const std::string &server, int port, const std::string &object) {
-    SIMPLEHTTP_INIT_MEMBER
-
+CSimpleHttp::CSimpleHttp(const std::string &server, int port, const std::string &object):
+    SIMPLEHTTP_INIT_MEMBER {
     m_server = server;
     m_port = port;
     m_object = object;
@@ -241,6 +241,12 @@ int CSimpleHttp::request(bool usePost, const std::string &data)
     // add head: user-agent
     oss << "User-Agent: Mozilla/4.0\r\n";
     oss << "Connection: Keep-Alive\r\n";
+    if (m_jsonMime)
+    {
+        oss << "Content-Type: application/json\r\n";
+        oss << "Accept: application/json, */*;\r\n";
+    }
+
     // add head: host
     oss << "Host: " << m_server;
     if (m_port != 80)

@@ -24,10 +24,12 @@ public:
 	void setLimitCount( int n );
 
 	// 向服务提供者发出请求，并等待响应回复 （同步）
-	int get( string& resp, const string& reqmsg, const string& svrname );
-	int post( string& resp, const string& reqmsg, const string& svrname );
+	int get( string& resp, const string& path, const string& qstr, const string& svrname );
+	int post( string& resp, const string& path, const string& reqbody, const string& svrname );
 
 
+private:
+	string adjustUrlPath( const string& url, const string& path ) const;
 
 private:
 	int m_eachLimitCount;

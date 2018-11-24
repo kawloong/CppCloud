@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------
-FileName     : sample_invk.cpp
+FileName     : sample_tcp_invk.cpp
 Description  : sdk使用样例 -- 服务消费者
-remark       : 编译命令 g++ -Wall -g -std=c++11 sample_invk.cpp  -o sample_invk libsdk_cppcloud.so  ../common/libhocomm.so
+remark       : 编译命令 g++ -Wall -g -std=c++11 sample_tcp_invk.cpp  -o sample_tcp_invk libsdk_cppcloud.so  ../common/libhocomm.so
 Modification :
 --------------------------------------------------------------------------
    1、Date  2018-11-20       create     hejl 
@@ -23,7 +23,7 @@ int main( int argc, char* argv[] )
 {
     if (argc < 2)
     {
-        printf("usage: sample_invk <serv_ip:serv_port>\n");
+        printf("usage: sample_tcp_invk <serv_ip:serv_port>\n");
         return -1;
     }
 

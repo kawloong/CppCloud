@@ -37,6 +37,10 @@ SvrStat::SvrStat( void )
     m_inqueue = false;
     m_delayTimeSec = 15;
 }
+SvrStat::~SvrStat( void )
+{
+    
+}
 
 SvrStat::CountEntry* SvrStat::_getEntry( const string& regname, int svrid, int prvdid )
 {

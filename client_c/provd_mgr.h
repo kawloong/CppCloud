@@ -46,6 +46,7 @@ public:
 private:
     ProviderItem* _getProvider( const string& regname, int prvdid );
     int reconnectNotifyCB( void* param );
+    int registRequest( ProviderItem* pvd ) const;
 
 private:
     int m_svrid;

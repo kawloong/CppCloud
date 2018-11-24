@@ -1,7 +1,7 @@
 CloudCpp:=switchhand.cpp exception.cpp svrprop.cpp 
 SrcCpp:=climanage.cpp listen.cpp iohand.cpp cloudapp.cpp tcp_invoker.cpp tcp_invoker_mgr.cpp 
 SrcCpp+=synchand.cpp config_json.cpp config_mgr.cpp provd_mgr.cpp svrconsumer.cpp client_c.cpp
-SrcCpp+=svr_item.cpp shttp_invoker_mgr.cpp asyncprvdmsg.cpp
+SrcCpp+=svr_item.cpp shttp_invoker_mgr.cpp asyncprvdmsg.cpp svr_stat.cpp
 
 LINKNAME:=libsdk_cppcloud.so
 TSONAME=$(LINKNAME).1
@@ -55,3 +55,12 @@ clean:
 depend: $(SRC)
 	$(CXX) -MM -std=c++11 $< $(INCLUDEDIR) $^ > .depend
 
+## sample make
+sample_prvd: sample_prvd.cpp
+	g++ -Wall -g -std=c++11 $^  -o $@ libsdk_cppcloud.so  ../common/libhocomm.so
+sample_tcp_invk: sample_tcp_invk.cpp
+	g++ -Wall -g -std=c++11 $^  -o $@ libsdk_cppcloud.so  ../common/libhocomm.so
+sample_http_invk: sample_http_invk.cpp
+	g++ -Wall -g -std=c++11 $^  -o $@ libsdk_cppcloud.so  ../common/libhocomm.so
+agent_prvd: agent_prvd.cpp
+	g++ -Wall -g -std=c++11 $^  -o $@ libsdk_cppcloud.so  ../common/libhocomm.so

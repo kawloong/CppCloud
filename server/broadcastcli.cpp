@@ -558,7 +558,7 @@ int BroadCastCli::UpdateCliProps( const Value* pdatas, int from )
 }
 
 // 客户（外部）属性改变的处理
-// remark: svrreg="prvd_REGNAME-10+prvd_REGNAME2-11"
+// remark: svrreg="prvd_REGNAME%10+prvd_REGNAME2%11"
 //         provname="prvd_REGNAME”
 //         regName="REGNAME"; prvdid=10;
 void BroadCastCli::AfterUpdatePropsHandle( CliBase* cli )
@@ -573,7 +573,7 @@ void BroadCastCli::AfterUpdatePropsHandle( CliBase* cli )
         for (; it != vprovName.end(); ++it)
         {
             vector<string> vspli;
-            StrParse::SpliteStr(vspli, *it, '-');
+            StrParse::SpliteStr(vspli, *it, '%');
             if (vspli.empty()) continue;
             string& provname = vspli[0];
             if (provname.find(SVRPROP_PREFIX) != 0)

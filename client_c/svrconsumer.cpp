@@ -139,6 +139,9 @@ int SvrConsumer::init( const string& svrList )
         IFBREAK(ret);
     }
 
+    ERRLOG_IF1RET_N(m_allPrvds.size() < vSvrName.size(), -117, 
+            "CONSUMERINIT| msg=less of provider| num=%zu/%zu| svrList=%s", 
+            m_allPrvds.size(), vSvrName.size(), svrList.c_str());
     if (0 == ret)
     {
         // srand(time(NULL))
@@ -204,7 +207,7 @@ int SvrConsumer::parseResponse( const void* ptr )
 
         if (i <= 3)
         {
-            StrParse::AppendFormat(prvdLog, "%d@%s,", svitm.svrid, svitm.url.c_str());
+            StrParse::AppendFormat(prvdLog, "%d%%%d@%s,", svitm.svrid, svitm.prvdid, svitm.url.c_str());
         }
     }
 

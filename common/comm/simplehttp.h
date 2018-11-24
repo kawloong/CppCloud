@@ -91,6 +91,7 @@ protected:
     int         m_port;
     std::string m_object;
     bool        m_parsed;
+    bool        m_jsonMime;
     int         m_timeout_ms; //毫秒
     int         m_sockfd;
     unsigned int m_connect_count;

@@ -52,7 +52,7 @@ public:
 	int syncRequest( string& resp, unsigned cmdid, const string& reqmsg, int tosec ); // 同步等待请求+响应全过程完成
 	int postRequest( unsigned cmdid, const string& reqmsg ); // 发送消息后不等待响应就返回
 	int postRequest( unsigned cmdid, const string& reqmsg, bool noEpFlag ); // 发送消息后不等待响应就返回
-	int begnRequest( string& resp, unsigned cmdid, const string& reqmsg, bool noRcv=false ); // 示加入IO复用时用此方法代替syncRequest()
+	int begnRequest( string& resp, unsigned cmdid, const string& reqmsg, bool noRcv=false ); // 当加入IO复用时用此方法代替syncRequest()
 
 	virtual int qrun( int flag, long p2 );
 	virtual int onClose( int p1, long p2 );

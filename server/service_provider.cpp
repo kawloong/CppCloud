@@ -16,7 +16,7 @@ int ServiceItem::parse0( const string& regname, CliBase* cli, int prvdid )
 		"SERVITEMPARSE| msg=parse fail| cli=%s", cli->m_idProfile.c_str());
 
 	this->regname = regname;
-	this->regname2 = _F("%s%s-%d", SVRPROP_PREFIX, regname.c_str(), prvdid);
+	this->regname2 = _F("%s%s%%%d", SVRPROP_PREFIX, regname.c_str(), prvdid);
 	this->prvdid = prvdid;
 	idc = cli->getIntProperty("idc");
 	rack = cli->getIntProperty("rack");
@@ -36,8 +36,8 @@ int ServiceItem::parse( CliBase* cli )
 
 	// 变化部分
 	desc = cli->getProperty(regname2 + ":desc");
-	okcount = cli->getIntProperty(regname2 + ":okcount");
-	ngcount = cli->getIntProperty(regname2 + ":ngcount");
+	//okcount = cli->getIntProperty(regname2 + ":okcount");
+	//ngcount = cli->getIntProperty(regname2 + ":ngcount");
 	weight = cli->getIntProperty(regname2 + ":weight");
 	enable = cli->getIntProperty(regname2 + ":enable");
 
@@ -128,7 +128,7 @@ int ServiceProvider::setItem( CliBase* cli, int prvdid )
 
 	if (NULL == pitem)
 	{
-		string regname2 = _F("%s%s-%d", SVRPROP_PREFIX, m_regName.c_str(), prvdid);
+		string regname2 = _F("%s%s%%%d", SVRPROP_PREFIX, m_regName.c_str(), prvdid);
 
 		pitem = new ServiceItem;
 		int ret = pitem->parse0(m_regName, cli, prvdid);

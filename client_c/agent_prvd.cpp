@@ -21,38 +21,83 @@ static void sigdeal( int signo )
     client_c::NotifyExit(NULL);
 }
 
+struct SvrOj
+{
+    string regname;
+    int prvdid;
+    int tag;
+
+    SvrOj(): prvdid(0), tag(0) {}
+};
+
 static void conf_change_callback( const string& confname )
 {
-
+    static map<string, SvrOj> sWorkingPrvd;
+    static int sTag = 0;
     map<string, string> oval;
     int idx = 0;
     int ret = 0;
     
-    for (;;)
+    for (++sTag; 0 == ret; idx++)
     {
-        ret = client_c::Query(oval, testConfKey, true);
+        ret = client_c::Query(oval, confFile + "/" + std::to_string(idx), true);
         if (ret || oval.empty()) break;
 
         string regname = oval["regname"];
         string url = oval["url"];
         string desc = oval["desc"];
+        int prvdid = atoi(oval["prvdid"].c_str());
         int protocol = atoi(oval["protocol"].c_str());
+        //string version = oval["version"]
         int weight = atoi(oval["weight"].c_str());
         bool enable = (oval["enable"] == "true" || oval["enable"] == "1");
 
-        if (!regname.empty() && !url.empty())
+        if (!regname.empty() && !url.empty() && prvdid > 0)
         {
-            client_c::RegProvider(regname, protocol, url);
-            client_c::setDesc(regname, desc);
-            client_c::setWeight(regname, weight);
-            client_c::setEnable(regname, enable);
-            client_c::PostOut(regname);
+            string key = regname + "@" + std::to_string(prvdid);
+            auto itFind = sWorkingPrvd.find(key);
+            if (sWorkingPrvd.end() == itFind)
+            {
+                client_c::RegProvider(regname, prvdid, protocol, url);
+                sWorkingPrvd[key].regname = regname;
+                sWorkingPrvd[key].prvdid = prvdid;
+            }
+
+            client_c::setDesc(regname, prvdid, desc);
+            client_c::setWeight(regname, prvdid, weight);
+            client_c::setEnable(regname, prvdid, enable);
+            //if (!version.empty()) client_c::setVersion
+            if (0 == client_c::PostOut(regname, prvdid))
+            {
+                sWorkingPrvd[key].tag = sTag;
+            }
+            else
+            {
+                printf("client_c::PostOut(%s, %d) fail\n", regname.c_str(), prvdid);
+            }
+        }
+        else
+        {
+            printf("invalid prvd config: %s:%s:%d\n", regname.c_str(), url.c_str(), prvdid);
         }
 
         oval.clear();
     }
     
-    printf("Queue: size=%d, ret=%d\n", (int)oval.size(), ret);
+    // 清除已删除的旧状态
+    for (auto itMap = sWorkingPrvd.begin(); sWorkingPrvd.end() != itMap;)
+    {
+        SvrOj& svoj = itMap->second;
+        if (svoj.tag < sTag)
+        {
+            client_c::setEnable(svoj.regname, svoj.prvdid, false);
+            itMap = sWorkingPrvd.erase(itMap);
+        }
+        else
+        {
+            ++itMap;
+        }
+    }
 }
 
 int main( int argc, char* argv[] )
@@ -81,7 +126,6 @@ int main( int argc, char* argv[] )
     }
     
     conf_change_callback("");
-
     client_c::SetConfChangeCallBack(conf_change_callback);
     signal(SIGINT, sigdeal);
     signal(SIGTERM, sigdeal);

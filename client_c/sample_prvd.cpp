@@ -55,7 +55,7 @@ int main( int argc, char* argv[] )
         return -4;
     }
 
-    client_c::postEnable(appName, 1, true);
+    client_c::PostEnable(appName, 1, true);
 
     ret = client_c::Run(false);
     printf("Run return %d\n", ret);
@@ -76,8 +76,7 @@ int TcpProviderHandle( msg_prop_t* msgprop, const char* body )
     string echo = string("{\"code\": 0, \"desc\": \"debug provider handle\", \"echo_data\": ") + body + "}";
     client_c::ProvdSendMsgAsync(msgprop, echo);
     
-    client_c::addOkCount(appName, 1, 1);
-    client_c::PostOut(appName, 1);
+    client_c::AddProviderStat(appName, 1, true);
 
     return 0;
 }

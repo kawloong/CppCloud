@@ -112,7 +112,7 @@ int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
 	int prvdid = 0;
 	Rjson::GetInt(prvdid, SVRREG_PROP_KEY, "prvdid", &doc);
 
-	string regname2 = _F("%s%s-%d", SVRPROP_PREFIX, regname.c_str(), prvdid);
+	string regname2 = _F("%s%s%%%d", SVRPROP_PREFIX, regname.c_str(), prvdid);
 	int enableBeforValue = cli->getIntProperty(regname2 + ":enable");
 	ret = This->setProviderProperty(cli, &doc, regname2);
 	int enableAfterValue = cli->getIntProperty(regname2 + ":enable");
@@ -271,7 +271,7 @@ int ProviderMgr::OnCMD_SVRSTAT_REQ( void* ptr, unsigned cmdid, void* param )
 
 		if (ivk_ok || ivk_ng)
 		{
-			string regname2 = _F("%s%s-%d", SVRPROP_PREFIX, regname.c_str(), prvdid);
+			string regname2 = _F("%s%s%%%d", SVRPROP_PREFIX, regname.c_str(), prvdid);
 			if (ivk_ok) iohand->setProperty(regname2 + ":ivk_ok", ivk_ok);
 			if (ivk_ng) iohand->setProperty(regname2 + ":ivk_ng", ivk_ng);
 		}
