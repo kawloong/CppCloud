@@ -24,24 +24,34 @@
   </head>
 
   <body>
-
+  <div id="app">
     <!-- Static navbar -->
-    <nav class="navbar navbar-default navbar-static-top">
+    <nav  class="navbar navbar-inverse navbar-static-top">
       <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-          </button>
-          <a class="navbar-brand" href="#">CppCloud</a>
+          <div class="navbar-header">
+              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+          <a class="navbar-brand">CppCloud</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
-            <li class="active"><a href="#">服务</a></li>
-            <li><a href="#about">配置</a></li>
-            <li><a href="#contact">日志</a></li>
+            <li @click="nat_click(0)" :class="active_classset(0)">
+              <router-link to="/main">服务</router-link>
+            </li>
+            <li @click="nat_click(1)" :class="active_classset(1)">
+                <router-link to="/conf">配置</router-link>
+            </li>
+            <li><router-link to="/log">日志</router-link></li>
             
           </ul>
           <ul class="nav navbar-nav navbar-right">
-            <li><a href="#">关于</a></li>
+            <li>
+              <router-link to="/about">关于</router-link>
+            </li>
             <li><a href="#">帮助</a></li>
           </ul>
         </div><!--/.nav-collapse -->
@@ -49,19 +59,40 @@
     </nav>
 
 
-    <div class="container" id="app">
+    <div class="container">
         <p>
-        <router-link to="/foo">Go to Foo</router-link>
-        <router-link to="/bar">Go to Bar</router-link>
+        {{hello}}
         </p>
         <!-- 路由匹配到的组件将渲染在这里 -->
         <router-view></router-view>
 
     </div> <!-- /container -->
 
-
-
+  </div>
   </body>
+  <!-- 主标签-服务 -->
+  <script type="text/x-template" id="id_main">
+    <p>main here;</p>
+  </script>
+
+  <!-- 配置标签页 -->
+  <script type="text/x-template" id="id_conf">
+    <p>conf here;</p>
+  </script>
+
+  <!-- 日志页 -->
+  <script type="text/x-template" id="id_log">
+    <p>log here;</p>
+  </script>
+
+  <!-- 关于页 -->
+  <script type="text/x-template" id="id_about">
+    <div> 这是 <span class="bigfont">CppCloud v1.0.0</span>版本 感谢使用； <br/>
+      作者： 贺先生<br/>
+      Email: hjl_mvp@126.com<br/>
+      日期：2018-12
+    </div>
+  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.min.js"></script>
   <script src="https://unpkg.com/vue-router@3.0.2/dist/vue-router.js"></script>
