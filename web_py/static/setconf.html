@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <title>分布式配置设置</title>
+	<script src="jquery-3.3.1.js" type="text/javascript"> </script>
+	<script>
+        $(function(){
+            // 初始列出所有已存在的configname
+            $.ajax('/confname').done(function(data){
+                $('#cfgname').text(JSON.stringify(data));
+            }).fail(function(msg){
+                $('#cfgname').text('confname fail', msg);
+            })
+        })
+
+        function getconf() {
+            var filename = $('#fntxt').val()
+
+            $('#jtxt').val('');
+            $.ajax('/getconf', {
+                data: {file_pattern: filename}
+            }).done(function(data){
+                $('#jtxt').val(JSON.stringify(data.contents));
+            })
+            return false;
+        }
+        
+		function setconf() {
+			var jtxt = $('#jtxt').val();
+			var filename = $('#fntxt').val();
+            jtxt = jtxt.trim(' \r\n');
+            var objjtxt = jtxt.length>0? JSON.parse(jtxt): null;
+
+            $('#iresult').text('');
+            $.ajax('/setconf', {
+                method: 'POST',
+                contentType: 'application/json',
+                dataType: 'text',
+                data: JSON.stringify({
+                    filename: filename,
+                    contents: objjtxt
+                })
+            }).done(function(data){
+                $('#iresult').text(data);
+            }).fail(function(msg){
+                alert('req fail', msg);
+            })
+
+            return false;
+		}
+
+        function bookchange() {
+            var filename = $('#fntxt').val();
+            var incbase = $('#chkbtn').prop('checked')? 1: 0;
+            $('#iresult').text('');
+            $.ajax('/bookchange', {
+                data: {file_pattern: filename, incbase: incbase}
+            }).done(function(data){
+                $('#iresult').text(JSON.stringify(data));
+            })
+            return false;
+        }
+
+	</script>
+</head>
+<body>
+<p id="cfgname"></p>
+<hr>
+<form>
+filename:
+<input type="text" id="fntxt" value="app1.json">
+<input type="checkbox" id="chkbtn"> incbase
+
+<br>
+<textarea id="jtxt" cols="30" rows="5" >
+{
+
+}
+</textarea>
+<br>
+<button id="setbtn" onclick="return setconf()"> set </button>
+<button id="getbtn" onclick="return getconf()"> get </button>
+<button id="bookbtn" onclick="return bookchange()"> 订阅变化 </button>
+
+
+<label id="iresult"></label>
+</form>
+
+</body>
+</html>

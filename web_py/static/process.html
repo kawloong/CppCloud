@@ -1,0 +1,81 @@
+<html>
+<head>
+    <title>进程活动信息 </title>
+    <script src="jquery-3.3.1.js" type="text/javascript"> </script>
+
+    <script>
+        function makeItem( proi, key ){
+            if (key in proi) {
+                return "<b>" + key + "</b> :  " + proi[key] + '<br>';
+            }
+            return '';
+        }
+        function makeDateItem( proi, key ){
+            if (key in proi) {
+                var timstmp = parseInt(proi[key]);
+                var dt = new Date(timstmp*1000)
+                return "<b>" + key + "</b> :  " + dt.toLocaleString() + '<br>';
+            }
+            return '';
+        }
+        function makeDataItemAll( proi ) {
+            var msg = '';
+            for (var kk in proi) {
+                if (kk == "svrid"){
+                    msg += "<a href='/runlog/" + proi[kk] + "'>" + "获取runlog@" + proi[kk] + "</a>";
+                    msg += "<br/>"
+                    continue;
+                }
+                msg += "<b>" + kk + "</b> :  " + proi[kk] + '<br>';
+            }
+            return msg;
+        }
+
+        $(function() {
+            var jbody = $("body");
+            var jitem = $("#pnode")
+            var url = "/clidata/0";
+            $.getJSON(url).done(function(jdata){
+                console.log(jdata)
+                if (jdata.code != 0) {
+                    jitem.hide();
+                    jbody.append(jdata.desc);
+                    return;
+                }
+
+                for (var ii in jdata.data){
+                    var proi = jdata.data[ii];
+                    var newitm = jitem.clone();
+                    newitm.html( 
+                        makeDataItemAll(proi) )
+                    
+                    jbody.append(newitm);
+                }
+
+                jitem.hide();
+            })
+        })
+    </script>
+
+    <style type="text/css">
+    .procitem {
+        float: left;
+        width: 300px;
+        height: 400px;
+        border-color: green;
+        border-width: 2px;
+        border-style:solid;
+        display: inline-block;
+        margin: 5px;
+        /*background-color: gray;*/
+    }
+    </style>
+</head>
+
+<body>
+    <div class="procitem" style="border-color:blue; line-height:42px; text-align:center">
+    </div>
+    <div id="pnode" class="procitem">
+    </div>
+</body>
+</html>

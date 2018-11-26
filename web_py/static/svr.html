@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <title>分布式服务治理测试</title>
+	<script src="jquery-3.3.1.js" type="text/javascript"> </script>
+	<script>
+        $(function(){
+            // 初始列出所有已存在的configname
+            $.ajax('/svrall').done(function(data){
+                $('#svrall').text(JSON.stringify(data));
+            }).fail(function(msg){
+                $('#svrall').text('get svrall fail', msg);
+            })
+        })
+
+        function regsvr() {
+            var jtxt = $('#jtxt').val();
+            jtxt = jtxt.trim(' \r\n');
+            var objjtxt = jtxt.length>0? JSON.parse(jtxt): null;
+
+            $('#iresult').text('');
+            $.ajax('/regsvr', {
+                method: 'POST',
+                contentType: 'application/json',
+                dataType: 'text',
+                data: JSON.stringify(objjtxt)
+            }).done(function(data){
+                $('#iresult').text(data);
+            }).fail(function(msg){
+                alert('req fail', msg);
+            })
+
+            return false;
+        }
+
+        function svrshow(){
+            var svrname = $('#svrname').val();
+            $('#qresult').val('');
+            $.ajax('/svrall', {
+                method: "GET",
+                data: {regname: svrname}
+            }).done(function(data){
+                $('#qresult').val(JSON.stringify(data));
+            }).fail(function(msg){
+                alert('req fail', msg);
+            })
+            return false;
+        }
+
+        function qsvr(){
+            var svrname = $('#svrname').val();
+            var bookchange = $('#chkbtn').prop('checked')? 1: 0;
+            $('#qresult').val('');
+            $.ajax('/qsvr', {
+                method: "GET",
+                data: {regname: svrname, bookchange: bookchange}
+            }).done(function(data){
+                $('#qresult').val(JSON.stringify(data));
+            }).fail(function(msg){
+                alert('req fail', msg);
+            })
+            return false;
+        }
+
+	</script>
+</head>
+<body>
+<p id="svrall"></p>
+<hr>
+<form>
+服务名:
+<input type="text" id="svrname" value="all">
+<input type="checkbox" id="chkbtn"> bookchange
+<button onclick="return qsvr()">服务发现</button>
+<button onclick="return svrshow()">服务信息</button>
+<br>
+<textarea style="float: left" id="jtxt" cols="60" rows="20" >
+{
+    "regname": "app1", 
+    "svrprop": {
+
+        "url": "http://192.168.1.2:8080",
+        "desc": "only for test",
+        "okcount": 0,
+        "protocol": 3,
+        "version": 1,
+        "weight": 100,
+        "enable": true
+    }
+}
+</textarea>
+&nbsp;&nbsp;
+<textarea id="qresult" cols="60" rows="20"></textarea>
+<br>
+<div style="clear:both"></div>
+<button id="regbtn" onclick="return regsvr()"> 注册服务 </button>
+
+
+<label id="iresult"></label>
+</form>
+
+</body>
+</html>
