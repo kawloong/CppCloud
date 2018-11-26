@@ -54,6 +54,7 @@ int ConfigMgr::initLoad( const string& confName )
     m_mainConfName = CloudApp::Instance()->getMConf();
     vector<string>::const_iterator cit = vFname.begin();
     RWLOCK_WRITE(g_rwLock0);
+    bool cbOk = false;
     for (; cit != vFname.end(); ++cit)
     {
         // 同步地下载完所有配置 （CMD_GETCONFIG_REQ）
@@ -71,8 +72,15 @@ int ConfigMgr::initLoad( const string& confName )
         RJSON_GETINT_D(code, &doc);
         ERRLOG_IF1BRK(code || !doc.HasMember("contents"), -52, 
             "CONFINIT| msg=maybe no file exist| name=%s| resp=%s", fname.c_str(), Rjson::ToString(&doc).c_str());
-        CloudApp::Instance()->setNotifyCB("cfg_change", OnCMD_EVNOTIFY_REQ);
-        CloudApp::Instance()->addCmdHandle(CMD_GETCONFIG_RSP, OnCMD_GETCONFIG_RSP);
+        
+        if (!cbOk)
+        {
+            CloudApp::Instance()->setNotifyCB("cfg_change", OnCMD_EVNOTIFY_REQ); // 配置变化通知
+            CloudApp::Instance()->setNotifyCB(RECONNOK_NOTIFYKEY, OnReconnectNotifyCB); // 断开恢复通知
+            CloudApp::Instance()->addCmdHandle(CMD_GETCONFIG_RSP, OnCMD_GETCONFIG_RSP); // 配置下发响应
+            cbOk = true;
+        }
+
 
         ConfJson* cjn = m_jcfgs[fname];
         if (NULL == cjn)
@@ -138,12 +146,13 @@ int ConfigMgr::OnCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param )
 }
 int ConfigMgr::onCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param )
 {
-    MSGHANDLE_PARSEHEAD(false);
+    MSGHANDLE_PARSEHEAD(true);
     int ret = 0;
     string fname;
 
     do
     {
+        IFRETURN_N(body && string("1") == body, 0);
         RJSON_GETINT_D(code, &doc);
         RJSON_VGETSTR(fname, HOCFG_FILENAME_KEY, &doc);
 
@@ -176,6 +185,35 @@ int ConfigMgr::onCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param )
     if (0 == ret && m_changeCB)
     {
         m_changeCB(fname);
+    }
+
+    return 0;
+}
+
+int ConfigMgr::OnReconnectNotifyCB( void* param )
+{
+    return ConfigMgr::Instance()->onReconnectNotifyCB(param);
+}
+
+int ConfigMgr::onReconnectNotifyCB( void* param )
+{
+    RWLOCK_READ(g_rwLock0);
+    map<string, ConfJson*>::iterator it = m_jcfgs.begin();
+    for (; m_jcfgs.end() != it; ++it)
+    {
+        const string& filename = it->first;
+        // 订阅变化推送
+        int ret0 = CloudApp::Instance()->postRequest( CMD_BOOKCFGCHANGE_REQ, 
+                        _F("{\"%s\": \"%s\", \"%s\": \"1\"}", HOCFG_FILENAME_KEY, filename.c_str(), HOCFG_INCLUDEBASE_KEY) );
+
+        
+        int ret1 = CloudApp::Instance()->postRequest(CMD_GETCONFIG_REQ, 
+                        _F("{\"%s\": \"%s\", \"%s\": 1, \"%s\": %d}", 
+                        HOCFG_FILENAME_KEY, it->first.c_str(), HOCFG_INCLUDEBASE_KEY, 
+                        HOCFG_GT_MTIME_KEY, it->second->getMtime()), false);
+        
+        LOGOPT_EI(ret0||ret1, "RESUMECONF| msg= %s resume req| mtime=%d| ret=%d&%d", 
+                    filename.c_str(), (int)it->second->getMtime(), ret0, ret1);
     }
 
     return 0;

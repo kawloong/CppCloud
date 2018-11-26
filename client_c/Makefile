@@ -48,12 +48,22 @@ $(ATARGET): $(OBJ) $(Alib)
 	$(AR) $@ $^ $(ALIBS)	
 
 sinclude .depend
-.PHONY: clean depend
+.PHONY: clean depend help
 clean:
 	@rm -rf $(TARGET) $(OBJ) $(COMMON_OBJ) $(LINKNAME) $(TSONAME)
 
 depend: $(SRC)
 	$(CXX) -MM -std=c++11 $< $(INCLUDEDIR) $^ > .depend
+
+help:
+	@echo "Command                     Target/Description"
+	@echo "make                     -> $(LINKNAME)"
+	@echo "make clean               -> clean all .o file"
+	@echo "make .depend             -> generate a .depend file by use g++ -MM"
+	@echo "make sample_prvd         -> demo for provider"
+	@echo "make sample_tcp_invk     -> demo for tcp invoker(consumer)"
+	@echo "make sample_http_invk    -> demo for http invoker(consumer)"
+	@echo "make agent_prvd          -> a simple tool of static agent provider"
 
 ## sample make
 sample_prvd: sample_prvd.cpp

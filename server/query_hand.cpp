@@ -137,7 +137,7 @@ int QueryHand::on_CMD_GETWARN_REQ( IOHand* iohand, const Value* doc, unsigned se
  * @file_pattern: 文件名
  * @key_pattern: 查询键 （可选）
  * @incbase: 包含继承文件 （可选）
- * @gt_mtime:  （可选）当大于此时间的情况下才响应配置信息，否则返回"ok"
+ * @gt_mtime:  （可选）当大于此时间的情况下才响应配置信息，否则返回1
  **/ 
 int QueryHand::on_CMD_GETCONFIG_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
 {
@@ -162,7 +162,7 @@ int QueryHand::on_CMD_GETCONFIG_REQ( IOHand* iohand, const Value* doc, unsigned 
 	}
 	else
 	{
-		result = (0 == curMtime)? "null" : "ok";
+		result = (0 == curMtime)? "null" : "1";
 	}
 
 	ret = iohand->sendData(CMD_GETCONFIG_RSP, seqid, result.c_str(), result.length(), true);

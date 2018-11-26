@@ -25,6 +25,8 @@ public:
 	int onCMD_EVNOTIFY_REQ( void* ptr );
 	static int OnCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param );
 	int onCMD_GETCONFIG_RSP( void* ptr, unsigned cmdid, void* param );
+    static int OnReconnectNotifyCB( void* param );
+    int onReconnectNotifyCB( void* param );
 
     ConfigMgr( void );
     ~ConfigMgr( void );

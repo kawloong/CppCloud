@@ -66,6 +66,7 @@ int CloudApp::init( int epfd, const string& svrhost_port, const string& appname 
 		addCmdHandle(CMD_KEEPALIVE_REQ, OnCMD_KEEPALIVE_REQ);
 		addCmdHandle(CMD_EVNOTIFY_REQ, OnCMD_EVNOTIFY_REQ);
 		addCmdHandle(CMD_SVRREGISTER_RSP, OnShowMsg);
+		addCmdHandle(CMD_BOOKCFGCHANGE_RSP, OnShowMsg);
 	}
 
 	return ret;
@@ -129,8 +130,9 @@ void CloudApp::setSvrid( int svrid )
 
 void CloudApp::setNotifyCB( const string& notify, NotifyCBFunc func )
 {
-	ERRLOG_IF1RET(m_ntfCB.end() != m_ntfCB.find(notify), "SETNTFCB| msg=exist notify %s CB", notify.c_str());
-	m_ntfCB[notify] = func;
+	string key = notify + _F("%p", func);
+	ERRLOG_IF1RET(m_ntfCB.end() != m_ntfCB.find(key), "SETNTFCB| msg=exist notify %s CB", key.c_str());
+	m_ntfCB[key] = func;
 }
 
 void CloudApp::reset( void )
@@ -270,11 +272,7 @@ int CloudApp::onCMD_WHOAMI_RSP( string& whoamiResp )
 		}
 		RJSON_VGETSTR(m_mconf, "mconf", &doc);
 
-		map<string, NotifyCBFunc>::iterator itr = m_ntfCB.find(RECONNOK_NOTIFYKEY);
-		if (m_ntfCB.end() != itr)
-		{
-			(itr->second)(NULL);
-		}
+		invokeNotifyCB(RECONNOK_NOTIFYKEY, NULL);
 	}
 
 	LOGOPT_EI(0 == m_appid, "WHOAMI_RSP| resp=%s", Rjson::ToString(&doc).c_str());
@@ -315,17 +313,31 @@ int CloudApp::onCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param )
 	MSGHANDLE_PARSEHEAD(false);
 	RJSON_GETSTR_D(notify, &doc);
 
-	map<string, NotifyCBFunc>::iterator itr = m_ntfCB.find(notify);
-	if (m_ntfCB.end() != itr)
-	{
-		(itr->second)(&doc);
-	}
-	else
+	if (0 == invokeNotifyCB(notify, &doc))
 	{
 		LOGWARN("EVNOTIFY| msg=no callback| notify=%s", notify.c_str());
 	}
 
 	return 0;
+}
+
+// 解发回调（可能会有多个cb）
+// return the number of invoke function
+int CloudApp::invokeNotifyCB( const string& notifyName, void* param ) const
+{
+	int ret = 0;
+
+	auto it0 = m_ntfCB.lower_bound(notifyName);
+	auto it1 = m_ntfCB.upper_bound(notifyName + "~");
+	
+	while (m_ntfCB.end() != it0 && it0 != it1)
+	{
+		it0->second(param);
+		++it0;
+		++ret;
+	}
+
+	return ret;
 }
 
 bool CloudApp::isInitOk( void ) const

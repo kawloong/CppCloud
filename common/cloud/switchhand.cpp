@@ -19,7 +19,8 @@ SwitchHand::~SwitchHand(void)
 {
     IFCLOSEFD(m_pipe[0]);
     IFCLOSEFD(m_pipe[1]);
-    IFDELETE(s_thread);
+    //IFDELETE(s_thread);
+    join();
 }
 
 void SwitchHand::init( int epFd )

@@ -196,6 +196,7 @@ int ServiceProvider::getAllJson( string& strjson ) const
 		{
 			if (i > 0) strjson.append(",");
 			itMap.second->getJsonStr(strjson);
+			++i;
 		}
 	}
 

@@ -10,7 +10,7 @@ Modification :
 
 /* *******************************************************
  * 使用示例
-map<string, int> custommap;
+map<std::string, int> custommap;
 
 custommap["hejl501"] =  1;
 custommap["he021"] = 2;
@@ -19,8 +19,8 @@ custommap["hojl101"] = 4;
 custommap["hop107"] = 5;
 custommap["hojl9101"] = 6;
 
-MapRanger<std::string, CliBase> cus("ho", "ho~"); // 查询以"ho"开头的key对应的对象
-while(cus.pop(cm.custommap))
+MapRanger<std::string, int> cus(custommap, "ho", "ho~"); // 查询以"ho"开头的key对应的对象
+while(cus.pop())
 {
     printf("key=%s, val=%d\n", cus.retKey.c_str(), cus.retVal);
 }

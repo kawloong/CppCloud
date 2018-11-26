@@ -59,6 +59,7 @@ public:
 
 protected:
 	virtual int notifyParent(int evtype, ...);
+	int invokeNotifyCB( const string& notifyName, void* param ) const;
 
 private:
 	void reset( void );
