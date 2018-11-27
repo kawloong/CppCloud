@@ -99,9 +99,9 @@ def onRunLogReq(cmdid, seqid, msg):
 
 if __name__ == '__main__':
     gweb_cli = ScommCli2( 
-        ('192.168.228.44', 4802),
+        ('192.168.1.68', 4800),
         clitype = 20,
-        svrid = 992,
+        svrid = 990,
         tag="tag1",
         progName = "Web-Ctrl",
         progDesc = "Web-Serv(monitor)"
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     if gweb_cli.run():
         # app.debug = True
         host = config.get('http_host', '0.0.0.0')
-        port = config.get('http_port', 82)
+        port = config.get('http_port', 80)
 
         app.response_class.default_mimetype = 'application/json; charset=utf-8'
         app.run(host=host,port=port) # , threaded=True
