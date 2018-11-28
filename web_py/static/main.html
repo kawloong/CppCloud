@@ -22,51 +22,53 @@
 
   <body>
   <div id="app">
+    <div id="home" v-show="0 === svrid_page">
     <div>
         栏目选择:
-        <input type="checkbox" value="svrid" v-model="colm_checked" /> 客户ID
-        <input type="checkbox" value="svrname" v-model="colm_checked" />应用名
-        <input type="checkbox" value="clitype" v-model="colm_checked" />应用类型
-        <input type="checkbox" value="clisock" v-model="colm_checked" />IP
-        <input type="checkbox" value="_mainconf" v-model="colm_checked" />主配置
-        <input type="checkbox" value="shell" v-model="colm_checked" />启动命令
-        <input type="checkbox" value="pid" v-model="colm_checked" />进程ID
-        <input type="checkbox" value="rack" v-model="colm_checked" />机房机架
-        <input type="checkbox" value="begin_time" v-model="colm_checked" />启动时间
-        <input type="checkbox" value="atime" v-model="colm_checked" />活跃时间
+        <template v-for="item in colm_base">
+        <input type="checkbox" :value="item" v-model="colm_checked" /> {{item | attrName2Human}}
+        </template>
     </div>
 
     <table class="table table-striped" border="1">
-      <tr>
-        <th v-if="colm_checked.indexOf('svrid') >= 0"><a @click="onSort('svrid',1)">客户ID</a></th>
-        <th v-if="colm_checked.indexOf('svrname') >= 0"><a @click="onSort('svrname',0)">应用名</a></th>
-        <th v-if="colm_checked.indexOf('clitype') >= 0"><a @click="onSort('clitype',1)">应用类型</a></th>
-        <th v-if="colm_checked.indexOf('clisock') >= 0"><a @click="onSort('clisock',0)">IP</a></th>
-        <th v-if="colm_checked.indexOf('_mainconf') >= 0"><a @click="onSort('_mainconf',0)">主配置</a></th>
-        <th v-if="colm_checked.indexOf('shell') >= 0"><a @click="onSort('shell',0)">启动命令</a></th>
-        <th v-if="colm_checked.indexOf('pid') >= 0"><a @click="onSort('pid',0)">进程ID</a></th>
-        <th v-if="colm_checked.indexOf('rack') >= 0"><a @click="onSort('rack',0)">机房机架</a></th>
-        <th v-if="colm_checked.indexOf('begin_time') >= 0"><a @click="onSort('begin_time',1)">启动时间</a></th>
-        <th v-if="colm_checked.indexOf('atime') >= 0"><a @click="onSort('atime',1)">活跃时间</a></th>
+      <tr style="cursor:pointer;">
+        <template v-for="item in colm_base">
+        <th v-if="colm_checked.indexOf(item) >= 0" @click="onSort(item,1)"> {{item | attrName2Human}} <span :class="spanclass(item) "></span> </th>
+        </template>
         <th>详细</th>
-        <th></th>
       </tr>
-      <template v-for="cli in maindata">
+      <template v-for="(cli,idx) in maindata">
       <tr>
-        <td v-if="colm_checked.indexOf('svrid') >= 0">{{cli.svrid}}</td>
-        <td v-if="colm_checked.indexOf('svrname') >= 0">{{cli.svrname}}</td>
-        <td v-if="colm_checked.indexOf('clitype') >= 0">{{cli.clitype}}</td>
-        <td v-if="colm_checked.indexOf('clisock') >= 0">{{cli.clisock}}</td>
-        <td v-if="colm_checked.indexOf('_mainconf') >= 0">{{cli._mainconf}}</td>
-        <td v-if="colm_checked.indexOf('shell') >= 0">{{cli.shell}}</td>
-        <td v-if="colm_checked.indexOf('pid') >= 0">{{cli.pid}}</td>
-        <td v-if="colm_checked.indexOf('rack') >= 0">{{cli.rack}}</td>
-        <td v-if="colm_checked.indexOf('begin_time') >= 0">{{cli.begin_time}}</td>
-        <td v-if="colm_checked.indexOf('atime') >= 0">{{cli.atime}}</td>
-        <td><a href="#">详细</a></td>
+        <template v-for="item in colm_base">
+        <td v-if="colm_checked.indexOf(item) >= 0">{{cli[item]}}</td>
+        </template>
+        <td><a @click.prevent="gotoDetail(cli.svrid, idx)" :href="'#'+cli.svrid">详细</a></td>
       </tr>
       </template>
     </table>
+    </div>
+
+    <div v-if="svrid_page > 0">
+        <a href="#" @click.prevent="gotoDetail(0)" data-toggle="tooltip" title="返回客户列表"
+            class="glyphicon glyphicon-arrow-left"> 返回
+        </a>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">属性信息</h3>
+            </div>
+            <div class="panel-body">
+                <form class="form-inline">
+                    <div class="form-group" v-for="(value, key) in maindata[svrid_idx]">
+                        <span data-toggle="tooltip" :title="'原始属性: '+key+'='+value"> 
+                        <label>{{key | attrName2Human}}:</label>
+                        <input type="text" class="form-control" :value="value" readonly>
+                        &nbsp; &nbsp; </span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     {{maindata}}
 
   </div>

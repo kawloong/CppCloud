@@ -3,3 +3,17 @@
     color: blue;
     font-weight: bold
 }
+
+th span {
+    float: right;
+    text-align:right;
+    color: darkkhaki
+}
+
+.glyphicon-arrow-up {
+    color: aqua
+}
+
+.glyphicon-arrow-down {
+    color: coral
+}
