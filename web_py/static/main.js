@@ -10,7 +10,8 @@ const app = new Vue({
     sort_colm: "",
     sort_dir: 0, // 1 升序； -1 降序
     svrid_page: 0, // 大于0时 进详细页
-    svrid_idx : 0
+    svrid_idx : 0,
+    prvd_obj: []
   },
 
   methods: {
@@ -53,9 +54,29 @@ const app = new Vue({
     },
 
     gotoDetail : function(svrid, arridx) {
+        const prvdKeys = ['regname', 'prvdid', 'url', 'protocol', 'weight', 'version']
         console.log("goto Detail svrid=" + svrid);
         this.svrid_page = svrid;
         this.svrid_idx = arridx;
+        if (0 === svrid) return;
+
+        let svrObj = this.maindata[arridx];
+        this.prvd_obj = [];
+        if ('_provider_mark' in svrObj) { // 服务提供者
+            let prvdarr = svrObj['_provider_mark'].split('+');
+            for (let prvdi in prvdarr) { // ['prvd_tt1-1', 'prvd_ff2-2']
+                let prvdItemObj = {}; // { url: xx, regname: xx}
+                for (let idx in prvdKeys) {
+                    let prvd_keyi = prvdarr[prvdi] + ':' + prvdKeys[idx];
+                    console.log("Prvd: " + prvd_keyi);
+                    if ( prvd_keyi in svrObj ){
+                        prvdItemObj[prvdKeys[idx]] = svrObj[prvd_keyi];
+                    }
+                }
+                
+                this.prvd_obj.push(prvdItemObj);
+            }
+        }
     }
 
   },

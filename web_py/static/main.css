@@ -17,3 +17,11 @@ th span {
 .glyphicon-arrow-down {
     color: coral
 }
+
+.panel-title {
+    font-weight: bold
+}
+
+.panel-body {
+    background-color: azure
+}
