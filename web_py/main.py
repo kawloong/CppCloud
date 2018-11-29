@@ -83,6 +83,14 @@ def clidata(svrid):
     key = request.args.get('key', '')
     return gweb_cli.request(CMD_GETCLI_REQ, { "key": key, "svrid": svrid })
 
+@app.route('/command/<string:cmd>')
+def command(cmd):
+    param = request.args.get('param', '')
+    svrid = request.args.get('svrid')
+    return gweb_cli.request(CMD_WEBCTRL_REQ, { 
+        "to": (svrid),
+        "cmd": cmd,
+        "param": param })
 
 def onNotifyMsg(cmdid, seqid, msg):
     print(msg)
@@ -99,9 +107,9 @@ def onRunLogReq(cmdid, seqid, msg):
 
 if __name__ == '__main__':
     gweb_cli = ScommCli2( 
-        ('192.168.228.44', 4800),
+        ('192.168.1.68', 4800),
         clitype = 20,
-        svrid = 993,
+        svrid = 990,
         tag="tag1",
         progName = "Web-Ctrl",
         progDesc = "Web-Serv(monitor)"

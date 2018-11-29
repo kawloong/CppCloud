@@ -53,6 +53,7 @@
         <a href="#" @click.prevent="gotoDetail(0)" data-toggle="tooltip" title="返回客户列表"
             class="glyphicon glyphicon-arrow-left"> 返回
         </a>
+        &nbsp;&nbsp;
         <a href="#"  @click.prevent="refreshDetail(svrid_page)">刷新</a>
         </div>
         <div class="panel panel-primary">
@@ -62,7 +63,7 @@
             </div>
             <div class="panel-body">
                 <form class="form-inline">
-                    <div class="form-group" v-for="(value, key) in maindata[svrid_idx]">
+                    <div class="form-group" v-for="(value, key) in detail_obj">
                         <span v-if="key.indexOf('prvd_') === -1"
                             data-toggle="tooltip" :title="'原始属性: '+key+'='+value"> 
                         <label>{{key | attrName2Human}}:</label>
@@ -73,7 +74,7 @@
             </div>
         </div>
 
-        <div class="panel panel-primary" v-if="'_provider_mark' in maindata[svrid_idx]">
+        <div class="panel panel-primary" v-if="'_provider_mark' in detail_obj">
             <div class="panel-heading">
                 <h3 class="panel-title">服务提供</h3>
             </div>
@@ -110,7 +111,7 @@
             </div>
         </div>
 
-        <div class="panel panel-primary" v-if="'_provider_mark' in maindata[svrid_idx]">
+        <div class="panel panel-primary" v-if="'_provider_mark' in detail_obj">
             <div class="panel-heading">
                 <h3 class="panel-title">控制命令</h3>
             </div>

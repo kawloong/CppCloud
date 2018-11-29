@@ -11,6 +11,7 @@ const app = new Vue({
     sort_dir: 0, // 1 升序； -1 降序
     svrid_page: 0, // 大于0时 进详细页
     svrid_idx : 0,
+    detail_obj: {},
     prvd_obj: [],
     invk_obj: {}
   },
@@ -61,7 +62,8 @@ const app = new Vue({
         this.svrid_idx = arridx;
         if (0 === svrid) return;
 
-        let svrObj = this.maindata[arridx];
+        this.detail_obj = this.maindata[arridx];
+        let svrObj = this.detail_obj;
         this.prvd_obj = [];
         if ('_provider_mark' in svrObj) { // 服务提供者
             let prvdarr = svrObj['_provider_mark'].split('+');
@@ -109,8 +111,11 @@ const app = new Vue({
             if (0 != result) {
                 alert('获取失败：'+res.body.desc);
             } else {
-                console.log(svrid + "更新详细成功：" + res.body.data);
-                this.maindata[this.svrid_idx] = res.body.data;
+                console.log(svrid + "更新详细成功：" + res.body.data[0]);
+                this.detail_obj = res.body.data[0];
+                this.maindata[this.svrid_idx] = this.detail_obj;
+
+                this.gotoDetail(svrid, this.svrid_idx);
             }
         }, function(){
             alert('请求/clidata/' + svrid + '失败处理');
