@@ -43,6 +43,7 @@ enum command_id_t
     CMD_APPRUNLOG_REQ = 0x001A,
     CMD_TCP_SVR_REQ = 0x001B, // tcp微服务请求命令
     CMD_SVRSTAT_REQ = 0x001C, // 服务治理上报统计信息
+    CMD_WEBCTRL_REQ = 0x001D, // web后台发出的管理命令
 
     CMDID_MID = 0x1000,
 
@@ -74,6 +75,7 @@ enum command_id_t
     CMD_APPRUNLOG_RSP = 0x101A,
     CMD_TCP_SVR_RSP = 0x101B,
     CMD_SVRSTAT_RSP = 0x101C,
+    CMD_WEBCTRL_RSP = 0x101D,
 };
 
 static const unsigned char g_msg_ver = 1;

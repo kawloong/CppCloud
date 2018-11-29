@@ -35,6 +35,8 @@ int IOHand::Init( void )
 	s_cmdid2interceptor[CMD_SVRREGISTER2_REQ] = "BroadCastCli::TransToAllPeer";
 	s_cmdid2interceptor[CMD_APPRUNLOG_REQ] = "RouteExchage::TransMsg";
 	s_cmdid2interceptor[CMD_APPRUNLOG_RSP] = "RouteExchage::TransMsg";
+	s_cmdid2interceptor[CMD_WEBCTRL_REQ] = "RouteExchage::TransMsg";
+	s_cmdid2interceptor[CMD_WEBCTRL_RSP] = "RouteExchage::TransMsg";
 
 
 	// 消息->处理类

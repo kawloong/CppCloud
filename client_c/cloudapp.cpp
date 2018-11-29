@@ -67,6 +67,7 @@ int CloudApp::init( int epfd, const string& svrhost_port, const string& appname 
 		addCmdHandle(CMD_EVNOTIFY_REQ, OnCMD_EVNOTIFY_REQ);
 		addCmdHandle(CMD_SVRREGISTER_RSP, OnShowMsg);
 		addCmdHandle(CMD_BOOKCFGCHANGE_RSP, OnShowMsg);
+		addCmdHandle(CMD_WEBCTRL_REQ, OnCMD_WEBCTRL_REQ);
 	}
 
 	return ret;
@@ -225,7 +226,6 @@ int CloudApp::taskRun( int flag, long p2 )
 
 		string whoamistr = whoamiMsg();
 		m_epCtrl.setEvt(EPOLLOUT | EPOLLIN, this);
-		clearBuf();
 		ret = sendData(CMD_WHOAMI_REQ, ++m_seqid, whoamistr.c_str(), whoamistr.length(), true);
 	}
 	else
@@ -319,6 +319,33 @@ int CloudApp::onCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param )
 		LOGWARN("EVNOTIFY| msg=no callback| notify=%s", notify.c_str());
 	}
 
+	return 0;
+}
+
+int CloudApp::OnCMD_WEBCTRL_REQ( void* ptr, unsigned cmdid, void* param )
+{
+    return This->onCMD_WEBCTRL_REQ(ptr, cmdid, param);
+}
+int CloudApp::onCMD_WEBCTRL_REQ( void* ptr, unsigned cmdid, void* param )
+{
+	MSGHANDLE_PARSEHEAD(true);
+	LOGINFO("WEBCTRLCMD| seqid=%d| msgbody=%s", seqid, body);
+	RJSON_GETSTR_D(cmd, &doc);
+	RJSON_VGETINT_D(to, ROUTE_MSG_KEY_TO, &doc);
+	int code = 0;
+	string resp("{");
+	if (cmd == "check-alive")
+	{
+		StrParse::PutOneJson(resp, "result", time(NULL), true);
+	}
+	else
+	{
+		StrParse::PutOneJson(resp, "result", string("invalid cmd ")+cmd, true);
+	}
+
+	StrParse::PutOneJson(resp, "code", code, true);
+	StrParse::PutOneJson(resp, ROUTE_MSG_KEY_TO, to, false);
+	sendData(CMD_WEBCTRL_RSP, seqid, resp.c_str(), resp.length(), true);
 	return 0;
 }
 
