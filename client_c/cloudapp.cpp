@@ -331,7 +331,7 @@ int CloudApp::onCMD_WEBCTRL_REQ( void* ptr, unsigned cmdid, void* param )
 	MSGHANDLE_PARSEHEAD(true);
 	LOGINFO("WEBCTRLCMD| seqid=%d| msgbody=%s", seqid, body);
 	RJSON_GETSTR_D(cmd, &doc);
-	RJSON_VGETINT_D(to, ROUTE_MSG_KEY_TO, &doc);
+	RJSON_VGETINT_D(to, ROUTE_MSG_KEY_FROM, &doc);
 	int code = 0;
 	string resp("{");
 	if (cmd == "check-alive")
@@ -344,7 +344,9 @@ int CloudApp::onCMD_WEBCTRL_REQ( void* ptr, unsigned cmdid, void* param )
 	}
 
 	StrParse::PutOneJson(resp, "code", code, true);
+	StrParse::PutOneJson(resp, ROUTE_MSG_KEY_FROM, m_appid, true);
 	StrParse::PutOneJson(resp, ROUTE_MSG_KEY_TO, to, false);
+	resp += "}";
 	sendData(CMD_WEBCTRL_RSP, seqid, resp.c_str(), resp.length(), true);
 	return 0;
 }

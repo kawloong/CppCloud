@@ -44,7 +44,14 @@ int RouteExchage::AdjustRoutMsg( Document& doc, int fromSvr, int* toSvr, int* bt
             }
             else
             {
-                Rjson::GetInt(ntmp, ROUTE_MSG_KEY_TO, &doc);
+                if (0 != Rjson::GetInt(ntmp, ROUTE_MSG_KEY_TO, &doc))
+                {
+                    string to;
+                    if (0 == Rjson::GetStr(to, ROUTE_MSG_KEY_TO, &doc)) // 尝试字符串类型
+                    {
+                        ntmp = atoi(to.c_str());
+                    }
+                }
                 IFBREAK_N(ntmp<=0, -101);
                 *toSvr = ntmp;
             }
