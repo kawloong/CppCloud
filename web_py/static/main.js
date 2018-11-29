@@ -11,7 +11,8 @@ const app = new Vue({
     sort_dir: 0, // 1 升序； -1 降序
     svrid_page: 0, // 大于0时 进详细页
     svrid_idx : 0,
-    prvd_obj: []
+    prvd_obj: [],
+    invk_obj: {}
   },
 
   methods: {
@@ -54,7 +55,7 @@ const app = new Vue({
     },
 
     gotoDetail : function(svrid, arridx) {
-        const prvdKeys = ['regname', 'prvdid', 'url', 'protocol', 'weight', 'version']
+        const prvdKeys = ['regname', 'prvdid', 'url', 'protocol', 'weight', 'version', 'pvd_ok', 'pvd_ng', 'ivk_ok', 'ivk_ng']
         console.log("goto Detail svrid=" + svrid);
         this.svrid_page = svrid;
         this.svrid_idx = arridx;
@@ -68,7 +69,7 @@ const app = new Vue({
                 let prvdItemObj = {}; // { url: xx, regname: xx}
                 for (let idx in prvdKeys) {
                     let prvd_keyi = prvdarr[prvdi] + ':' + prvdKeys[idx];
-                    console.log("Prvd: " + prvd_keyi);
+                    //console.log("Prvd: " + prvd_keyi);
                     if ( prvd_keyi in svrObj ){
                         prvdItemObj[prvdKeys[idx]] = svrObj[prvd_keyi];
                     }
@@ -77,6 +78,43 @@ const app = new Vue({
                 this.prvd_obj.push(prvdItemObj);
             }
         }
+
+        // 服务消息者判断
+        this.invk_obj = {};
+        let prvdMarkstr = svrObj['_provider_mark'];
+        for (let key in svrObj) {
+            let value  = svrObj[key];
+            if (0 === key.indexOf('prvd_')) {
+                let invkArr = key.split(':');
+                if (2 != invkArr.length) {
+                    console.log('error prop-key ' + key);
+                    continue;
+                }
+                if (prvdMarkstr) { // 属于提供者
+                    if (prvdMarkstr.indexOf(invkArr[0]) >= 0) continue;
+                }
+
+                if (!this.invk_obj.hasOwnProperty(invkArr[0])){
+                    this.invk_obj[invkArr[0]] = {};
+                }
+                this.invk_obj[invkArr[0]][invkArr[1]] = value;
+            }
+        }
+    },
+
+    refreshDetail : function(svridx) {
+        let svrid = this.svrid_page;
+        this.$http.get('/clidata/' + svrid).then(function(res){
+            var result = res.body.code
+            if (0 != result) {
+                alert('获取失败：'+res.body.desc);
+            } else {
+                console.log(svrid + "更新详细成功：" + res.body.data);
+                this.maindata[this.svrid_idx] = res.body.data;
+            }
+        }, function(){
+            alert('请求/clidata/' + svrid + '失败处理');
+        })
     }
 
   },
@@ -112,6 +150,9 @@ const app = new Vue({
             return attrHumanObj[attrName];
         }
         return attrName;
+    },
+    filterNullStr : function(param) {
+        return param? param: 0;
     }
   },
 

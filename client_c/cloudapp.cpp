@@ -225,6 +225,7 @@ int CloudApp::taskRun( int flag, long p2 )
 
 		string whoamistr = whoamiMsg();
 		m_epCtrl.setEvt(EPOLLOUT | EPOLLIN, this);
+		clearBuf();
 		ret = sendData(CMD_WHOAMI_REQ, ++m_seqid, whoamistr.c_str(), whoamistr.length(), true);
 	}
 	else

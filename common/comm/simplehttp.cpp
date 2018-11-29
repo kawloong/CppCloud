@@ -294,13 +294,29 @@ int CSimpleHttp::request(bool usePost, const std::string &data)
 #endif
     }
 
+    static const int httpHeadLengthMin = 160; // 最小http-head
+    static const unsigned ms2us = 1000;
     char recvBuf[512];
     string::size_type headEnd;
     size_t recv_len = 0;
     string respHeader;
-    while ((headEnd = respHeader.find("\r\n\r\n")) == string::npos)
+    for (int i = 0; (headEnd = respHeader.find("\r\n\r\n")) == string::npos; ++i)
     {
-        ret = recv(m_sockfd, recvBuf, sizeof(recvBuf), 0);
+        if (0 == i)
+        {
+            ret = recv(m_sockfd, recvBuf, httpHeadLengthMin, 0); // 注意如果body比较小的响应会死等
+        }
+        else
+        {
+            ret = recv(m_sockfd, recvBuf, sizeof(recvBuf), MSG_DONTWAIT);
+            if (-1 == ret && EAGAIN == (errno || EWOULDBLOCK == errno))
+            {
+                ret = usleep(ms2us * 200); // 200 ms
+                ERR_RETURN(ret<0, strerror(errno), E_HTTP_RECV_HEAD_FAIL);
+                continue;
+            }
+        }
+
         ERR_RETURN(ret<=0, strerror(errno), E_HTTP_RECV_HEAD_FAIL);
 
         ERR_RETURN(recv_len + ret > maxConLen, "http head too big", E_HTTP_RSP_TOOBIG);

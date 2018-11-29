@@ -4,7 +4,7 @@
 #include "cloud/const.h"
 #include "comm/strparse.h"
 
-ServiceItem::ServiceItem( void ): ivk_ok(0), ivk_ng(0)
+ServiceItem::ServiceItem( void ): pvd_ok(0), pvd_ng(0), ivk_ok(0), ivk_ng(0)
 {
 
 }
@@ -65,8 +65,8 @@ void ServiceItem::getJsonStr( string& strjson, int oweight ) const
 	StrParse::PutOneJson(strjson, "desc", desc, true);
 	StrParse::PutOneJson(strjson, "svrid", svrid, true);
 	StrParse::PutOneJson(strjson, "prvdid", prvdid, true);
-	StrParse::PutOneJson(strjson, "okcount", okcount, true);
-	StrParse::PutOneJson(strjson, "ngcount", ngcount, true);
+	StrParse::PutOneJson(strjson, "pvd_ok", pvd_ok, true);
+	StrParse::PutOneJson(strjson, "pvd_ng", pvd_ng, true);
 	StrParse::PutOneJson(strjson, "protocol", protocol, true);
 	StrParse::PutOneJson(strjson, "version", version, true);
 	// 权重，当服务消费应用调用时，weight=匹配分数值
@@ -157,14 +157,22 @@ void ServiceProvider::setStat( CliBase* cli, int prvdid, int pvd_ok, int pvd_ng,
 		auto itr2 = itr->second.find(prvdid);
 		if ( itr2 != itr->second.end() )
 		{
+			string regname2 = _F("%s%s%%%d", SVRPROP_PREFIX, m_regName.c_str(), prvdid);
 			ServiceItem* itm = itr2->second;
-			if (pvd_ok > 0) itm->okcount = pvd_ok;
-			if (pvd_ng > 0) itm->ngcount = pvd_ng;
-			if (ivk_dok > 0) itm->ivk_ok += ivk_dok;
-			if (ivk_dng > 0) itm->ivk_ng += ivk_dng;
+
+			#define IFUPDATESTAT(name) if (name > 0) { itm->name = name; cli->setIntProperty(regname2+":" #name, name); }
+			#define IFUPDATESTAT_DELTA(param, memName) if (param > 0) { itm->memName += param; \
+				cli->setIntProperty(regname2+":" #memName, param + cli->getIntProperty(regname2+":" #memName)); }
+
+			IFUPDATESTAT(pvd_ok);
+			IFUPDATESTAT(pvd_ng);
+			IFUPDATESTAT_DELTA(ivk_dok, ivk_ok);
+			IFUPDATESTAT_DELTA(ivk_dng, ivk_ok);
+			// keyname example "prvd_httpApp1%9"
 		}
 	}
 }
+
 
 bool ServiceProvider::removeItme( CliBase* cli )
 {

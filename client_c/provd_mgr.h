@@ -31,6 +31,7 @@ public:
 public:
     // 服务注册
     int regProvider( const string& regname, int prvdid, short protocol, const string& url );
+    void setUrl( const string& regname, int prvdid, const string& url );
     void setDesc( const string& regname, int prvdid, const string& desc );
     void setWeight( const string& regname, int prvdid, short weight );
     void setVersion( const string& regname, int prvdid, short ver );

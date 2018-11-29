@@ -1,7 +1,7 @@
 #include "svrprop.h"
 #include "comm/strparse.h"
 
-SvrProp::SvrProp( void ): svrid(0), prvdid(0), okcount(0), ngcount(0), tmpnum(0),
+SvrProp::SvrProp( void ): svrid(0), prvdid(0), tmpnum(0),
 	 protocol(0),version(0), weight(0), idc(0), rack(0), islocal(false), enable(false)
 {
 
@@ -21,8 +21,7 @@ string SvrProp::jsonStr( void ) const
 	if(!desc.empty()>0) StrParse::PutOneJson(strjson, "desc", desc, true);
 	if(svrid>0) StrParse::PutOneJson(strjson, "svrid", svrid, true);
 	if(prvdid>0) StrParse::PutOneJson(strjson, "prvdid", prvdid, true);
-	if(okcount>0) StrParse::PutOneJson(strjson, "okcount", okcount, true);
-	if(ngcount>0) StrParse::PutOneJson(strjson, "ngcount", ngcount, true);
+
 	StrParse::PutOneJson(strjson, "protocol", protocol, true);
 	StrParse::PutOneJson(strjson, "version", version, true);
 	// 权重，当服务消费应用调用时，weight=匹配分数值

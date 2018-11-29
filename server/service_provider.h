@@ -18,6 +18,8 @@ class CliBase;
 struct ServiceItem : public SvrProp
 {
 	string regname2;
+	unsigned pvd_ok;
+	unsigned pvd_ng;
 	unsigned ivk_ok; // 调用者统计 全量
     unsigned ivk_ng; // 调用者统计 全量
 	ServiceItem( void );
@@ -45,6 +47,8 @@ public:
 	// 计算返回可用服务
 	int query( string& jstr, short idc, short rack, short version, short limit ) const;
 	int getAllJson( string& strjson ) const;
+
+private:
 
 private:
 	const string m_regName;

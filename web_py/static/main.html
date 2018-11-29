@@ -49,9 +49,12 @@
     </div>
 
     <div v-if="svrid_page > 0">
+        <div>
         <a href="#" @click.prevent="gotoDetail(0)" data-toggle="tooltip" title="返回客户列表"
             class="glyphicon glyphicon-arrow-left"> 返回
         </a>
+        <a href="#"  @click.prevent="refreshDetail(svrid_page)">刷新</a>
+        </div>
         <div class="panel panel-primary">
             
             <div class="panel-heading">
@@ -87,6 +90,26 @@
             </div>
         </div>
 
+        <div class="panel panel-primary" v-if="Object.keys(invk_obj).length">
+            <div class="panel-heading">
+                <h3 class="panel-title">服务消费</h3>
+            </div>
+            <div class="panel-body">
+                <table class="table">
+                    <tr>
+                        <th>服务名</th>
+                        <th>成功次数</th>
+                        <th>失败次数</th>
+                    </tr>
+                    <tr v-for="(val,key) in invk_obj">
+                        <td>{{key}}</td>
+                        <td>{{val.ivk_ok | filterNullStr}}</td>
+                        <td>{{val.ivk_ng | filterNullStr}}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
         <div class="panel panel-primary" v-if="'_provider_mark' in maindata[svrid_idx]">
             <div class="panel-heading">
                 <h3 class="panel-title">控制命令</h3>
@@ -99,7 +122,7 @@
         </div>
     </div>
 
-    {{prvd_obj}}
+    {{invk_obj}}
 
   </div>
   </body>

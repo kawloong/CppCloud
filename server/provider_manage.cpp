@@ -84,7 +84,7 @@ void ProviderMgr::notify2Invoker( const string& regname, int svrid, int prvdid )
 /** 服务提供者注册服务
  * request: by CMD_SVRREGISTER_REQ CMD_SVRREGISTER2_REQ
  * format: { "regname": "app1", "svrid": 100, 
- * 		"svrprop": {"prvdid":1, "okcount": 123, ..} }
+ * 		"svrprop": {"prvdid":1, "url": "tcp://x", ..} }
  **/
 int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
 {
@@ -113,10 +113,14 @@ int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
 	Rjson::GetInt(prvdid, SVRREG_PROP_KEY, "prvdid", &doc);
 
 	string regname2 = _F("%s%s%%%d", SVRPROP_PREFIX, regname.c_str(), prvdid);
+
+	int urlChange = CheckValidUrlProtocol(cli, &doc, regname2, seqid);
 	int enableBeforValue = cli->getIntProperty(regname2 + ":enable");
 	ret = This->setProviderProperty(cli, &doc, regname2);
 	int enableAfterValue = cli->getIntProperty(regname2 + ":enable");
-	if (0 == ret && 1 == enableBeforValue && 0 == enableAfterValue) // 禁用服务时触发
+	bool enableChange = (1 == enableBeforValue && 0 == enableAfterValue);
+
+	if (0 == ret && (urlChange || enableChange)) // 禁用服务时触发
 	{
 		// 通知各个订阅者
 		This->notify2Invoker(regname, svrid, prvdid);
@@ -140,11 +144,48 @@ void ProviderMgr::updateProvider( CliBase* cli,  const string& regname, int prvd
 	provider->setItem(cli, prvdid);
 }
 
+// url&protocol合法性检查
+int ProviderMgr::CheckValidUrlProtocol( CliBase* cli, const void* doc, const string& regname2, unsigned seqid ) 
+{
+	string url1;
+	string url0 = cli->getProperty(regname2 + ":url");
+	int protocol1 = 0;
+	int ret = 0;
+	
+	if (0 != Rjson::GetStr(url1, SVRREG_PROP_KEY, "url", (const Document*)doc))
+	{
+		url1 = url0;
+	}
+	else
+	{
+		if (!url0.empty() && !url1.empty() && url1 != url0)
+		{
+			ret = 1;
+		}
+	}
+	if (0 != Rjson::GetInt(protocol1, SVRREG_PROP_KEY, "protocol", (const Document*)doc))
+	{
+		protocol1 = cli->getIntProperty(regname2 + ":protocol");
+	}
+
+	if (!url1.empty() && 0 != protocol1)
+	{
+		static const int protocolLen = 4;
+		static const string urlPrefix[protocolLen+1] = {"tcp", "udp", "http", "https", "x"};
+		NormalExceptionOn_IFTRUE(protocol1 > protocolLen || protocol1 <= 0, 400, 
+				CMD_SVRREGISTER_RSP, seqid, _F("invalid protocol %d", protocol1));
+	 	NormalExceptionOn_IFTRUE(0 != url1.find(urlPrefix[protocol1-1]), 400, 
+				CMD_SVRREGISTER_RSP, seqid, "url protocol not match");
+	}
+
+	return ret;
+}
+
 int ProviderMgr::setProviderProperty( CliBase* cli, const void* doc, const string& regname2 )
 {
 	int ret = -1;
 	const Value* svrprop = NULL;
-	if (0 == Rjson::GetObject(&svrprop, SVRREG_PROP_KEY, (const Value*)doc) && svrprop)
+	if (0 == Rjson::GetObject(&svrprop, SVRREG_PROP_KEY, (const Document*)doc) && svrprop)
 	{
 		Value::ConstMemberIterator itr = svrprop->MemberBegin();
     	for (; itr != svrprop->MemberEnd(); ++itr)

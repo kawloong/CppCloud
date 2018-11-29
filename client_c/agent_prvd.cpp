@@ -63,6 +63,7 @@ static void conf_change_callback( const string& confname )
                 sWorkingPrvd[key].prvdid = prvdid;
             }
 
+            client_c::setUrl(regname, prvdid, url);
             client_c::setDesc(regname, prvdid, desc);
             client_c::setWeight(regname, prvdid, weight);
             client_c::setEnable(regname, prvdid, enable);

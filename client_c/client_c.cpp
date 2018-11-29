@@ -171,6 +171,11 @@ int RegProvider( const string& regname, int prvdid, short protocol, int port, co
     return ProvdMgr::Instance()->regProvider(regname, prvdid, protocol, url);
 }
 
+void setUrl( const string& regname, int prvdid, const string& url )
+{
+    ProvdMgr::Instance()->setUrl(regname, prvdid, url);
+}
+
 void setDesc( const string& regname, int prvdid, const string& desc )
 {
     ProvdMgr::Instance()->setDesc(regname, prvdid, desc);

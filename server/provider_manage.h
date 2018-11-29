@@ -43,6 +43,7 @@ private:
 	void notify2Invoker( const string& regname, int svrid, int prvdid );
 	// 注册或设备服务提供者的属性
 	int setProviderProperty( CliBase* cli, const void* doc, const string& regname );
+	static int CheckValidUrlProtocol( CliBase* cli, const void* doc, const string& regname2, unsigned seqid ) ;
 
 private:
 	map<string, ServiceProvider*> m_providers;

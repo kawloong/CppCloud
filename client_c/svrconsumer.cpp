@@ -22,6 +22,10 @@ void SvrConsumer::SvrItem::rmBySvrid( int svrid, int prvdid )
                 this->weightSum -= it->weight;
                 it = svrItms.erase(it);
             }
+            else
+            {
+                ++it;
+            }
         }
         else
         {

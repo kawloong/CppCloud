@@ -19,8 +19,6 @@ struct SvrProp
 	string desc;
 	int svrid;
 	int prvdid; // 在静态提供者中区分多个服务
-	int okcount; // 成功调用次数（服务提供方统计的）
-	int ngcount; // 失败调用次数（服务提供方统计的）
 	int tmpnum;
 	short protocol; // tcp=1 udp=2 http=3 https=4
 	short version;

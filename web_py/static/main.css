@@ -25,3 +25,9 @@ th span {
 .panel-body {
     background-color: azure
 }
+
+.form-group span label {
+    width: 65px;
+    text-align: right;
+    text-justify:inter-ideograph;
+}

@@ -40,6 +40,7 @@ namespace client_c
     // 发布服务
     int RegProvider( const string& regname, int prvdid, short protocol, int port, const string& path="" );
     int RegProvider( const string& regname, int prvdid, short protocol, const string& url );
+    void setUrl( const string& regname, int prvdid, const string& url );
     void setDesc( const string& regname, int prvdid, const string& desc );
     void setWeight( const string& regname, int prvdid, short weight );
     void setVersion( const string& regname, int prvdid, short ver );

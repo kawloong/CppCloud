@@ -8,6 +8,7 @@
 SHttpInvokerMgr::SHttpInvokerMgr( void )
 {
     m_eachLimitCount = 5;
+    m_invokerTimOut_sec = 3;
 }
 
 SHttpInvokerMgr::~SHttpInvokerMgr( void )
@@ -55,7 +56,8 @@ int SHttpInvokerMgr::get( string& resp, const string& path, const string& qstr, 
         CSimpleHttp http(adjustUrlPath(pvd.url, path) + "?" + qstr);
         http.setTimeout(m_invokerTimOut_sec*1000);
         ret = http.doGet();
-        ERRLOG_IF1BRK(ret, ret, "GETPROVIDER| msg=http.doGet fail %d| svrname=%s", ret, svrname.c_str());
+        ERRLOG_IF1BRK(ret, ret, "GETPROVIDER| msg=http.doGet fail %d(%s)| svrname=%s", 
+                ret, http.getErrMsg().c_str(), svrname.c_str());
 
         resp = http.getResponse();
         string status = http.getHttpStatus();

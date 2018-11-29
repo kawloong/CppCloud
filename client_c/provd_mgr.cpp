@@ -86,6 +86,11 @@ int ProvdMgr::regProvider( const string& regname, int prvdid, short protocol, co
     return ret;
 }
 
+void ProvdMgr::setUrl( const string& regname, int prvdid, const string& url )
+{
+    ProviderItem* pvd = _getProvider(regname, prvdid);
+    if (pvd) pvd->url = url;
+}
 void ProvdMgr::setDesc( const string& regname, int prvdid, const string& desc )
 {
     ProviderItem* pvd = _getProvider(regname, prvdid);
@@ -106,16 +111,7 @@ void ProvdMgr::setEnable( const string& regname, int prvdid, bool enable )
     ProviderItem* pvd = _getProvider(regname, prvdid);
     if (pvd) pvd->enable = enable;
 }
-void ProvdMgr::addOkCount( const string& regname, int prvdid, int dcount )
-{
-    ProviderItem* pvd = _getProvider(regname, prvdid);
-    if (pvd) pvd->okcount += dcount;
-}
-void ProvdMgr::addNgCount( const string& regname, int prvdid, int dcount )
-{
-    ProviderItem* pvd = _getProvider(regname, prvdid);
-    if (pvd) pvd->ngcount += dcount;
-}
+
 
 // param: noEpFlag 当启动阶段未进入io-epoll复用前传true； 有io-epoll复用的业务里传false
 int ProvdMgr::postOut( const string& regname, int prvdid )
