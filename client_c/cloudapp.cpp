@@ -67,7 +67,7 @@ int CloudApp::init( int epfd, const string& svrhost_port, const string& appname 
 		addCmdHandle(CMD_EVNOTIFY_REQ, OnCMD_EVNOTIFY_REQ);
 		addCmdHandle(CMD_SVRREGISTER_RSP, OnShowMsg);
 		addCmdHandle(CMD_BOOKCFGCHANGE_RSP, OnShowMsg);
-		addCmdHandle(CMD_WEBCTRL_REQ, OnCMD_WEBCTRL_REQ);
+		//addCmdHandle(CMD_WEBCTRL_REQ, OnCMD_WEBCTRL_REQ);
 	}
 
 	return ret;
@@ -311,43 +311,36 @@ int CloudApp::OnCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param )
 }
 int CloudApp::onCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param )
 {
-	MSGHANDLE_PARSEHEAD(false);
+	MSGHANDLE_PARSEHEAD(true);
 	RJSON_GETSTR_D(notify, &doc);
 
-	if (0 == invokeNotifyCB(notify, &doc))
-	{
-		LOGWARN("EVNOTIFY| msg=no callback| notify=%s", notify.c_str());
-	}
+	int handCount = invokeNotifyCB(notify, &doc);
 
-	return 0;
-}
-
-int CloudApp::OnCMD_WEBCTRL_REQ( void* ptr, unsigned cmdid, void* param )
-{
-    return This->onCMD_WEBCTRL_REQ(ptr, cmdid, param);
-}
-int CloudApp::onCMD_WEBCTRL_REQ( void* ptr, unsigned cmdid, void* param )
-{
-	MSGHANDLE_PARSEHEAD(true);
 	LOGINFO("WEBCTRLCMD| seqid=%d| msgbody=%s", seqid, body);
-	RJSON_GETSTR_D(cmd, &doc);
 	RJSON_VGETINT_D(to, ROUTE_MSG_KEY_FROM, &doc);
+
 	int code = 0;
 	string resp("{");
-	if (cmd == "check-alive")
+	if (notify == "check-alive") // 此处处理各命令
 	{
 		StrParse::PutOneJson(resp, "result", time(NULL), true);
 	}
 	else
 	{
-		StrParse::PutOneJson(resp, "result", string("invalid cmd ")+cmd, true);
+		StrParse::PutOneJson(resp, "result", string("unknow notify ")+notify, true);
+		WARNLOG_IF1(0 == handCount, "EVNOTIFY| msg=no callback| notify=%s", notify.c_str());
 	}
 
-	StrParse::PutOneJson(resp, "code", code, true);
-	StrParse::PutOneJson(resp, ROUTE_MSG_KEY_FROM, m_appid, true);
-	StrParse::PutOneJson(resp, ROUTE_MSG_KEY_TO, to, false);
-	resp += "}";
-	sendData(CMD_WEBCTRL_RSP, seqid, resp.c_str(), resp.length(), true);
+	if (to > 0)
+	{
+		StrParse::PutOneJson(resp, "code", code, true);
+		StrParse::PutOneJson(resp, "notify_r", notify, true);
+		StrParse::PutOneJson(resp, ROUTE_MSG_KEY_FROM, m_appid, true);
+		StrParse::PutOneJson(resp, ROUTE_MSG_KEY_TO, to, false);
+		resp += "}";
+		sendData(CMD_EVNOTIFY_RSP, seqid, resp.c_str(), resp.length(), true);		
+	}
+
 	return 0;
 }
 

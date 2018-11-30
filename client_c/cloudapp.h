@@ -29,12 +29,12 @@ public:
 	static int OnCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param );
 	static int OnCMD_KEEPALIVE_REQ( void* ptr, unsigned cmdid, void* param );
 	static int OnShowMsg( void* ptr, unsigned cmdid, void* param );
-	static int OnCMD_WEBCTRL_REQ( void* ptr, unsigned cmdid, void* param );
+	//static int OnCMD_WEBCTRL_REQ( void* ptr, unsigned cmdid, void* param );
 	
 	int onCMD_WHOAMI_RSP( string& whoamiResp );
 	int onSyncMsg( void* ptr, unsigned cmdid, void* param );
 	int onCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param );
-	int onCMD_WEBCTRL_REQ( void* ptr, unsigned cmdid, void* param );
+	//int onCMD_WEBCTRL_REQ( void* ptr, unsigned cmdid, void* param );
 	// ****** message handle end *******
 
 public:
