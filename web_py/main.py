@@ -83,13 +83,13 @@ def clidata(svrid):
     key = request.args.get('key', '')
     return gweb_cli.request(CMD_GETCLI_REQ, { "key": key, "svrid": svrid })
 
-@app.route('/command/<string:cmd>')
+@app.route('/notify/<string:cmd>')
 def command(cmd):
     param = request.args.get('param', '')
     svrid = request.args.get('svrid')
-    return gweb_cli.request(CMD_WEBCTRL_REQ, { 
+    return gweb_cli.request(CMD_EVNOTIFY_REQ, { 
         "to": (svrid),
-        "cmd": cmd,
+        "notify": cmd,
         "param": param })
 
 def onNotifyMsg(cmdid, seqid, msg):

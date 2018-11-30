@@ -13,7 +13,8 @@ const app = new Vue({
     svrid_idx : 0,
     detail_obj: {},
     prvd_obj: [],
-    invk_obj: {}
+    invk_obj: {},
+    outtext: ''
   },
 
   methods: {
@@ -120,6 +121,37 @@ const app = new Vue({
         }, function(){
             alert('请求/clidata/' + svrid + '失败处理');
         })
+    },
+
+    checkAlive : function() {
+        let self = this;
+        let url = '/notifyx/check-alive';
+        self.$data.outtext += '检查存活：';
+        this.$http.get(url, {params:{svrid: this.svrid_page}} 
+                ).then(function(res) {
+                self.ajaxCallBack(url, res, function(body){
+                    // console.log('response' + this.outtext + body.result);
+                    self.$data.outtext += '  成功：' + body.result + '\n';
+                });
+            }, function(){
+                self.ajaxCallBack(url, false, null);
+        }
+        )
+    },
+
+    ajaxCallBack : function(url, res, okcb) {
+        if (res) {
+            var result = res.body.code
+            if (0 === result) {
+                okcb(res.body);
+            } else {
+                //alert('返回失败：'+res.body);
+                this.$data.outtext += '  返回失败：' + body.result + '\n';
+            }
+        } else {
+            //alert('请求' + url + '失败处理');
+            this.$data.outtext += '请求' + url + '失败处理' + '\n'; 
+        }
     }
 
   },

@@ -31,3 +31,12 @@ th span {
     text-align: right;
     text-justify:inter-ideograph;
 }
+
+.resptxt_style {
+    height: 170px;
+    width: 100%;
+}
+
+.btn-group-justified button {
+    margin: 10px;
+}
