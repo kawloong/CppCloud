@@ -16,6 +16,7 @@
       <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
   </head>
+  <title>主服务页</title>
   <script type="text/javascript">
 
   </script>
@@ -128,7 +129,8 @@
                                     @click="checkAlive()">检查存活</button>
                             </div>
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-default">清空输出</button>
+                                <button type="button" class="btn btn-default"
+                                    @click="outtext=''">清空输出</button>
                             </div>
                         </div>
                     
@@ -159,7 +161,7 @@
                     </div>
                         <div class="col-xs-8 col-md-6">
                             <textarea  v-model="outtext" class="resptxt_style"
-                                placeholder="此处命令执行结果" width="100%">
+                                placeholder="此处显示命令执行结果" width="100%">
                             </textarea>
                         </div>
                     </div>

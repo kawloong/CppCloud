@@ -40,3 +40,15 @@ th span {
 .btn-group-justified button {
     margin: 10px;
 }
+
+.list-group-item-text {
+    color: darkkhaki;
+    font-size: x-small
+}
+
+.conftitle {
+    font-size: 20px;
+    font-style: inherit;
+    margin-bottom: 15px;
+    margin-top: 10px;
+}

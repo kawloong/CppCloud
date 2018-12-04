@@ -125,7 +125,7 @@ const app = new Vue({
 
     checkAlive : function() {
         let self = this;
-        let url = '/notifyx/check-alive';
+        let url = '/notify/check-alive';
         self.$data.outtext += '检查存活：';
         this.$http.get(url, {params:{svrid: this.svrid_page}} 
                 ).then(function(res) {

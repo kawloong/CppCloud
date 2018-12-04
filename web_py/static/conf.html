@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <link href="main.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://cdn.bootcss.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <title>参数配置页</title>
+  </head>
+  
+<body>
+    <div id="app">
+        <div class="container">
+            <div class="row conftitle">
+                <div class="col-md-3">
+                    <span> 配置文件列表 </span>
+                </div>
+                <div class="col-md-9">
+                    编辑 
+                    <span>{{ selfile }}</span>
+                    &nbsp;
+                    <span v-if="seltime">更新时间
+                    <span>{{ seltime | toHumanTime }}</span>
+                    &nbsp;
+                    <a href="#modify" @click="modify">修改</a>
+                    <a href="#refresh" @click="refresh" data-toggle="tooltip" title="从后台download配置会覆盖当前修改">
+                        刷新</a>
+                    </span>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="list-group">
+                        <a href="#" class="list-group-item "
+                         v-for="(val, filename) in filenames" v-if="val[0] === 1"
+                         :class="selfile==filename? 'active':''"
+                         @click="chooseFile(filename)">
+                            <h4 class="list-group-item-heading"> 
+                                {{filename}} 
+                                <span v-show="val[3]">*</span>
+                            </h4>
+                            <p class="list-group-item-text">{{val[1] | toHumanTime}}</p>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-9">
+                   <textarea class="form-control" rows="30" v-model="contents"
+                    @input="inputChange(true)">
+                    {{contents}}
+                   </textarea>
+                </div>
+            </div>
+        </div>
+
+        {{filenames}}
+    </div>
+</body>
+
+  <script src="https://vuejs.org/js/vue.min.js"></script>
+  <script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
+  <script src="conf.js"></script>
+</html>
