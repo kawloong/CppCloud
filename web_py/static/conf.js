@@ -2,7 +2,7 @@ var vueapp = null;
 function conffun( Vue ) {
     vueapp = new Vue({
         data: {
-            filenames: {},
+            filenames: {}, // {"f1": [isdel, mtime, contants, modifyfg, timehightlight]}
             selfile: '', // 选中的文件
             seltime: '',
             contents: ''
@@ -33,8 +33,9 @@ function conffun( Vue ) {
                         self.filenames[filename][1] =  resp.body.mtime;
                         self.filenames[filename][2] =  JSON.stringify(resp.body.contents);
                         self.filenames[filename][3] =  false; // 修改标记
+                        self.filenames[filename][4] = '';
 
-                        self.contents = JSON.stringify(resp.body.contents);
+                        self.contents = JSON.stringify(resp.body.contents, null, 4);
                     } else {
                         console.error('执行失败: ' + JSON.stringify(res.body));
                     }
@@ -99,8 +100,11 @@ function conffun( Vue ) {
                 }).then(function(resp){
                     if (resp.body.code === 0){
                         console.log('修改' + opFilename + '成功, ' + self.filenames[opFilename][3]);
-                        self.$set(self.filenames[opFilename], 3, false);
-                        //self.filenames[opFilename][3] = false;
+                        self.filenames[opFilename][1] = resp.body.mtime;
+                        //self.$set(self.filenames[opFilename], 3, false);
+                        self.filenames[opFilename][3] = false;
+                        self.$set(self.filenames[opFilename], 4, 'time_hl');
+                        this.seltime = resp.body.mtime;
                     } else {
                         alert('响应失败:' + resp.body.desc);
                     }

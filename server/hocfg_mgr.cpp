@@ -357,7 +357,8 @@ int HocfgMgr::OnSetConfigHandle( void* ptr, unsigned cmdid, void* param )
     This->notifyChange(filename, mtime);
     if (CMD_SETCONFIG_REQ == cmdid)
     {
-        string resp = _F("{\"code\": %d, \"desc\": \"%s\"}", ret, desc.c_str());
+        string resp = _F("{\"code\": %d, \"mtime\":%d, \"desc\": \"%s\"}", 
+            ret, mtime, desc.c_str());
         iohand->sendData(CMD_SETCONFIG_RSP, seqid, resp.c_str(), resp.length(), true);
 
         //int fromcli = iohand->getIntProperty(CONNTERID_KEY);

@@ -22,10 +22,10 @@
     <div id="app">
         <div class="container">
             <div class="row conftitle">
-                <div class="col-md-3">
+                <div class="col-sm-3">
                     <span> 配置文件列表 </span>
                 </div>
-                <div class="col-md-9">
+                <div class="col-sm-9">
                     编辑 
                     <span>{{ selfile }}</span>
                     &nbsp;
@@ -39,7 +39,7 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-3">
+                <div class="col-sm-3">
                     <div class="list-group">
                         <a href="#" class="list-group-item "
                          v-for="(val, filename) in filenames" v-if="val[0] === 1"
@@ -49,11 +49,15 @@
                                 {{filename}} 
                                 <span v-show="val[3]">*</span>
                             </h4>
-                            <p class="list-group-item-text">{{val[1] | toHumanTime}}</p>
+                            <p class="list-group-item-text">
+                            <span :class="val[4]"> 
+                                   {{val[1] | toHumanTime}} 
+                            </span>
+                            </p>
                         </a>
                     </div>
                 </div>
-                <div class="col-md-9">
+                <div class="col-sm-9">
                    <textarea class="form-control" rows="30" v-model="contents"
                     @input="inputChange(true)">
                     {{contents}}
