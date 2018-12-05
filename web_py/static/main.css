@@ -27,7 +27,7 @@ th span {
 }
 
 .form-group span label {
-    width: 65px;
+    width: 70px;
     text-align: right;
     text-justify:inter-ideograph;
 }
@@ -78,4 +78,8 @@ th span {
     display: inline-block;
     text-align: right;
     margin-right: 20px;
+}
+
+.qctrl_main {
+    padding: 30px;
 }

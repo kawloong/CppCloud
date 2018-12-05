@@ -2,6 +2,7 @@ var vueapp = null;
 function conffun( Vue ) {
     vueapp = new Vue({
         data: {
+            tabidx: 0,
             filenames: {}, // {"f1": [isdel, mtime, contants, modifyfg, timehightlight]}
             selfile: '', // 选中的文件
             seltime: '',
@@ -191,11 +192,13 @@ function conffun( Vue ) {
             onQueryClick: function(){
                 if (!this.qctrl.valid) {
                     alert('条件无效不能查询')
-                    return;
+                    return false;
                 }
 
-                let url = '/getconf?file_pattern=' + this.qctrl.filename;
-                url += "&key_pattern=" + this.qctrl.key;
+                let curFileName = this.qctrl.filename == '文件列表'? '': this.qctrl.filename;
+                let qctrlkey = this.qctrl.key? this.qctrl.key : '/';
+                let url = '/getconf?file_pattern=' + curFileName;
+                url += "&key_pattern=" + qctrlkey;
                 url += "&incbase=" + (this.qctrl.incbase? "1": "0");
                 let self = this;
                 this.$http.get(url).then(function(resp){
@@ -209,27 +212,31 @@ function conffun( Vue ) {
                 }, function(){
                     alert('请求' + url + '失败');
                 })
+
+                return false;
             }
         },
 
         computed: {
             qcondiction: function() {
-                let cond = this.qctrl.filename + this.qctrl.key;
+                let curFileName = this.qctrl.filename == '文件列表'? '': this.qctrl.filename;
+                let qctrlkey = this.qctrl.key? this.qctrl.key : '/';
+                let cond = curFileName + qctrlkey;
                 cond += '&inbase=' + this.qctrl.incbase;
 
                 let httpparam =  {
-                    "file_pattern": this.qctrl.filename,
-                    "key_pattern":  this.qctrl.key,
+                    "file_pattern": curFileName,
+                    "key_pattern":  qctrlkey,
                     "incbase": (this.qctrl.incbase? "1": "0")
                 };
 
-                this.qctrl.valid = (this.qctrl.filename in this.filenames) && 
-                    (this.qctrl.key && this.qctrl.key.length > 0 && 
-                        this.qctrl.key.search(/^[-/\w]+$/) >= 0);
+                this.qctrl.valid = (curFileName in this.filenames) && 
+                    (qctrlkey && qctrlkey.length > 0 && 
+                        qctrlkey.search(/^[-/\w]+$/) >= 0);
 
-                this.qctrl.sdkcall["sdk_cpp"] =  'client_c::Query(oval, \"' + this.qctrl.filename + this.qctrl.key + '\", true)';
-                this.qctrl.sdkcall["http"] = '/getconf?file_pattern=' + this.qctrl.filename
-                 + "&key_pattern=" + this.qctrl.key + "&incbase=" + (this.qctrl.incbase? "1": "0");
+                this.qctrl.sdkcall["sdk_cpp"] =  'client_c::Query(oval, \"' + curFileName + qctrlkey + '\", true)';
+                this.qctrl.sdkcall["http"] = '/getconf?file_pattern=' + curFileName
+                 + "&key_pattern=" + qctrlkey + "&incbase=" + (this.qctrl.incbase? "1": "0");
                 this.qctrl.sdkcall["tcp"] = "cmdid=CMD_GETCONFIG_REQ; body=" + JSON.stringify(httpparam);
 
                 return cond;

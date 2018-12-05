@@ -174,13 +174,16 @@ const app = new Vue({
             'svrid': '客户ID',
             'svrname':'应用名',
             'clitype':'应用类型',
-            'clisock':'IP',
+            'clisock':'远端地址',
             '_mainconf':'主配置',
             'shell':'启动命令',
             'pid':'进程ID',
             'rack':'机房机架',
             'begin_time':'启动时间',
-            'atime':'活跃时间'
+            'atime':'活跃时间',
+            'localsock': '本地地址',
+            '_provider_mark': '服务标记',
+            'fd': '套接字fd'
         }
 
         if (attrName in attrHumanObj){

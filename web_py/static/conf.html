@@ -20,17 +20,70 @@
   
 <body>
     <div id="app">
-        <div class="container">
+            <ul class="nav nav-tabs nav-justified">
+                    <li role="presentation" :class="0==tabidx?'active':''">
+                        <a href="#" @click.prevent="tabidx=0">
+                            配置编辑</a>
+                    </li>
+                    <li role="presentation" :class="1==tabidx?'active':''">
+                        <a href="#" @click.prevent="tabidx=1">
+                            查询测试</a>
+                    </li>
+            </ul>
+
+            <div class="container-fluid" v-show="1==tabidx">
+            <div >
+                    <div>
+                    <form class="form-inline">
+                        <main class="qctrl_main">
+                        <select class="form-control" v-model="qctrl.filename">
+                        <option style="display: none">文件列表</option>
+                        <option
+                            v-for="(val, filename) in filenames" 
+                            v-if="val[0] === 1">
+                            {{filename}}
+                        </option>
+                        </select>
+
+                        <input type="text" class="form-control" 
+                            data-toggle="tooltip" title="key的格式类似文件目录路径，层级间用斜线/分割，譬如/dir0/dir1/key2"
+                            placeholder="查询Key" v-model="qctrl.key"> 
+                        <div class="checkbox">
+                                <label> <input type="checkbox" v-model="qctrl.incbase"> 继承 </label>
+                         </div> 
+                        <button class="btn btn-default" @click.prevent="onQueryClick">查询</button>
+                        &nbsp;&nbsp;
+
+                        <span :style=" {color: qctrl.valid?'green':'red'} " >
+                            查询条件({{qctrl.valid?'有效':'无效'}}): &nbsp; {{qcondiction}} 
+                        </span>
+                        </main>
+
+                        <p><span class="qcallspan">tcp调用:</span>{{qctrl.sdkcall.tcp}}</p>
+                        <p><span class="qcallspan">http调用:</span>{{qctrl.sdkcall.http}}</p>
+                        <p><span class="qcallspan">sdk_cpp调用:</span>{{qctrl.sdkcall.sdk_cpp}}</p>
+
+                        <span v-if="qctrl.output">
+                            
+                            <br>
+                            查询结果
+                            <br>
+                            <samp>
+                                {{qctrl.output}}
+                            </samp>
+                        </span>
+                    </form>
+                    </div>
+                </div>
+            </div>
+
+
+        <div class="container-fluid" v-if="0==tabidx">
             <div class="row">
                 <div class="col-sm-3 conftitle">
                     <span> 配置文件列表 </span>
                 </div>
-                <div class="col-sm-9">
-                    <div class="checkbox"><label>
-                         <input type="checkbox" v-model="qctrl.qpanel" > 查询面板
-                    </label> </div>
-                    
-                    
+                <div class="col-sm-9"> 
                     <span v-if="seltime"> 编辑 {{ selfile }}</span>
                     &nbsp;
                     <span v-if="seltime">更新时间
@@ -95,54 +148,11 @@
 
                    
 
-                <div class="panel panel-default" v-show="qctrl.qpanel">
-                    <div class="panel-body">
-                        <h4>查询面板</h4>
-                    <form class="form-inline">
-
-                        <select class="form-control" v-model="qctrl.filename">
-                        <option style="display: none">文件列表</option>
-                        <option
-                            v-for="(val, filename) in filenames" 
-                            v-if="val[0] === 1">
-                            {{filename}}
-                        </option>
-                        </select>
-
-                        <input type="text" class="form-control" 
-                            data-toggle="tooltip" title="key的格式类似文件目录路径，层级间用斜线/分割，譬如/dir0/dir1/key2"
-                            placeholder="查询Key" v-model="qctrl.key"> 
-                        <div class="checkbox">
-                                <label> <input type="checkbox" v-model="qctrl.incbase"> 继承 </label>
-                         </div> 
-                        <button class="btn btn-default" @click="onQueryClick">查询</button>
-                        <br>
-
-                        <p :style=" {color: qctrl.valid?'green':'red'} " >
-                            查询条件({{qctrl.valid?'有效':'无效'}}): &nbsp; {{qcondiction}} 
-                        </p>
-
-                        <p><span class="qcallspan">tcp调用:</span>{{qctrl.sdkcall.tcp}}</p>
-                        <p><span class="qcallspan">http调用:</span>{{qctrl.sdkcall.http}}</p>
-                        <p><span class="qcallspan">sdk_cpp调用:</span>{{qctrl.sdkcall.sdk_cpp}}</p>
-
-                        <span v-if="qctrl.output">
-                            
-                            <br>
-                            查询结果
-                            <br>
-                            <samp>
-                                {{qctrl.output}}
-                            </samp>
-                        </span>
-                    </form>
-                    </div>
-                </div>
                 </div>
             </div>
         </div>
 
-        {{filenames}}
+        
     </div>
 </body>
 

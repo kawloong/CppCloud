@@ -79,9 +79,10 @@
 
 		if (!eqr)
 		{
+      $('li.active').removeClass("active");
 			jtag.addClass("active");
 			if (dom_activ) {
-				$(dom_activ).removeClass("active");
+				//$(dom_activ).removeClass("active");
 			}
 			
 			dom_activ = this;
