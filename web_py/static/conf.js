@@ -5,7 +5,18 @@ function conffun( Vue ) {
             filenames: {}, // {"f1": [isdel, mtime, contants, modifyfg, timehightlight]}
             selfile: '', // 选中的文件
             seltime: '',
-            contents: ''
+            contents: '',
+            addflag: 0,
+            newfilename: '',
+            qctrl: {
+                qpanel: false,
+                cond: '',
+                valid: false,
+                filename: '文件列表',
+                incbase: 0,
+                output: '',
+                sdkcall: {"sdk_cpp": "", "http": "", "tcp": ""}
+            }
         },
 
         methods: {
@@ -31,7 +42,7 @@ function conffun( Vue ) {
                     if (resp.body.code === 0) {
                         const filename = resp.body.file_pattern;
                         self.filenames[filename][1] =  resp.body.mtime;
-                        self.filenames[filename][2] =  JSON.stringify(resp.body.contents);
+                        self.filenames[filename][2] =  JSON.stringify(resp.body.contents, null, 4);
                         self.filenames[filename][3] =  false; // 修改标记
                         self.filenames[filename][4] = '';
 
@@ -113,6 +124,30 @@ function conffun( Vue ) {
                 });
             },
 
+            addClick: function(flag){ // 点击新增
+                this.addflag = 1;
+                let newfilename = this.newfilename;
+                if (2 === flag){
+                    if (newfilename.length < 3) {
+                        alert('Invalid FileName');
+                        return ;
+                    }
+
+                    var item = this.filenames[newfilename];
+                    if (item){
+                        alert('已存在的文件名：'+ newfilename);
+                        return ;
+                    }
+
+                    //this.filenames[newfilename] = [1, 1, "", 0, 0];
+                    const now = Date.parse(new Date()) / 1000;
+                    this.$set(this.filenames, newfilename, [1, now, "", 0, 'newfile']);
+                    this.chooseFile(newfilename);
+                    this.newfilename = '';
+                    this.addflag = 0;
+                }
+            },
+
             inputChange: function(istrue){
                 if (this.selfile in this.filenames){
                     this.filenames[this.selfile][3] = istrue;
@@ -130,6 +165,74 @@ function conffun( Vue ) {
                     }
                 }
                 console.log('It is not a string!')
+            },
+
+            removeClick: function(filename) {
+                console.log("click remove " + filename);
+                if (!confirm("确认要删除文件:" + filename)) {
+                    return ;
+                }
+                
+                const url = '/setconf';
+                let self = this;
+                this.$http.post(url, { filename: filename }
+                ).then(function(resp){
+                    if (resp.body.code === 0){
+                        self.$set(self.filenames[filename], 0, 0);
+                        console.log("成功删除" + filename + " " + JSON.stringify(resp.body));
+                    } else {
+                        alert("删除" + filename + "失败 " + resp.body.desc)
+                    }
+                }, function(){
+                    alert("请求" + filename + "删除失败")
+                });
+            },
+
+            onQueryClick: function(){
+                if (!this.qctrl.valid) {
+                    alert('条件无效不能查询')
+                    return;
+                }
+
+                let url = '/getconf?file_pattern=' + this.qctrl.filename;
+                url += "&key_pattern=" + this.qctrl.key;
+                url += "&incbase=" + (this.qctrl.incbase? "1": "0");
+                let self = this;
+                this.$http.get(url).then(function(resp){
+                    if (resp.body.code == 0) {
+                        self.qctrl.cond = url;
+                        self.qctrl.output = JSON.stringify(resp.body.contents, null, 4);
+                        console.log(resp.body.contents);
+                    } else {
+                        alert('请求' + url + '失败' + JSON.stringify(resp.body));
+                    }
+                }, function(){
+                    alert('请求' + url + '失败');
+                })
+            }
+        },
+
+        computed: {
+            qcondiction: function() {
+                let cond = this.qctrl.filename + this.qctrl.key;
+                cond += '&inbase=' + this.qctrl.incbase;
+
+                let httpparam =  {
+                    "file_pattern": this.qctrl.filename,
+                    "key_pattern":  this.qctrl.key,
+                    "incbase": (this.qctrl.incbase? "1": "0")
+                };
+
+                this.qctrl.valid = (this.qctrl.filename in this.filenames) && 
+                    (this.qctrl.key && this.qctrl.key.length > 0 && 
+                        this.qctrl.key.search(/^[-/\w]+$/) >= 0);
+
+                this.qctrl.sdkcall["sdk_cpp"] =  'client_c::Query(oval, \"' + this.qctrl.filename + this.qctrl.key + '\", true)';
+                this.qctrl.sdkcall["http"] = '/getconf?file_pattern=' + this.qctrl.filename
+                 + "&key_pattern=" + this.qctrl.key + "&incbase=" + (this.qctrl.incbase? "1": "0");
+                this.qctrl.sdkcall["tcp"] = "cmdid=CMD_GETCONFIG_REQ; body=" + JSON.stringify(httpparam);
+
+                return cond;
             }
         },
 

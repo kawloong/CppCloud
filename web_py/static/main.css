@@ -56,3 +56,26 @@ th span {
 .time_hl {
     color: limegreen;
 }
+
+.newfile {
+    color: hotpink;
+}
+
+.addtext {
+    width: 100%;
+    height: 32px;;
+}
+
+.remove_btn {
+    float: right;
+    display: inline;
+}
+
+.qcallspan {
+    color: blue;
+    font-weight: bold;
+    width: 100px;
+    display: inline-block;
+    text-align: right;
+    margin-right: 20px;
+}

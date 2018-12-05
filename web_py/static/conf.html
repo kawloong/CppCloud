@@ -21,13 +21,17 @@
 <body>
     <div id="app">
         <div class="container">
-            <div class="row conftitle">
-                <div class="col-sm-3">
+            <div class="row">
+                <div class="col-sm-3 conftitle">
                     <span> 配置文件列表 </span>
                 </div>
                 <div class="col-sm-9">
-                    编辑 
-                    <span>{{ selfile }}</span>
+                    <div class="checkbox"><label>
+                         <input type="checkbox" v-model="qctrl.qpanel" > 查询面板
+                    </label> </div>
+                    
+                    
+                    <span v-if="seltime"> 编辑 {{ selfile }}</span>
                     &nbsp;
                     <span v-if="seltime">更新时间
                     <span>{{ seltime | toHumanTime }}</span>
@@ -41,27 +45,99 @@
             <div class="row">
                 <div class="col-sm-3">
                     <div class="list-group">
+                    
+                    <template  v-for="(val, filename) in filenames">
+                        <span>
                         <a href="#" class="list-group-item "
-                         v-for="(val, filename) in filenames" v-if="val[0] === 1"
+                         v-if="val[0] === 1"
                          :class="selfile==filename? 'active':''"
                          @click="chooseFile(filename)">
                             <h4 class="list-group-item-heading"> 
                                 {{filename}} 
                                 <span v-show="val[3]">*</span>
+                                
                             </h4>
                             <p class="list-group-item-text">
                             <span :class="val[4]"> 
                                    {{val[1] | toHumanTime}} 
                             </span>
+                            <span class="glyphicon glyphicon-remove remove_btn"
+                                @click.stop.prevent="removeClick(filename)"
+                             aria-hidden="true">
+                            </span>
                             </p>
                         </a>
+                    </span>
+                    </template>
+
                     </div>
+
+                        <div class="panel">
+                            <button class="list-group-item " @click="addClick(1)" v-if="0 == addflag">
+                                <span>新增 &nbsp; &nbsp;</span>
+                                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                            </button>
+                            <div class="input-group" v-if="1 == addflag">
+                                <input v-model="newfilename" type="text" placeholder="请输入文件名" class="addtext"/>
+                                <span class="input-group-btn">
+                                    <button class="btn btn-default" type="button"
+                                     @click="addClick(2)">加入</button>
+                                </span>
+                            </div>
+                        </div>
+                        
                 </div>
                 <div class="col-sm-9">
-                   <textarea class="form-control" rows="30" v-model="contents"
+                   <textarea class="form-control" rows="26" v-model="contents"
                     @input="inputChange(true)">
                     {{contents}}
                    </textarea>
+
+                   
+
+                <div class="panel panel-default" v-show="qctrl.qpanel">
+                    <div class="panel-body">
+                        <h4>查询面板</h4>
+                    <form class="form-inline">
+
+                        <select class="form-control" v-model="qctrl.filename">
+                        <option style="display: none">文件列表</option>
+                        <option
+                            v-for="(val, filename) in filenames" 
+                            v-if="val[0] === 1">
+                            {{filename}}
+                        </option>
+                        </select>
+
+                        <input type="text" class="form-control" 
+                            data-toggle="tooltip" title="key的格式类似文件目录路径，层级间用斜线/分割，譬如/dir0/dir1/key2"
+                            placeholder="查询Key" v-model="qctrl.key"> 
+                        <div class="checkbox">
+                                <label> <input type="checkbox" v-model="qctrl.incbase"> 继承 </label>
+                         </div> 
+                        <button class="btn btn-default" @click="onQueryClick">查询</button>
+                        <br>
+
+                        <p :style=" {color: qctrl.valid?'green':'red'} " >
+                            查询条件({{qctrl.valid?'有效':'无效'}}): &nbsp; {{qcondiction}} 
+                        </p>
+
+                        <p><span class="qcallspan">tcp调用:</span>{{qctrl.sdkcall.tcp}}</p>
+                        <p><span class="qcallspan">http调用:</span>{{qctrl.sdkcall.http}}</p>
+                        <p><span class="qcallspan">sdk_cpp调用:</span>{{qctrl.sdkcall.sdk_cpp}}</p>
+
+                        <span v-if="qctrl.output">
+                            
+                            <br>
+                            查询结果
+                            <br>
+                            <samp>
+                                {{qctrl.output}}
+                            </samp>
+                        </span>
+                    </form>
+                    </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -72,5 +148,7 @@
 
   <script src="https://vuejs.org/js/vue.min.js"></script>
   <script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
+
+
   <script src="conf.js"></script>
 </html>
