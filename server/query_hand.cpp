@@ -11,6 +11,7 @@
 #include "broadcastcli.h"
 #include "route_exchange.h"
 #include "hocfg_mgr.h"
+#include "climanage.h"
 
 HEPCLASS_IMPL_FUNCX_BEG(QueryHand)
 HEPCLASS_IMPL_FUNCX_MORE(QueryHand, ProcessOne)
@@ -58,6 +59,7 @@ int QueryHand::ProcessOne( void* ptr, unsigned cmdid, void* param )
 	CMDID2FUNCALL_CALL(CMD_GETWARN_REQ);
 	CMDID2FUNCALL_CALL(CMD_GETCONFIG_REQ);
 	CMDID2FUNCALL_CALL(CMD_TESTING_REQ);
+	CMDID2FUNCALL_CALL(CMD_EVNOTIFY_REQ);
 	
 	return 0;
 }
@@ -88,18 +90,29 @@ int QueryHand::on_CMD_GETCLI_REQ( IOHand* iohand, const Value* doc, unsigned seq
 	string dstSvrId;
 	string dstKey;
 	string outjson;
+	string resp;
 
 	svrid = getIntFromJson(CONNTERID_KEY, doc);
-
 	Rjson::GetStr(dstKey, "key", doc);
 
-	outjson = g_resp_strbeg;
+
 	ret = Actmgr::Instance()->pickupCliProfile(outjson, svrid, dstKey);
-	outjson += "}";
-	ERRLOG_IF1(ret, "CMD_GETCLI_REQ| msg=pickupCliProfile fail %d| get_svrid=%d| key=%s", ret, svrid, dstKey.c_str());
+
+	if (svrid > 0 && 0 == ret) // 获取不到指定某一应用
+	{
+		resp = _F("{ \"code\": 404, \"desc\": \"no exit svrid=%d\"}", svrid);
+	}
+	else
+	{
+		resp = g_resp_strbeg;
+		resp += outjson;
+		resp += _F(", \"count\": %d}", ret);
+	}
+
+	//ERRLOG_IF1(0==ret, "CMD_GETCLI_REQ| msg=pickupCliProfile fail %d| get_svrid=%d| key=%s", ret, svrid, dstKey.c_str());
 
 	//ret = SendMsg(iohand, CMD_GETCLI_RSP, seqid, outjson, true);
-	iohand->sendData(CMD_GETCLI_RSP, seqid, outjson.c_str(), outjson.length(), true);
+	iohand->sendData(CMD_GETCLI_RSP, seqid, resp.c_str(), resp.length(), true);
 	return ret;
 }
 
@@ -201,5 +214,30 @@ int QueryHand::on_CMD_TESTING_REQ( IOHand* iohand, const Value* doc, unsigned se
 		LOGDEBUG("TESTING_REQ| msg=test PostToCli ?->%d| ret=%d", from, ret);
 	}
 
+	return 0;
+}
+
+int QueryHand::on_CMD_EVNOTIFY_REQ( IOHand* iohand, const Value* doc, unsigned seqid )
+{
+	int code = -1;
+	RJSON_GETSTR_D(notify, doc);
+	if ("closelink" == notify)
+	{
+		RJSON_VGETINT_D(svrid, CONNTERID_KEY, doc);
+		CliBase* cli = CliMgr::Instance()->getChildBySvrid(svrid);
+		IOHand* iocli = dynamic_cast<IOHand*>(cli);
+		code = -2;
+		if (cli && iocli)
+		{
+			code = iocli->driveClose(_F("notify close by %s", iohand->m_idProfile.c_str()));
+		}
+	}
+
+	string resp("{");
+	StrParse::PutOneJson(resp, "code", code, true);
+	StrParse::PutOneJson(resp, "notify_r", notify, false);
+	resp += "}";
+
+	iohand->sendData(CMD_EVNOTIFY_RSP, seqid, resp.c_str(), resp.length(), true);
 	return 0;
 }

@@ -34,6 +34,7 @@ private:
     CMD2FUNCCALL_DESC(CMD_GETWARN_REQ);
     CMD2FUNCCALL_DESC(CMD_GETCONFIG_REQ);
     CMD2FUNCCALL_DESC(CMD_TESTING_REQ);
+    CMD2FUNCCALL_DESC(CMD_EVNOTIFY_REQ);
 
     static int on_ExchangeMsg( IOHand* iohand, const Value* doc, unsigned cmdid, unsigned seqid );
 

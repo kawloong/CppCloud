@@ -1,6 +1,7 @@
 #include "cloudapp.h"
 #include "comm/strparse.h"
 #include "comm/sock.h"
+#include "comm/base64.h"
 #include "cloud/switchhand.h"
 #include "cloud/msgid.h"
 #include "cloud/exception.h"
@@ -320,10 +321,33 @@ int CloudApp::onCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param )
 	RJSON_VGETINT_D(to, ROUTE_MSG_KEY_FROM, &doc);
 
 	int code = 0;
+	int force = 0;
+	int exitcode = 0;
 	string resp("{");
-	if (notify == "check-alive") // 此处处理各命令
+	if ("check-alive" == notify) // 此处处理各命令
 	{
 		StrParse::PutOneJson(resp, "result", time(NULL), true);
+	}
+	else if ("exit" == notify)
+	{
+		RJSON_GETINT(force, &doc);
+		RJSON_GETINT(exitcode, &doc);
+		StrParse::PutOneJson(resp, "result", "success", true);
+	}
+	else if ("shellcmd" == notify)
+	{
+		string outtxt;
+		RJSON_GETINT_D(cmdid, &doc);
+		if (0 == cmdid) // 尝试string
+		{
+			RJSON_VGETSTR_D(strcmdid, "cmdid", &doc);
+			if (!strcmdid.empty())
+			{
+				cmdid = atoi(strcmdid.c_str());
+			}
+		}
+		code = onNotifyShellCmd(outtxt, cmdid);
+		StrParse::PutOneJson(resp, "result", outtxt, true);
 	}
 	else
 	{
@@ -341,7 +365,58 @@ int CloudApp::onCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param )
 		sendData(CMD_EVNOTIFY_RSP, seqid, resp.c_str(), resp.length(), true);		
 	}
 
+	if (1 == force) // 强制退出命令
+	{
+		string tmp;
+		m_seqid = seqid - 1;
+		int ret = begnRequest(tmp, CMD_EVNOTIFY_RSP, resp, true);
+		LOGERROR("EVNOTIFY| msg=force exit| req=%s| ret=%d", body, ret);
+		exit(exitcode);
+	}
+
 	return 0;
+}
+
+// @summery: 命令通知，外部进来； 为安全起见，都是预先定义好cmdid对应要执行的shell
+// outtxt: 标准输出+base64编码string
+// remark: cmdid 从1起编号
+int CloudApp::onNotifyShellCmd( string& outtxt, int cmdid)
+{
+	static const char* shellcmd[] = {"", "uptime", "free -h", "df -h"};
+	static const int cmdlength = sizeof(shellcmd)/sizeof(char*);
+	int ret;
+
+	ERRLOG_IF1RET_N(cmdid <= 0 || cmdid > cmdlength, -85, "NTFSHELLCMD| msg=invalid cmdid %d", cmdid);
+	FILE* fp = popen(shellcmd[cmdid], "r");
+	ERRLOG_IF1RET_N(NULL == fp, -86, "NTFSHELLCMD| msg=popen fail | cmd=%s", shellcmd[cmdid]);
+
+	string stdouttxt;
+	while (fp)
+	{
+		char buff[256] = {0};
+		int rdsize = fread(buff, sizeof(buff)-1, 1, fp);
+		if (rdsize >= 0)
+		{
+			stdouttxt += buff;
+		}
+
+		if (rdsize <= 0) break;
+	}
+	if (fp) fclose(fp);
+	fp = NULL;
+
+	if (Base64::Encode(stdouttxt) > 0)
+	{
+		outtxt = stdouttxt;
+		ret = 0;
+	}
+	else
+	{
+		ret = 400;
+		outtxt = "base64 encode fail";
+	}
+
+	return ret;
 }
 
 // 解发回调（可能会有多个cb）
@@ -375,6 +450,18 @@ bool CloudApp::isInEpRun( void ) const
 
 void CloudApp::uninit( void )
 {
+	// 发送未完的消息
+	for (int i=0; m_oBufItem || m_oBuffq.size() > 0; ++i)
+	{
+		onWrite(0, 0);
+		if (i > 20)
+		{
+			LOGWARN("CLOUDAPPEXIT| msg=out queue still exist| size=%d", m_oBuffq.size());
+			break;
+		}
+		usleep(1000 * 200); // 200ms
+	}
+
 	m_epCtrl.setEvt(0, NULL);
 	reset();
 }

@@ -1,7 +1,22 @@
+var vueapp = null;
+
+function b64EncodeUnicode(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+        return String.fromCharCode('0x' + p1);
+    }));
+}
+
+function b64DecodeUnicode(str) {
+    return decodeURIComponent(atob(str).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+}
+
+
 function mainf( Vue ) {
   
 
-const app = new Vue({
+vueapp = new Vue({
   data: {
     maindata: [],
     colm_checked: ['svrid', 'svrname', 'clisock'],
@@ -106,20 +121,25 @@ const app = new Vue({
     },
 
     refreshDetail : function(svridx) {
+        let self = this;
         let svrid = this.svrid_page;
+
+        self.$data.outtext += '刷新信息：';
         this.$http.get('/clidata/' + svrid).then(function(res){
             var result = res.body.code
             if (0 != result) {
-                alert('获取失败：'+res.body.desc);
+                self.$data.outtext += ('获取失败：'+res.body.desc + '\n');
             } else {
+
                 console.log(svrid + "更新详细成功：" + res.body.data[0]);
                 this.detail_obj = res.body.data[0];
                 this.maindata[this.svrid_idx] = this.detail_obj;
 
                 this.gotoDetail(svrid, this.svrid_idx);
+                self.$data.outtext += ' 成功svrid=' + svrid + '\n';
             }
         }, function(){
-            alert('请求/clidata/' + svrid + '失败处理');
+            self.$data.outtext += ('请求/clidata/' + svrid + '失败处理\n');
         })
     },
 
@@ -131,12 +151,47 @@ const app = new Vue({
                 ).then(function(res) {
                 self.ajaxCallBack(url, res, function(body){
                     // console.log('response' + this.outtext + body.result);
-                    self.$data.outtext += '  成功：' + body.result + '\n';
+                    self.$data.outtext += ' 成功' + body.result + '\n';
                 });
             }, function(){
                 self.ajaxCallBack(url, false, null);
         }
         )
+    },
+
+    clickClose: function(idx){
+        let self = this;
+        let url = 2===idx? '/notify/closelink' :'/notify/exit';
+        const cmdarr = ['通知关闭', '强制关闭', '断开连接'];
+
+        self.$data.outtext += cmdarr[idx] + ":";
+        this.$http.get(url, {params:{svrid: this.svrid_page, force: idx}} 
+            ).then(function(res) {
+            self.ajaxCallBack(url, res, function(body){
+                // console.log('response' + this.outtext + body.result);
+                self.$data.outtext += ' 成功' + body.result + '\n';
+                self.$data.outtext += '关闭成功后，将不能进行其他操作，请重新从服务主页开始\n';
+            });
+        }, function(){
+            self.ajaxCallBack(url, false, null);
+        })
+    },
+    
+    checkCpuInfo: function(idx){
+        let self = this;
+        let url = '/notify/shellcmd';
+        const cmdarr = ['获取CPU信息', '获取MEMERY'];
+
+        self.$data.outtext += cmdarr[idx] + ":";
+        this.$http.get(url, {params:{svrid: this.svrid_page, cmdid: idx}} 
+            ).then(function(res) {
+            self.ajaxCallBack(url, res, function(body){
+                // console.log('response' + this.outtext + body.result);
+                self.$data.outtext += ' 成功\n  ' + b64DecodeUnicode(body.result) + '\n';
+            });
+        }, function(){
+            self.ajaxCallBack(url, false, null);
+        })
     },
 
     ajaxCallBack : function(url, res, okcb) {
@@ -146,7 +201,7 @@ const app = new Vue({
                 okcb(res.body);
             } else {
                 //alert('返回失败：'+res.body);
-                this.$data.outtext += '  返回失败：' + body.result + '\n';
+                this.$data.outtext += '  返回失败：' + JSON.stringify(res.body) + '\n';
             }
         } else {
             //alert('请求' + url + '失败处理');
@@ -191,6 +246,16 @@ const app = new Vue({
         }
         return attrName;
     },
+
+    // 属性值转可读
+    value2Human : function(val, attrName) {
+        const timeAttrMap = {'atime':1, 'begin_time':1};
+        if (attrName in timeAttrMap){
+            return vueapp.$options.filters.toHumanTime(val);
+        }
+        return val;
+    },
+
     filterNullStr : function(param) {
         return param? param: 0;
     }

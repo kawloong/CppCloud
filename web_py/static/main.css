@@ -37,6 +37,10 @@ th span {
     width: 100%;
 }
 
+div.checkbox {
+    margin-left: 15px;
+}
+
 .btn-group-justified button {
     margin: 10px;
 }

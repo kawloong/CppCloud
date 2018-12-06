@@ -24,7 +24,7 @@ public:
 
     /* @summey: 面向string的bas64编码函数
     ** @param: iobuff [in/out] 输入二进制数据,输出base64编码后字符串数据
-    ** @return: 成功返回输出解码后数据的字节数, 失败返回小于0
+    ** @return: 成功返回输出编码后数据的字节数, 失败返回小于0
     **/
     static int Encode(std::string& iobuff);
 

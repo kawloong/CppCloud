@@ -25,10 +25,14 @@
   <div id="app">
     <div id="home" v-show="0 === svrid_page">
     <div>
-        栏目选择:
+        <form class="form-inline"><div class="form-group">
+        <label>栏目选择:</label>
         <template v-for="item in colm_base">
-        <input type="checkbox" :value="item" v-model="colm_checked" /> {{item | attrName2Human}}
+        <div class="checkbox">
+            <label> <input type="checkbox" :value="item" v-model="colm_checked"> {{item | attrName2Human}} </label>
+        </div>
         </template>
+        </div></form>
     </div>
 
     <table class="table table-striped" border="1">
@@ -41,7 +45,7 @@
       <template v-for="(cli,idx) in maindata">
       <tr>
         <template v-for="item in colm_base">
-        <td v-if="colm_checked.indexOf(item) >= 0">{{cli[item]}}</td>
+        <td v-if="colm_checked.indexOf(item) >= 0">{{cli[item] | value2Human(item)}}</td>
         </template>
         <td><a @click.prevent="gotoDetail(cli.svrid, idx)" :href="'#'+cli.svrid">详细</a></td>
       </tr>
@@ -68,7 +72,8 @@
                         <span v-if="key.indexOf('prvd_') === -1"
                             data-toggle="tooltip" :title="'原始属性: '+key+'='+value"> 
                         <label>{{key | attrName2Human}}:</label>
-                        <input type="text" class="form-control" :value="value" readonly>
+                        <input type="text" class="form-control" 
+                            :value="value | value2Human(key)" readonly>
                         &nbsp; &nbsp; </span>
                     </div>
                 </form>
@@ -122,7 +127,8 @@
                     
                         <div class="btn-group btn-group-justified" role="group" aria-label="x">
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-default">刷新信息</button>
+                                <button type="button" class="btn btn-default"
+                                    @click="refreshDetail(svrid_page)">刷新信息</button>
                             </div>
                             <div class="btn-group" role="group">
                                 <button type="button" class="btn btn-default" 
@@ -136,13 +142,16 @@
                     
                         <div class="btn-group btn-group-justified" role="group" aria-label="x">
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-default">通知关闭</button>
+                                <button type="button" class="btn btn-default"
+                                    @click="clickClose(0)">通知关闭</button>
                             </div>
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-default">强制关闭</button>
+                                <button type="button" class="btn btn-default"
+                                    @click="clickClose(1)">强制关闭</button>
                             </div>
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-default">断开Link</button>
+                                <button type="button" class="btn btn-default"
+                                    @click="clickClose(2)">断开Link</button>
                             </div>
                         </div>
                     
@@ -151,10 +160,12 @@
                                 <button type="button" class="btn btn-default">IO统计</button>
                             </div>
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-default">CPU负载</button>
+                                <button type="button" class="btn btn-default"
+                                    @click="checkCpuInfo(1)">CPU负载</button>
                             </div>
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-default">内存状况</button>
+                                <button type="button" class="btn btn-default"
+                                    @click="checkCpuInfo(2)">内存状况</button>
                             </div>
                         </div>
                     

@@ -54,8 +54,10 @@ int Actmgr::pickupWarnCliProfile( string& json, const string& filter_key, const 
 // @summery: 获取客户端的属性信息
 // @param: svrid 为0时获取所有,否则单个
 // @param: key 为空时获取所有属性
+// @return 获取到的cli个数
 int Actmgr::pickupCliProfile( string& json, int svrid, const string& key )
 {
+	int count = 0;
 	json += "[";
 	if (0 == svrid)
 	{
@@ -64,6 +66,7 @@ int Actmgr::pickupCliProfile( string& json, int svrid, const string& key )
 		{
 			if (i) json.append(",");
 			getJsonProp(itr->first, json, key);
+			++count;
 		}
 	}
 	else
@@ -72,11 +75,12 @@ int Actmgr::pickupCliProfile( string& json, int svrid, const string& key )
 		if (ptr)
 		{
 			getJsonProp(ptr, json, key);
+			++count;
 		}
 	}
 
 	json.append("]");
-	return 0;
+	return count;
 }
 
 // 获取某个app的一项或全部属性，以json字符串返回

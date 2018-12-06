@@ -68,6 +68,8 @@ private:
 	int taskRun( int flag, long p2 );
 	int appendTimerq( void );
 
+	int onNotifyShellCmd( string& outtxt, int cmdid);
+
 
 private:
 	int m_appid;
