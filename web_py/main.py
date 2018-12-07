@@ -87,10 +87,18 @@ def clidata(svrid):
 def command(cmd):
     param = request.args.get('param', '')
     svrid = request.args.get('svrid')
-    return gweb_cli.request(CMD_EVNOTIFY_REQ, { 
-        "to": (svrid),
-        "notify": cmd,
-        "param": param })
+    svrid = int(svrid)
+
+    reqobj = {"notify": cmd, "param": param}
+    if 'closelink' == cmd:
+        reqobj['svrid'] = svrid;
+    else:
+        reqobj['to'] = svrid;
+
+    if 'shellcmd' == cmd:
+        reqobj['cmdid'] = request.args.get('cmdid')
+
+    return gweb_cli.request(CMD_EVNOTIFY_REQ, reqobj)
 
 def onNotifyMsg(cmdid, seqid, msg):
     print(msg)

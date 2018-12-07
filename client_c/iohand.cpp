@@ -397,6 +397,19 @@ int IOHand::getIntProperty( const string& key ) const
 	return atoi(getProperty(key).c_str());
 }
 
+// @param: [out] format {all:[进程收到的字节数, 进程发出的字节数, 进程收到的报文数, 进程发出的报文数], 
+//		one:[当前连接收到的字节数, 当前连接发出的字节数, 当前连接收到的报文数, 当前连接发出的报文数]}
+int IOHand::getIOStatJson( string& rspjson ) const
+{
+	StrParse::AppendFormat(rspjson, "\"all\":[%lld, %lld, %d, %d]",
+		serv_recv_bytes, serv_send_bytes, serv_recvpkg_num, serv_sendpkg_num);
+	
+	StrParse::AppendFormat(rspjson, ",\"one\":[%lld, %lld, %d, %d]",
+		m_recv_bytes, m_send_bytes, m_recvpkg_num, m_sendpkg_num);
+	
+	return 0;
+}
+
 int IOHand::driveClose( const string& reason )
 {
 	m_closeReason = reason;

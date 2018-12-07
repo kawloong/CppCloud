@@ -50,6 +50,8 @@ public: // interface HEpBase
 	void setIntProperty( const string& key, int val );
     int getIntProperty( const string& key ) const;
 
+	int getIOStatJson( string& rspjson ) const;
+
 	// 消息处理
 	bool addCmdHandle( unsigned cmdid, ProcOneFunT func, unsigned seqid=0 ); // 线程安全
 	void delCmdHandle( unsigned cmdid, unsigned seqid=0 ); // 线程安全

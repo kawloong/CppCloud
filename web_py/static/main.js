@@ -60,6 +60,11 @@ vueapp = new Vue({
         })
     },
 
+    isReadOnly : function(key){
+        const readonlykey = {'aliasname': 1, 'desc': 1};
+        return !(key in readonlykey);
+    },
+
     spanclass : function(column) {
         let iconClass = "glyphicon-sort";
         if (column === this.sort_colm) {
@@ -72,13 +77,18 @@ vueapp = new Vue({
     },
 
     gotoDetail : function(svrid, arridx) {
-        const prvdKeys = ['regname', 'prvdid', 'url', 'protocol', 'weight', 'version', 'pvd_ok', 'pvd_ng', 'ivk_ok', 'ivk_ng']
+        const prvdKeys = ['regname', 'prvdid', 'url', 'protocol', 'weight', 
+            'version', 'pvd_ok', 'pvd_ng', 'ivk_ok', 'ivk_ng', 'enable']
         console.log("goto Detail svrid=" + svrid);
         this.svrid_page = svrid;
         this.svrid_idx = arridx;
         if (0 === svrid) return;
 
         this.detail_obj = this.maindata[arridx];
+        if (! ('aliasname' in this.detail_obj)) {
+            this.detail_obj['aliasname'] = ''
+        }
+
         let svrObj = this.detail_obj;
         this.prvd_obj = [];
         if ('_provider_mark' in svrObj) { // 服务提供者
@@ -118,6 +128,10 @@ vueapp = new Vue({
                 this.invk_obj[invkArr[0]][invkArr[1]] = value;
             }
         }
+    },
+    
+    propChange : function(param){
+        console.log("change prop " + param);
     },
 
     refreshDetail : function(svridx) {
@@ -194,6 +208,27 @@ vueapp = new Vue({
         })
     },
 
+    checkIOStat: function(){
+        let self = this;
+        let url = '/notify/iostat';
+        
+        self.$data.outtext += "IO统计:";
+        this.$http.get(url, {params:{ svrid: this.svrid_page }} 
+            ).then(function(res) {
+            self.ajaxCallBack(url, res, function(body){
+                console.log('response' + body.result);
+
+                let allstat = body.result.all;
+                self.$data.outtext += ' 成功 ' + 
+                'recv ' + allstat[0] + 'bytes@' + allstat[2] + 'package' +
+                 ', send ' + allstat[1] + 'bytes@' + allstat[3] + 'package';
+                 + '\n';
+            });
+        }, function(){
+            self.ajaxCallBack(url, false, null);
+        })
+    },
+
     ajaxCallBack : function(url, res, okcb) {
         if (res) {
             var result = res.body.code
@@ -238,7 +273,8 @@ vueapp = new Vue({
             'atime':'活跃时间',
             'localsock': '本地地址',
             '_provider_mark': '服务标记',
-            'fd': '套接字fd'
+            'fd': '套接字fd',
+            'desc': '描述'
         }
 
         if (attrName in attrHumanObj){

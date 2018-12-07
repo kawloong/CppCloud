@@ -39,13 +39,18 @@ struct SdkMember
 
 
 // 初始化，连接cppcloud-serv，下载主配置文件
-int Init( const string& appName, const string& servHostPort, int appid /*=0*/ )
+int Init( const string& appName, const string& servHostPort, int appid /*=0*/, const string& tag/*=nilstr*/ )
 {
     int ret;
 
     if (appid > 0)
     {
         CloudApp::Instance()->setSvrid(appid);
+    }
+
+    if (!tag.empty())
+    {
+        CloudApp::Instance()->setTag(tag);
     }
 
     gsdk.hepo.init();
@@ -72,7 +77,6 @@ int Init( const string& appName, const string& servHostPort, int appid /*=0*/ )
     
     return ret;
 }
-
 
 // 加载配置指定文件(download)
 int LoadConfFile( const string& fname )

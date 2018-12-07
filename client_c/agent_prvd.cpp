@@ -111,13 +111,15 @@ int main( int argc, char* argv[] )
 
     int ret;
     string serv = argv[1];
+    string tag = (argc > 2)? argv[2] : "";
 
     // 服务启动初始化，传入CloudServ的地址
-    if ( (ret = client_c::Init(appName, serv)) )
+    if ( (ret = client_c::Init(appName, serv, 0, tag)) )
     {
         printf("Init fail %d, serv=%s\n", ret, serv.c_str());
         return -2;
     }
+
 
     // 加载后应用所需要的配置文件
     if ( (ret = client_c::LoadConfFile(confFile)) )

@@ -29,6 +29,10 @@ public:
     static int ReconnectNotifyCB( void* param ); // 重连后回调
 
 public:
+
+    // 获取，提供对外判断是否存在此服务
+    ProviderItem* getProvider( const string& regname, int prvdid );
+
     // 服务注册
     int regProvider( const string& regname, int prvdid, short protocol, const string& url );
     void setUrl( const string& regname, int prvdid, const string& url );
@@ -45,7 +49,6 @@ public:
     void uninit( void );
 
 private:
-    ProviderItem* _getProvider( const string& regname, int prvdid );
     int reconnectNotifyCB( void* param );
     int registRequest( ProviderItem* pvd ) const;
 

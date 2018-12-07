@@ -19,7 +19,7 @@ void ProvdMgr::uninit( void )
     m_provider_apps.clear();
 }
 
-ProviderItem* ProvdMgr::_getProvider( const string& regname, int prvdid )
+ProviderItem* ProvdMgr::getProvider( const string& regname, int prvdid )
 {
     string key = regname + "%" + _N(prvdid);
     map<string, ProviderItem*>::const_iterator itr = m_provider_apps.find(key);
@@ -88,27 +88,27 @@ int ProvdMgr::regProvider( const string& regname, int prvdid, short protocol, co
 
 void ProvdMgr::setUrl( const string& regname, int prvdid, const string& url )
 {
-    ProviderItem* pvd = _getProvider(regname, prvdid);
+    ProviderItem* pvd = getProvider(regname, prvdid);
     if (pvd) pvd->url = url;
 }
 void ProvdMgr::setDesc( const string& regname, int prvdid, const string& desc )
 {
-    ProviderItem* pvd = _getProvider(regname, prvdid);
+    ProviderItem* pvd = getProvider(regname, prvdid);
     if (pvd) pvd->desc = desc;
 }
 void ProvdMgr::setWeight( const string& regname, int prvdid, short weight )
 {
-    ProviderItem* pvd = _getProvider(regname, prvdid);
+    ProviderItem* pvd = getProvider(regname, prvdid);
     if (pvd) pvd->weight = weight;
 }
 void ProvdMgr::setVersion( const string& regname, int prvdid, short ver )
 {
-    ProviderItem* pvd = _getProvider(regname, prvdid);
+    ProviderItem* pvd = getProvider(regname, prvdid);
     if (pvd) pvd->version = ver;
 }
 void ProvdMgr::setEnable( const string& regname, int prvdid, bool enable )
 {
-    ProviderItem* pvd = _getProvider(regname, prvdid);
+    ProviderItem* pvd = getProvider(regname, prvdid);
     if (pvd) pvd->enable = enable;
 }
 
@@ -116,7 +116,7 @@ void ProvdMgr::setEnable( const string& regname, int prvdid, bool enable )
 // param: noEpFlag 当启动阶段未进入io-epoll复用前传true； 有io-epoll复用的业务里传false
 int ProvdMgr::postOut( const string& regname, int prvdid )
 {
-    ProviderItem* pvd = _getProvider(regname, prvdid);
+    ProviderItem* pvd = getProvider(regname, prvdid);
     ERRLOG_IF1RET_N(NULL == pvd, -63, "POSTPROVIDER| msg=post no provider| "
             "regname=%s", regname.c_str());
     

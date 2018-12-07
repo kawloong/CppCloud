@@ -1,4 +1,5 @@
 #include "cloudapp.h"
+#include "provd_mgr.h"
 #include "comm/strparse.h"
 #include "comm/sock.h"
 #include "comm/base64.h"
@@ -123,6 +124,11 @@ int CloudApp::begnRequest( string& resp, unsigned cmdid, const string& reqmsg, b
 	ERRLOG_IF1(ret, "SYNCREQ| msg=send or recv fail %d| err=(%d)%s", ret, errno, strerror(errno));
 
 	return ret;
+}
+
+void CloudApp::setTag( const string& tag )
+{
+	m_tag = tag;
 }
 
 void CloudApp::setSvrid( int svrid )
@@ -321,35 +327,9 @@ int CloudApp::onCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param )
 	RJSON_VGETINT_D(to, ROUTE_MSG_KEY_FROM, &doc);
 
 	int code = 0;
-	int force = 0;
-	int exitcode = 0;
 	string resp("{");
-	if ("check-alive" == notify) // 此处处理各命令
-	{
-		StrParse::PutOneJson(resp, "result", time(NULL), true);
-	}
-	else if ("exit" == notify)
-	{
-		RJSON_GETINT(force, &doc);
-		RJSON_GETINT(exitcode, &doc);
-		StrParse::PutOneJson(resp, "result", "success", true);
-	}
-	else if ("shellcmd" == notify)
-	{
-		string outtxt;
-		RJSON_GETINT_D(cmdid, &doc);
-		if (0 == cmdid) // 尝试string
-		{
-			RJSON_VGETSTR_D(strcmdid, "cmdid", &doc);
-			if (!strcmdid.empty())
-			{
-				cmdid = atoi(strcmdid.c_str());
-			}
-		}
-		code = onNotifyShellCmd(outtxt, cmdid);
-		StrParse::PutOneJson(resp, "result", outtxt, true);
-	}
-	else
+	
+	if (1 == _notifyHandle(resp, code, notify, &doc))
 	{
 		StrParse::PutOneJson(resp, "result", string("unknow notify ")+notify, true);
 		WARNLOG_IF1(0 == handCount, "EVNOTIFY| msg=no callback| notify=%s", notify.c_str());
@@ -365,22 +345,119 @@ int CloudApp::onCMD_EVNOTIFY_REQ( void* ptr, unsigned cmdid, void* param )
 		sendData(CMD_EVNOTIFY_RSP, seqid, resp.c_str(), resp.length(), true);		
 	}
 
-	if (1 == force) // 强制退出命令
+	if ("exit" == notify) // 强制退出命令
 	{
-		string tmp;
-		m_seqid = seqid - 1;
-		int ret = begnRequest(tmp, CMD_EVNOTIFY_RSP, resp, true);
-		LOGERROR("EVNOTIFY| msg=force exit| req=%s| ret=%d", body, ret);
-		exit(exitcode);
+		RJSON_GETINT_D(force, &doc);
+		RJSON_GETINT_D(exitcode, &doc);
+		if (1 == force)
+		{
+			string tmp;
+			m_seqid = seqid - 1;
+			int ret = begnRequest(tmp, CMD_EVNOTIFY_RSP, resp, true);
+			LOGERROR("EVNOTIFY| msg=force exit| req=%s| ret=%d", body, ret);
+			exit(exitcode);	
+		}
+
 	}
 
 	return 0;
 }
 
+int CloudApp::_notifyHandle( string& resp, int& code, const string& notify, const void* vdoc )
+{
+	int ret = 0;
+	int force = 0;
+	int exitcode = 0;
+
+	const Value* doc = (const Document*)vdoc;
+	if ("check-alive" == notify) // 此处处理各命令
+	{
+		StrParse::PutOneJson(resp, "result", time(NULL), true);
+	}
+	else if ("exit" == notify)
+	{
+		RJSON_GETINT(force, doc);
+		RJSON_GETINT(exitcode, doc);
+		StrParse::PutOneJson(resp, "result", "success", true);
+	}
+	else if ("shellcmd" == notify)
+	{
+		string outtxt;
+		RJSON_GETINT_D(cmdid, doc);
+		if (0 == cmdid) // 尝试string
+		{
+			RJSON_VGETSTR_D(strcmdid, "cmdid", doc);
+			if (!strcmdid.empty())
+			{
+				cmdid = atoi(strcmdid.c_str());
+			}
+		}
+		code = onNotifyShellCmd(outtxt, cmdid);
+		StrParse::PutOneJson(resp, "result", outtxt, true);
+	}
+	else if ("iostat" == notify)
+	{
+		string ostat;
+		getIOStatJson(ostat);
+		resp += "\"result\":{" + ostat + "},";
+	}
+	else if (APP_ALIAS_NAME == notify)
+	{
+		RJSON_VGETSTR_D(name, APP_ALIAS_NAME, doc);
+		if (!name.empty())
+		{
+			m_2ndName = name;
+			string reqmsg = _F("{\"%s\": \"%s\"}", APP_ALIAS_NAME, name.c_str());
+			
+			code = postRequest(CMD_SETARGS_REQ, reqmsg);
+			StrParse::PutOneJson(resp, "result", string("success set to ") + name, true);
+		}
+	}
+	else if ("provider" == notify)
+	{
+		int weight = -1;
+		int enable = -1;
+		RJSON_GETSTR_D(regname, doc);
+		RJSON_GETINT_D(prvdid, doc);
+		string desc;
+		if (ProvdMgr::Instance()->getProvider(regname, prvdid))
+		{
+			if (0 == RJSON_GETINT(weight, doc) && weight >= 0)
+			{
+				ProvdMgr::Instance()->setWeight(regname, prvdid, weight);
+				desc += _F("setWeight %d", weight);
+			}
+
+			if (0 == RJSON_GETINT(enable, doc) && enable >= 0)
+			{
+				ProvdMgr::Instance()->setEnable(regname, prvdid, enable);
+				desc += _F(" setEnable %d", enable);
+			}
+		}
+
+		if (!desc.empty())
+		{
+			ProvdMgr::Instance()->postOut(regname, prvdid);
+			StrParse::PutOneJson(resp, "result", desc, true);
+		}
+		else
+		{
+			code = 404;
+			StrParse::PutOneJson(resp, "result", _F("no %s%%%d", regname.c_str(), prvdid), true);
+		}
+	}
+	else
+	{
+		ret = 1;
+	}
+
+	return ret;
+}
+
 // @summery: 命令通知，外部进来； 为安全起见，都是预先定义好cmdid对应要执行的shell
 // outtxt: 标准输出+base64编码string
 // remark: cmdid 从1起编号
-int CloudApp::onNotifyShellCmd( string& outtxt, int cmdid)
+int CloudApp::onNotifyShellCmd( string& outtxt, int cmdid) const
 {
 	static const char* shellcmd[] = {"", "uptime", "free -h", "df -h"};
 	static const int cmdlength = sizeof(shellcmd)/sizeof(char*);
@@ -475,6 +552,15 @@ string CloudApp::whoamiMsg( void ) const
 	StrParse::PutOneJson(whoIamJson, SVRNAME_KEY, m_svrname.c_str(), true);
 	StrParse::PutOneJson(whoIamJson, CLISOCKET_KEY, Sock::sock_name(m_cliFd, true, false), true);
 	StrParse::PutOneJson(whoIamJson, "begin_time", (int)time(NULL), true);
+
+	if (!m_tag.empty())
+	{
+		StrParse::PutOneJson(whoIamJson, "tag", m_tag,true);
+	}
+	if (!m_2ndName.empty())
+	{
+		StrParse::PutOneJson(whoIamJson, APP_ALIAS_NAME, m_2ndName, true);
+	}
 	
 	StrParse::PutOneJson(whoIamJson, "pid", getpid(), true);
 	StrParse::PutOneJson(whoIamJson, CLIENT_TYPE_KEY, m_cliType, false);

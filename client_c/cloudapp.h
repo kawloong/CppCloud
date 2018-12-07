@@ -46,8 +46,10 @@ public:
 	string getMConf( void ) const;
 	string getLocalIP( void ) const;
 	string whoamiMsg( void ) const;
-	int setToEpollEv( void );
 
+	int setToEpollEv( void );
+	
+	void setTag( const string& tag );
 	void setSvrid( int svrid );
 	void setNotifyCB( const string& notify, NotifyCBFunc func ); // 订阅Serv的推送消息
 
@@ -68,7 +70,8 @@ private:
 	int taskRun( int flag, long p2 );
 	int appendTimerq( void );
 
-	int onNotifyShellCmd( string& outtxt, int cmdid);
+	int onNotifyShellCmd( string& outtxt, int cmdid) const;
+	int _notifyHandle( string& resp, int& code, const string& notify, const void* doc );
 
 
 private:
@@ -85,6 +88,9 @@ private:
 	string m_rhost;
 	string m_svrname;
 	string m_mconf;
+
+	string m_tag; // 本地启动传入的tag
+	string m_2ndName; // 启动后给web设置的别名
 
 	SyncHand m_syncHand;
 	map<string, NotifyCBFunc> m_ntfCB; // 未做多个相同事件消费

@@ -13,15 +13,17 @@ struct svr_item_t; // defind in "svr_item.h"
 struct msg_prop_t; // define in "msgprop.h"
 typedef int (*CMD_HAND_FUNC)(msg_prop_t*, const char*);
 typedef void (*CONF_CHANGE_CB)(const string& confname);
+static const string nilstr;
 
 namespace client_c
 {
     // 初始化，连接cppcloud-serv，获得主配置文件名
-    int Init( const string& appName, const string& servHostPort, int appid = 0 );
+    int Init( const string& appName, const string& servHostPort, int appid=0, const string& tag=nilstr );
 
     // 加载配置指定文件(download)
     int LoadConfFile( const string& fname );
     string GetMConfName( void ); // 获取主配置文件名
+
     // 配置查询 
     // T=[string, int, map<string,string>, map<string,int>, vector<string>, vector<int>]
     template<class T> int Query( T& oval, const string& fullqkey, bool wideVal );
@@ -38,7 +40,7 @@ namespace client_c
     int ProvdSendMsgAsync( const msg_prop_t* msgprop, const string& msg );
     
     // 发布服务
-    int RegProvider( const string& regname, int prvdid, short protocol, int port, const string& path="" );
+    int RegProvider( const string& regname, int prvdid, short protocol, int port, const string& path=nilstr );
     int RegProvider( const string& regname, int prvdid, short protocol, const string& url );
     void setUrl( const string& regname, int prvdid, const string& url );
     void setDesc( const string& regname, int prvdid, const string& desc );

@@ -12,6 +12,7 @@ const char SVRNAME_KEY[] = "svrname";
 const char CLISOCKET_KEY[] = "localsock";
 const char CLIENT_TYPE_KEY[] = "clitype";
 const char OBJECT_TYPE_KEY[] = "objtype";
+const char APP_ALIAS_NAME[] = "aliasname";
 const char SERV_ALIAS_PREFIX[] = "serv_";
 const char SERV_IN_ALIAS_PREFIX[] = "serv_I";
 const char SERV_OUT_ALIAS_PREFIX[] = "serv_o";

@@ -72,9 +72,16 @@
                         <span v-if="key.indexOf('prvd_') === -1"
                             data-toggle="tooltip" :title="'原始属性: '+key+'='+value"> 
                         <label>{{key | attrName2Human}}:</label>
-                        <input type="text" class="form-control" 
+
+                        <input type="text" class="form-control" v-if="isReadOnly(key)"
                             :value="value | value2Human(key)" readonly>
-                        &nbsp; &nbsp; </span>
+
+                        <input type="text" class="form-control" v-else
+                            :value="value | value2Human(key)"
+                            @blur="propChange($event)">
+
+                        &nbsp; &nbsp; 
+                        </span>
                     </div>
                 </form>
             </div>
@@ -157,7 +164,8 @@
                     
                         <div class="btn-group btn-group-justified" role="group" aria-label="x">
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-default">IO统计</button>
+                                <button type="button" class="btn btn-default"
+                                    @click="checkIOStat">IO统计</button>
                             </div>
                             <div class="btn-group" role="group">
                                 <button type="button" class="btn btn-default"
