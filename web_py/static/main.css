@@ -87,3 +87,14 @@ div.checkbox {
 .qctrl_main {
     padding: 30px;
 }
+
+div.checkbox {
+    display: inline-block;
+}
+
+
+a[name=toTop] {
+    position: fixed;
+    right: 10px;
+    bottom: 20px;
+}

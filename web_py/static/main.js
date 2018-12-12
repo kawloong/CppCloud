@@ -130,8 +130,24 @@ vueapp = new Vue({
         }
     },
     
-    propChange : function(param){
-        console.log("change prop " + param);
+    propChange : function(param, key, val0){
+        console.log("change prop " + param.target.value);
+        if (val0 == param.target.value) return;
+        
+        if ('aliasname' === key){
+            const url = '/notify/aliasname';
+            this.$http.get(url, {params:{
+                svrid: this.svrid_page,
+                aliasname: param.target.value
+            }}).then(function(resp){
+                var result = resp.body.code
+                if (0 != result){
+                    console.log("reset to " + val0);
+                }
+            }, function(){
+                console.log("reset to " + val0);
+            })
+        }
     },
 
     refreshDetail : function(svridx) {

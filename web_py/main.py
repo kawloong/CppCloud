@@ -94,6 +94,10 @@ def command(cmd):
         reqobj['svrid'] = svrid;
     else:
         reqobj['to'] = svrid;
+    
+    param2 =  request.args.get(cmd, None)
+    if param2:
+        reqobj[cmd] = param2
 
     if 'shellcmd' == cmd:
         reqobj['cmdid'] = request.args.get('cmdid')
@@ -115,7 +119,7 @@ def onRunLogReq(cmdid, seqid, msg):
 
 if __name__ == '__main__':
     gweb_cli = ScommCli2( 
-        ('192.168.228.44', 4800),
+        ('192.168.1.68', 4800),
         clitype = 20,
         svrid = 990,
         tag="tag1",
