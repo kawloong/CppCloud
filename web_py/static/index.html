@@ -19,7 +19,20 @@
       <script src="https://cdn.bootcss.com/html5shiv/3.7.3/html5shiv.min.js"></script>
       <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
-    
+    <script type="text/javascript">
+      function gotoTop(){
+          console.log("gototop run")
+          window.scroll(0,0);
+          return false;
+      }
+    </script>
+    <style>
+        #idtop {
+            position: fixed;
+            right: 10px;
+            bottom: 20px;
+        }
+    </style>
 
   <body>
 
@@ -54,11 +67,18 @@
               <a href="about.html" target="context_main">关于</a>
             </li>
             <li><a href="#" target="context_main">帮助</a></li>
+            
           </ul>
         </div><!--/.nav-collapse -->
       </div>
     </nav>
 
+    <nav id="idtop">
+        <button onclick="gotoTop()" 
+          type="button" class="btn btn-default btn-sm" aria-label="Left Align">
+            <span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span>
+        </button>
+    </nav>
 
     <div class="container" style="margin-top: 54px;">
         
