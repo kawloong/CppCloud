@@ -15,144 +15,45 @@
       <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
 
-    <title>参数配置页</title>
+    <title>服务治理</title>
   </head>
   
 <body>
     <div id="app">
-            <ul class="nav nav-tabs nav-justified">
-                    <li role="presentation" :class="0==tabidx?'active':''">
-                        <a href="#" @click.prevent="tabidx=0">
-                            配置编辑</a>
-                    </li>
-                    <li role="presentation" :class="1==tabidx?'active':''">
-                        <a href="#" @click.prevent="tabidx=1">
-                            查询测试</a>
-                    </li>
-            </ul>
+        <div class="panel panel-info">
+            <div class="panel-heading">服务提供</div>
+            <div class="panel-body">
+                <div class="list-group">
+                    <a href="#" v-for="(valarr, pname) in maindata"
+                        @click="onClickName(pname)"
+                        :class="curPrvd==pname? 'active': ''"
+                        class="list-group-item prvditem" >
+                        <span class="badge">{{valarr.length}}</span>
+                        <span class="prvdname">{{pname}}</span>
+                    </a>
 
-            <div class="container-fluid" v-show="1==tabidx">
-            <div >
-                    <div>
-                    <form class="form-inline">
-                        <main class="qctrl_main">
-                        <select class="form-control" v-model="qctrl.filename">
-                        <option style="display: none">文件列表</option>
-                        <option
-                            v-for="(val, filename) in filenames" 
-                            v-if="val[0] === 1">
-                            {{filename}}
-                        </option>
-                        </select>
-
-                        <input type="text" class="form-control" 
-                            data-toggle="tooltip" title="key的格式类似文件目录路径，层级间用斜线/分割，譬如/dir0/dir1/key2"
-                            placeholder="查询Key" v-model="qctrl.key"> 
-                        <div class="checkbox">
-                                <label> <input type="checkbox" v-model="qctrl.incbase"> 继承 </label>
-                         </div> 
-                        <button class="btn btn-default" @click.prevent="onQueryClick">查询</button>
-                        &nbsp;&nbsp;
-
-                        <span :style=" {color: qctrl.valid?'green':'red'} " >
-                            查询条件({{qctrl.valid?'有效':'无效'}}): &nbsp; {{qcondiction}} 
-                        </span>
-                        </main>
-
-                        <p><span class="qcallspan">tcp调用:</span>{{qctrl.sdkcall.tcp}}</p>
-                        <p><span class="qcallspan">http调用:</span>{{qctrl.sdkcall.http}}</p>
-                        <p><span class="qcallspan">sdk_cpp调用:</span>{{qctrl.sdkcall.sdk_cpp}}</p>
-
-                        <span v-if="qctrl.output">
-                            
-                            <br>
-                            查询结果
-                            <br>
-                            <samp>
-                                {{qctrl.output}}
-                            </samp>
-                        </span>
-                    </form>
-                    </div>
+                    {{maindata}}
                 </div>
             </div>
 
+            <div class="panel-body prvd-contant" 
+                 v-for="(item0, idx) in maindata[curPrvd]">
+                <form class="form-inline">
+                    <div class="form-group">
+                       
 
-        <div class="container-fluid" v-if="0==tabidx">
-            <div class="row">
-                <div class="col-sm-3 conftitle">
-                    <span> 配置文件列表 </span>
-                </div>
-                <div class="col-sm-9"> 
-                    <span v-if="seltime"> 编辑 {{ selfile }}</span>
-                    &nbsp;
-                    <span v-if="seltime">更新时间
-                    <span>{{ seltime | toHumanTime }}</span>
-                    &nbsp;
-                    <a href="#modify" @click="modify">修改</a>
-                    <a href="#refresh" @click="refresh" data-toggle="tooltip" title="从后台download配置会覆盖当前修改">
-                        刷新</a>
-                    </span>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-3">
-                    <div class="list-group">
-                    
-                    <template  v-for="(val, filename) in filenames">
-                        <span>
-                        <a href="#" class="list-group-item "
-                         v-if="val[0] === 1"
-                         :class="selfile==filename? 'active':''"
-                         @click="chooseFile(filename)">
-                            <h4 class="list-group-item-heading"> 
-                                {{filename}} 
-                                <span v-show="val[3]">*</span>
-                                
-                            </h4>
-                            <p class="list-group-item-text">
-                            <span :class="val[4]"> 
-                                   {{val[1] | toHumanTime}} 
-                            </span>
-                            <span class="glyphicon glyphicon-remove remove_btn"
-                                @click.stop.prevent="removeClick(filename)"
-                             aria-hidden="true">
-                            </span>
-                            </p>
-                        </a>
-                    </span>
-                    </template>
-
-                    </div>
-
-                        <div class="panel">
-                            <button class="list-group-item " @click="addClick(1)" v-if="0 == addflag">
-                                <span>新增 &nbsp; &nbsp;</span>
-                                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-                            </button>
-                            <div class="input-group" v-if="1 == addflag">
-                                <input v-model="newfilename" type="text" placeholder="请输入文件名" class="addtext"/>
-                                <span class="input-group-btn">
-                                    <button class="btn btn-default" type="button"
-                                     @click="addClick(2)">加入</button>
-                                </span>
-                            </div>
+                        <div class="input-group vcls-input" v-for="(itmVal, itmKey) in item0"
+                            :class="'vcls-input-'+itmKey">
+                            <span class="input-group-addon">{{itmKey}}</span>
+                            <input type="text" style="background-color:white;"
+                                 :value="itmVal"
+                                 class="form-control inputtext"
+                                aria-describedby="basic-addon3" readonly>
                         </div>
-                        
-                </div>
-                <div class="col-sm-9">
-                   <textarea class="form-control" rows="26" v-model="contents"
-                    @input="inputChange(true)">
-                    {{contents}}
-                   </textarea>
-
-                   
-
-                </div>
+                    </div>
+                </form>
             </div>
         </div>
-
-        
     </div>
 </body>
 
@@ -160,5 +61,5 @@
   <script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
 
 
-  <script src="conf.js"></script>
+  <script src="prvd.js"></script>
 </html>

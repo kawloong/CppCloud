@@ -92,3 +92,43 @@ div.checkbox {
     display: inline-block;
 }
 
+.prvditem {
+    display: inline-block;
+    width: 200px;
+    margin-right: 10px;
+}
+
+.prvdname {
+    font-size: 18px;
+    font-style: italic;
+}
+
+.prvdItmKey {
+    width: 40px;
+}
+
+.prvd-contant {
+    border-top: blue 1px solid;
+}
+
+
+.vcls-input {
+    width: 160px;
+    padding-right: 20px;
+    padding-bottom: 5px;
+}
+
+.vcls-input-regname {
+    width: 320px;
+}
+.vcls-input-desc {
+    width: 320px;
+}
+.vcls-input-url {
+    width: 480px;
+}
+
+.inputtext {
+    font-style: italic;
+    background-color: #fff;
+}
