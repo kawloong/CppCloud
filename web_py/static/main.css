@@ -132,3 +132,7 @@ div.checkbox {
     font-style: italic;
     background-color: #fff;
 }
+
+.item-key {
+    font-weight: bolder;
+}

@@ -85,22 +85,24 @@ def clidata(svrid):
 
 @app.route('/notify/<string:cmd>')
 def command(cmd):
-    param = request.args.get('param', '')
-    svrid = request.args.get('svrid')
-    svrid = int(svrid)
+    intKey = ('prvdid', 'svrid', 'weight', 'enable')
+   
+    reqobj = dict(request.args.items())
+    reqobj["notify"] = cmd
 
-    reqobj = {"notify": cmd, "param": param}
+    for key in intKey:
+        if key in reqobj:
+            reqobj[key] = int(reqobj[key])
+
     if 'closelink' == cmd:
-        reqobj['svrid'] = svrid;
+        pass
     else:
-        reqobj['to'] = svrid;
+        reqobj['to'] = int(reqobj['svrid'])
+        del reqobj['svrid']
     
-    param2 =  request.args.get(cmd, None)
-    if param2:
-        reqobj[cmd] = param2
 
-    if 'shellcmd' == cmd:
-        reqobj['cmdid'] = request.args.get('cmdid')
+    #if 'shellcmd' == cmd:
+    #    reqobj['cmdid'] = request.args.get('cmdid')
 
     return gweb_cli.request(CMD_EVNOTIFY_REQ, reqobj)
 
@@ -119,10 +121,10 @@ def onRunLogReq(cmdid, seqid, msg):
 
 if __name__ == '__main__':
     gweb_cli = ScommCli2( 
-        ('192.168.1.68', 4800),
+        ('192.168.228.44', 4800),
         clitype = 20,
         svrid = 990,
-        tag="tag1",
+        aliasname="tag1",
         progName = "Web-Ctrl",
         progDesc = "Web-Serv(monitor)"
     )

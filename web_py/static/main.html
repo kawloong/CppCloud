@@ -79,7 +79,7 @@
 
                         <input type="text" class="form-control" v-else
                             :value="value | value2Human(key)"
-                            @blur="propChange($event, key, value)">
+                            @change="propChange($event, key, value)" >
 
                         &nbsp; &nbsp; 
                         </span>
