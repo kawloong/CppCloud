@@ -127,7 +127,7 @@ int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
 	}
 
 	This->updateProvider(cli, regname, prvdid);
-	string resp = _F("\"code\": 0, \"desc\": \"reg %s result %d\"", regname2.c_str(), ret);
+	string resp = _F("{\"code\": 0, \"desc\": \"reg %s result %d\"}", regname2.c_str(), ret);
 	iohand->sendData(CMD_SVRREGISTER_RSP, seqid, resp.c_str(), resp.length(), true);
 	return ret;
 }

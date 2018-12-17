@@ -3,7 +3,26 @@ function prvdfunc( Vue ) {
     vueapp = new Vue({
         data: {
             maindata: {},
-            curPrvd: ''
+            listContents: [],
+            curPrvdName: '',
+            readonly: false,
+            addSample: { // 添加服务时的字段
+                "regname": "",
+                "svrprop": {
+                    "url": "",
+                    "desc": "",
+                    "protocol": 3,
+                    "version": 0,
+                    "weight": 100,
+                    "idc": 0,
+                    "rack": 0,
+                    "enable": 1
+                }
+            },
+            searchData: {
+                svrSelect: '服务列表',
+                searchResult: ''
+            }
         },
 
         methods: {
@@ -12,7 +31,9 @@ function prvdfunc( Vue ) {
             },
 
             onClickName: function(pname){
-                this.curPrvd = pname;
+                this.curPrvdName = pname;
+                this.listContents = this.maindata[pname];
+                this.readonly = false;
             },
 
             onItemValChange: function(event, itmobj, itmKey){
@@ -39,6 +60,40 @@ function prvdfunc( Vue ) {
                     }
                 }, function(){
                     alert('修改' + itmKey + '请求' + url + '失败');
+                })
+            },
+
+            onSearchPrvd: function(){
+                const url = "/qsvr?bookchange=0&regname=" + this.searchData.svrSelect;
+                let self = this;
+                self.searchData.searchResult = '正在查询: ' + this.searchData.svrSelect;
+                this.$http.get(url).then(function(res){
+                    if (res.body instanceof Object && res.body.code == 0) {
+                        self.listContents = res.body.data;
+                        self.readonly = true;
+                        self.searchData.searchResult = "成功查到" + self.listContents.length + "项";
+                        
+                    }else {
+                        self.searchData.searchResult = ('执行失败：' + JSON.stringify(res.body));
+                    }
+                }, function(){
+                    console.error('请求' + url + '失败');
+                    self.searchData.searchResult = '请求' + url + '失败';
+                })
+            },
+
+            onAddPrvd: function() {
+                const url = "/regsvr";
+                let self = this;
+                let postObj = self.addSample;
+                this.$http.post(url, postObj).then(function(res){
+                    if (res.body.code === 0) {
+                        console.log(res.body.desc)
+                    }else {
+                        alert('添加执行失败：' + JSON.stringify(res.body));
+                    }
+                }, function(){
+                    alert('添加请求' + url + '失败');
                 })
             }
         },

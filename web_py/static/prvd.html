@@ -21,22 +21,72 @@
 <body>
     <div id="app">
         <div class="panel panel-info">
-            <div class="panel-heading">服务提供</div>
+            <div class="panel-heading">服务发现（动态查询）</div>
+            <div class="panel-body">
+                <form class="form-inline">
+                    <div class="form-group">
+                        <div class="list-group">
+                            <select class="form-control" v-model="searchData.svrSelect">
+                                <option style="display: none">服务列表</option>
+                                <option v-for="(valarr, pname) in maindata">
+                                    {{pname}}
+                                </option>
+                            </select>
+            
+                            <button @click.prevent="onSearchPrvd">查询</button>
+
+                            &nbsp;&nbsp; <span> {{searchData.searchResult}} </span>
+                        </div>
+
+
+                </form>
+            </div>
+            </div>
+
+            <div class="panel-heading">服务提供 
+                    <a class="btn btn-default" aria-label="Left Align">
+                        <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
+                    </a>
+            </div>
             <div class="panel-body">
                 <div class="list-group">
                     <a href="#" v-for="(valarr, pname) in maindata"
                         @click="onClickName(pname)"
-                        :class="curPrvd==pname? 'active': ''"
+                        :class="curPrvdName==pname? 'active': ''"
                         class="list-group-item prvditem" >
                         <span class="badge">{{valarr.length}}</span>
                         <span class="prvdname">{{pname}}</span>
                     </a>
-
                 </div>
             </div>
 
+            <div class="panel-heading">服务添加</div>
+            <div class="panel-body">
+                <form class="form-inline">
+                    <div class="form-group">
+                        
+                        <div class="input-group vcls-input vcls-input-regname">
+                            <span class="input-group-addon item-key">regname</span>
+                            <input type="text"  v-model="addSample.regname"
+                                class="form-control inputtext"
+                                aria-describedby="basic-addon3">
+                        </div>
+                        <div class="input-group vcls-input" v-for="(itmVal, itmKey) in addSample.svrprop" :class="'vcls-input-'+itmKey">
+                            <span class="input-group-addon item-key">{{itmKey}}</span>
+                
+                            <input type="text"  v-model="addSample.svrprop[itmKey]"
+                                class="form-control inputtext"
+                                aria-describedby="basic-addon3">
+                
+                        </div>
+                        
+                        <input class="btn btn-default" type="button" @click.prevent="onAddPrvd" value="提交">
+                    </div>
+                </form>
+            </div>
+
             <div class="panel-body prvd-contant" 
-                 v-for="(item0, idx) in maindata[curPrvd]">
+                 v-for="(item0, idx) in listContents">
                 <form class="form-inline">
                     <div class="form-group">
                        
@@ -44,10 +94,11 @@
                         <div class="input-group vcls-input" v-for="(itmVal, itmKey) in item0"
                             :class="'vcls-input-'+itmKey">
                             <span class="input-group-addon item-key">{{itmKey}}</span>
-                            <input type="text" v-if="isKeyReadOnly(itmKey)"
+                            <input type="text" v-if="readonly || isKeyReadOnly(itmKey)"
                                  :value="itmVal"
                                  class="form-control inputtext"
                                 aria-describedby="basic-addon3" readonly>
+
                             <input type="number" v-else
                                  :value="itmVal"
                                  @change="onItemValChange($event, item0, itmKey)"
@@ -55,6 +106,7 @@
                                 aria-describedby="basic-addon3">
                                 
                         </div>
+
                     </div>
                 </form>
             </div>
