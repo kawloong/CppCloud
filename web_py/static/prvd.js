@@ -7,6 +7,7 @@ function prvdfunc( Vue ) {
             curPrvdName: '',
             readonly: false,
             addSample: { // 添加服务时的字段
+                "show": false,
                 "regname": "",
                 "svrprop": {
                     "url": "",
@@ -17,7 +18,9 @@ function prvdfunc( Vue ) {
                     "idc": 0,
                     "rack": 0,
                     "enable": 1
-                }
+                },
+                "result": '',
+                "resultStyle": {}
             },
             searchData: {
                 svrSelect: '服务列表',
@@ -83,18 +86,51 @@ function prvdfunc( Vue ) {
             },
 
             onAddPrvd: function() {
+                if (this.submitting){
+                    alert("处理中，请等待. . .")
+                    return;
+                }
+                this.submitting = true;
+                this.addSample.result = "正在添加";
+
                 const url = "/regsvr";
                 let self = this;
                 let postObj = self.addSample;
                 this.$http.post(url, postObj).then(function(res){
                     if (res.body.code === 0) {
-                        console.log(res.body.desc)
+                        self.addSample.result = "成功 " + res.body.desc;
+                        self.addSample.resultStyle.color = "green";
+                        console.log(res.body.desc);
                     }else {
-                        alert('添加执行失败：' + JSON.stringify(res.body));
+                        //alert('添加执行失败：' + JSON.stringify(res.body));
+                        self.addSample.result = JSON.stringify(res.body);
+                        self.addSample.resultStyle.color = "red";
+                    }
+                    self.submitting = false;
+                }, function(){
+                    //alert('添加请求' + url + '失败');
+                    self.addSample.result = '添加请求' + url + '失败';
+                    self.submitting = false;
+                    self.addSample.resultStyle.color = "red";
+                })
+            },
+
+            onRefresh: function(){
+                const url = "/svrall?regname=all";
+                let self = this;
+                this.$http.get(url).then(function(res){
+                    if (res.body instanceof Object) {
+                        self.maindata = res.body.data;
+                    }else {
+                        console.log('执行失败：' + JSON.stringify(res.body));
                     }
                 }, function(){
-                    alert('添加请求' + url + '失败');
+                    console.error('请求' + url + '失败');
                 })
+            },
+
+            onShowAddClick: function(){
+                this.addSample.show = !this.addSample.show;
             }
         },
 
@@ -103,17 +139,7 @@ function prvdfunc( Vue ) {
         },
 
         created: function() {
-            const url = "/svrall?regname=all";
-            let self = this;
-            this.$http.get(url).then(function(res){
-                if (res.body instanceof Object) {
-                    self.maindata = res.body.data;
-                }else {
-                    console.log('执行失败：' + JSON.stringify(res.body));
-                }
-            }, function(){
-                console.error('请求' + url + '失败');
-            })
+            this.onRefresh();
         },
 
         filters : {
