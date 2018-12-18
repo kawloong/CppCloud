@@ -40,6 +40,8 @@ public:
 	ServiceProvider( const string& svrName );
 	~ServiceProvider( void );
 
+	bool hasItem( CliBase* cli, int prvdid ) const;
+
 	int setItem( CliBase* cli, int prvdid );
 	void setStat( CliBase* cli, int prvdid, int pvd_ok, int pvd_ng, int ivk_dok, int ivk_dng );
 	bool removeItme( CliBase* cli );

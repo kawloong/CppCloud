@@ -7,10 +7,10 @@ function prvdfunc( Vue ) {
             curPrvdName: '',
             readonly: false,
             addSample: { // 添加服务时的字段
-                "show": false,
                 "regname": "",
                 "svrprop": {
                     "url": "",
+                    "prvdid": 0,
                     "desc": "",
                     "protocol": 3,
                     "version": 0,
@@ -18,10 +18,25 @@ function prvdfunc( Vue ) {
                     "idc": 0,
                     "rack": 0,
                     "enable": 1
-                },
-                "result": '',
-                "resultStyle": {}
+                }
             },
+            addSampleCtrl:{
+                show: false,
+                result: '',
+                resultStyle: {},
+                textMsg: {
+                    url: ["url样例：\n1. tcp://192.168.1.68:2000\n2. udp://192.168.1.68:2000\n3. http://192.168.1.68:2000\n4. https://192.168.1.68:2000"],
+                    "prvdid": ["默认0，如果需要注册多个同名服务则以此值区分"],
+                    "desc": ["服务提供者描述信息"],
+                    "protocol": ["protocol取值:  tcp=1 udp=2 http=3 https=4"],
+                    "version": ["版本信息，当为0时服务发现查询不去匹配，若大于0则会严格匹配"],
+                    "weight": ["服务权重值，越大则服务调用者应调用的概率越高"],
+                    "idc": ["机房编号"],
+                    "rack": ["机架编号"],
+                    "enable": ["是否启用：启用1，禁用0"]
+                }
+            },
+
             searchData: {
                 svrSelect: '服务列表',
                 searchResult: ''
@@ -91,27 +106,27 @@ function prvdfunc( Vue ) {
                     return;
                 }
                 this.submitting = true;
-                this.addSample.result = "正在添加";
+                this.addSampleCtrl.result = "正在添加";
 
                 const url = "/regsvr";
                 let self = this;
                 let postObj = self.addSample;
                 this.$http.post(url, postObj).then(function(res){
                     if (res.body.code === 0) {
-                        self.addSample.result = "成功 " + res.body.desc;
-                        self.addSample.resultStyle.color = "green";
+                        self.addSampleCtrl.result = "成功 " + res.body.desc;
+                        self.addSampleCtrl.resultStyle.color = "green";
                         console.log(res.body.desc);
                     }else {
                         //alert('添加执行失败：' + JSON.stringify(res.body));
-                        self.addSample.result = JSON.stringify(res.body);
-                        self.addSample.resultStyle.color = "red";
+                        self.addSampleCtrl.result = JSON.stringify(res.body);
+                        self.addSampleCtrl.resultStyle.color = "red";
                     }
                     self.submitting = false;
                 }, function(){
                     //alert('添加请求' + url + '失败');
-                    self.addSample.result = '添加请求' + url + '失败';
+                    self.addSampleCtrl.result = '添加请求' + url + '失败';
                     self.submitting = false;
-                    self.addSample.resultStyle.color = "red";
+                    self.addSampleCtrl.resultStyle.color = "red";
                 })
             },
 
@@ -130,7 +145,7 @@ function prvdfunc( Vue ) {
             },
 
             onShowAddClick: function(){
-                this.addSample.show = !this.addSample.show;
+                this.addSampleCtrl.show = !this.addSampleCtrl.show;
             }
         },
 

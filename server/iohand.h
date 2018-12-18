@@ -51,6 +51,9 @@ protected:
 	int interceptorProcess( IOBuffItem*& iBufItem );
 	int cmdProcess( IOBuffItem*& iBufItem );
 
+private:
+	static int _AddInterceptor( unsigned cmdid, const string& funcname );
+
 protected:
     int m_cliFd;
 	HEpEvFlag m_epCtrl;

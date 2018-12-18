@@ -92,6 +92,11 @@ function conffun( Vue ) {
                     return;
                 }
 
+                if (!this.filenames[this.selfile][3]){
+                    console.log(this.selfile + " no change return;");
+                    return;
+                }
+
                 const url = '/setconf';
                 // json合法性检查
                 if (!this.jsonValid(this.contents)){

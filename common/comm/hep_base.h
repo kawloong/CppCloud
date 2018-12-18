@@ -55,7 +55,7 @@ struct HEpEvFlag
     clsname::clsname(const char* name): HEpBase(name) \
     {RegisterFunc(#clsname "::" #static_method_name, &clsname::static_method_name);}
 
-// 注册多个func
+// 注册多个func (注意链接顺序：hep_base.o放于g++文件列表的右边, 因右边的比左边的先初始化)
 #define HEPCLASS_IMPL_FUNCX_BEG(clsname) \
     static struct Reg##clsname {\
         Reg##clsname(){

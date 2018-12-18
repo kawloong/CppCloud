@@ -1,3 +1,6 @@
+[v-cloak] {
+    display: none;
+}
 
 .bigfont {
     color: blue;
@@ -136,4 +139,10 @@ div.checkbox {
 .item-key {
     font-weight: bolder;
     background-color: darkgray;
+}
+
+li>h6{
+    margin-bottom: 0px;
+    font-size: 12px;
+    color: peru;
 }

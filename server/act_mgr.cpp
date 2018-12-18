@@ -1,12 +1,21 @@
 #include "act_mgr.h"
 #include "comm/strparse.h"
 #include "comm/timef.h"
+#include "cloud/exception.h"
 #include "cloud/const.h"
+#include "cloud/homacro.h"
 #include "clibase.h"
 #include "climanage.h"
 
+HEPCLASS_IMPL_FUNCX_BEG(Actmgr)
+HEPCLASS_IMPL_FUNCX_MORE(Actmgr, NotifyCatch)
+HEPCLASS_IMPL_FUNCX_END(Actmgr)
+
+Actmgr* Actmgr::This = NULL;
+
 Actmgr::Actmgr(void)
 {
+	This = this;
 	m_opLogSize = CLIOPLOG_SIZE;
 	m_pchildren = CliMgr::Instance()->getAllChild();
 }
@@ -223,4 +232,17 @@ void Actmgr::clearWarnMsg( const string& taskkey )
 		m_warnLog.erase(taskkey);
 	}
 	
+}
+
+int Actmgr::NotifyCatch( void* ptr, unsigned cmdid, void* param )
+{
+	MSGHANDLE_PARSEHEAD(true)
+	RJSON_GETSTR_D(notify, &doc);
+	RJSON_VGETINT_D(svrid, CONNTERID_KEY, &doc);
+	RJSON_VGETINT_D(to, ROUTE_MSG_KEY_TO, &doc);
+
+	This->appendCliOpLog( _F("NOTIFY| notify=%s| target=%d| reqmsg=%s", 
+			notify.c_str(), to>0? to: svrid, body) );
+
+	return 1;
 }

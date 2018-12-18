@@ -4,6 +4,8 @@
 #include "iohand.h"
 #include "broadcastcli.h"
 #include "climanage.h"
+#include "act_mgr.h"
+#include "comm/timef.h"
 #include "comm/hep_base.h"
 #include "comm/file.h"
 #include "cloud/const.h"
@@ -342,6 +344,9 @@ int HocfgMgr::OnSetConfigHandle( void* ptr, unsigned cmdid, void* param )
     {
         This->remove(filename, mtime); // xx清除内存xx, 同时unlink磁盘文件
         desc = _F("remove %s success", filename.c_str());
+        Actmgr::Instance()->appendCliOpLog(
+            _F("CONFDEL| filename=%s| mtime=%d(%s)", 
+            filename.c_str(), mtime, TimeF::StrFTime("%F %T", mtime)) );
     }
     else
     {
@@ -352,6 +357,11 @@ int HocfgMgr::OnSetConfigHandle( void* ptr, unsigned cmdid, void* param )
         {
             ret = This->save2File(fullfilename, contents);
         }
+
+        Actmgr::Instance()->appendCliOpLog(
+            _F("CONFCHANGE| filename=%s| mtime=%d(%s)| opcli=%s| result=%s", 
+            filename.c_str(), mtime, TimeF::StrFTime("%F %T", mtime), 
+            iohand->m_idProfile.c_str(), desc.c_str()) );
     }
 
     This->notifyChange(filename, mtime);

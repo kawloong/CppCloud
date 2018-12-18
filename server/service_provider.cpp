@@ -122,6 +122,18 @@ ServiceProvider::~ServiceProvider( void )
 	}
 }
 
+bool ServiceProvider::hasItem( CliBase* cli, int prvdid ) const
+{
+	auto itfind = m_svrItems.find(cli);
+	if (itfind != m_svrItems.end())
+	{
+		auto second = itfind->second;
+		return (second.find(prvdid) != second.end());
+	}
+
+	return false;
+}
+
 int ServiceProvider::setItem( CliBase* cli, int prvdid )
 {
 	ServiceItem*& pitem = m_svrItems[cli][prvdid];

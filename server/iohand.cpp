@@ -10,7 +10,8 @@
 
 HEPMUTICLASS_IMPL(IOHand, IOHand, CliBase)
 
-static map<unsigned, string> s_cmdid2interceptor; // 消息拦截器
+
+static map< unsigned, vector<HEpBase::ProcOneFunT> > s_cmdid2interceptor; // 消息拦截器
 static map<unsigned, string> s_cmdid2clsname; // 事件处理器，滞后于拦截器
 
 datasize_t IOHand::serv_recv_bytes = 0;
@@ -22,22 +23,22 @@ int IOHand::serv_sendpkg_num = 0;
 int IOHand::Init( void )
 {
 	// 前置拦截器
-	s_cmdid2interceptor[CMD_BROADCAST_REQ] = "BroadCastCli::TransToAllPeer";
-	s_cmdid2interceptor[CMD_UPDATEERA_REQ] = "BroadCastCli::TransToAllPeer";
-	s_cmdid2interceptor[CMD_TESTING_REQ] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_TESTING_RSP] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_CLIERA_REQ] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_CLIERA_RSP] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_HOCFGNEW_REQ] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_HOCFGNEW_RSP] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_SETCONFIG2_REQ] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_SETCONFIG3_REQ] = "BroadCastCli::TransToAllPeer"; // 广播
-	s_cmdid2interceptor[CMD_SVRREGISTER2_REQ] = "BroadCastCli::TransToAllPeer";
-	s_cmdid2interceptor[CMD_APPRUNLOG_REQ] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_APPRUNLOG_RSP] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_EVNOTIFY_REQ] = "RouteExchage::TransMsg";
-	s_cmdid2interceptor[CMD_EVNOTIFY_RSP] = "RouteExchage::TransMsg";
-
+	_AddInterceptor(CMD_BROADCAST_REQ, "BroadCastCli::TransToAllPeer");
+	_AddInterceptor(CMD_UPDATEERA_REQ, "BroadCastCli::TransToAllPeer");
+	_AddInterceptor(CMD_TESTING_REQ, "RouteExchage::TransMsg");
+	_AddInterceptor(CMD_TESTING_RSP, "RouteExchage::TransMsg");
+	_AddInterceptor(CMD_CLIERA_REQ, "RouteExchage::TransMsg");
+	_AddInterceptor(CMD_CLIERA_RSP, "RouteExchage::TransMsg");
+	_AddInterceptor(CMD_HOCFGNEW_REQ, "RouteExchage::TransMsg");
+	_AddInterceptor(CMD_HOCFGNEW_RSP, "RouteExchage::TransMsg");
+	_AddInterceptor(CMD_SETCONFIG2_REQ, "RouteExchage::TransMsg");
+	_AddInterceptor(CMD_SETCONFIG3_REQ, "BroadCastCli::TransToAllPeer"); // 广播
+	_AddInterceptor(CMD_SVRREGISTER2_REQ, "BroadCastCli::TransToAllPeer");
+	_AddInterceptor(CMD_APPRUNLOG_REQ, "RouteExchage::TransMsg");
+	_AddInterceptor(CMD_APPRUNLOG_RSP, "RouteExchage::TransMsg");
+	_AddInterceptor(CMD_EVNOTIFY_REQ, "Actmgr::NotifyCatch");
+	_AddInterceptor(CMD_EVNOTIFY_REQ, "RouteExchage::TransMsg");
+	_AddInterceptor(CMD_EVNOTIFY_RSP, "RouteExchage::TransMsg");
 
 	// 消息->处理类
 	s_cmdid2clsname[CMD_WHOAMI_REQ] = "BegnHand::ProcessOne"; // ->BegnHand
@@ -105,6 +106,24 @@ void IOHand::clearBuf( void )
 	{
 		IFDELETE(buf);
 	}
+}
+
+int IOHand::_AddInterceptor( unsigned cmdid, const string& funcname )
+{
+	int ret = -75;
+	HEpBase::ProcOneFunT procFunc = GetProcFunc(funcname.c_str());
+	if (procFunc)
+	{
+		s_cmdid2interceptor[cmdid].push_back(procFunc);
+		ret = 0;
+	}
+	else
+	{
+		LOGERROR("ADDINTERCEPTOR| msg=not function| funcname=%s", funcname.c_str());
+		throw OffConnException(_F("ADDINTERCEPTOR| msg=not function| funcname=%s", funcname.c_str()));
+	}
+
+	return ret;
 }
 
 int IOHand::onRead( int p1, long p2 )
@@ -503,16 +522,18 @@ int IOHand::interceptorProcess( IOBuffItem*& iBufItem )
 {
 	int ret = 1; // 1 is continue
 	head_t* hdr = iBufItem->head();
-	map<unsigned,string>::iterator it;
 
-	it = s_cmdid2interceptor.find(hdr->cmdid);
+	auto it = s_cmdid2interceptor.find(hdr->cmdid);
 	if (it != s_cmdid2interceptor.end())
 	{
-		string funcname = it->second;
-		HEpBase::ProcOneFunT procFunc = GetProcFunc(funcname.c_str());
-		if (procFunc)
+		for (auto itVec = it->second.begin(); itVec != it->second.end(); ++itVec)
 		{
-			ret = procFunc(this, hdr->cmdid, (void*)iBufItem);
+			HEpBase::ProcOneFunT procFunc = *itVec;
+			if (procFunc)
+			{
+				ret = procFunc(this, hdr->cmdid, (void*)iBufItem);
+				if (0 == ret) break;
+			}
 		}
 	}
 

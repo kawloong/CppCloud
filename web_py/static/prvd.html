@@ -2,43 +2,38 @@
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Bootstrap core CSS -->
     <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <link href="main.css" rel="stylesheet">
 
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
-      <script src="https://cdn.bootcss.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-      <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-
     <title>服务治理</title>
   </head>
   
 <body>
-    <div id="app">
+
+            
+    <div id="app"  v-cloak>
         <div class="panel panel-info">
             <div class="panel-heading">服务发现（动态查询）</div>
             <div class="panel-body">
                 <form class="form-inline">
-                    <div class="form-group">
-                        <div class="list-group">
+                    <div class="form-group" >
+                            <label class="sr-only" for="svrlist">svrlist</label> 
                             <select class="form-control" v-model="searchData.svrSelect">
                                 <option style="display: none">服务列表</option>
                                 <option v-for="(valarr, pname) in maindata">
                                     {{pname}}
                                 </option>
                             </select>
-            
-                            <button @click.prevent="onSearchPrvd">查询</button>
+                    </div>
+                    <div class="form-group">
+                            <label class="sr-only" for="svrlist2">svrlist2</label> 
+                            <button class="form-control" 
+                                @click.prevent="onSearchPrvd">查询</button>
 
                             &nbsp;&nbsp; <span> {{searchData.searchResult}} </span>
-                        </div>
-
-
+                    </div>
                 </form>
             </div>
             </div>
@@ -64,7 +59,7 @@
                 </div>
 
                 
-                <button type="button" v-show="!addSample.show"
+                <button type="button" v-show="!addSampleCtrl.show"
                     @click.prevent="onShowAddClick"
                     data-toggle="tooltip" title="此处添加的服务的生命周期会随当前web-app退出而关闭"
                     class="btn btn-default" aria-label="Left Align">
@@ -74,7 +69,7 @@
                 </button>
             </div>
 
-            <div class="panel-heading" v-show="addSample.show">
+            <div class="panel-heading" v-show="addSampleCtrl.show">
                 服务添加
                 &nbsp;&nbsp; 
                 <button type="button" 
@@ -85,7 +80,7 @@
                     
                 </button>
             </div>
-            <div class="panel-body" v-show="addSample.show">
+            <div class="panel-body" v-show="addSampleCtrl.show">
                 <form class="form-inline">
                     <div class="form-group">
                         
@@ -93,9 +88,13 @@
                             <span class="input-group-addon item-key">regname</span>
                             <input type="text"  v-model="addSample.regname"
                                 class="form-control inputtext"
+                                placeholder="服务提供者名称"
                                 aria-describedby="basic-addon3">
                         </div>
-                        <div class="input-group vcls-input" v-for="(itmVal, itmKey) in addSample.svrprop" :class="'vcls-input-'+itmKey">
+                        <div class="input-group vcls-input"
+                            v-for="(itmVal, itmKey) in addSample.svrprop"  
+                            data-toggle="tooltip" :title="addSampleCtrl.textMsg[itmKey][0]"
+                            :class="'vcls-input-'+itmKey">
                             <span class="input-group-addon item-key">{{itmKey}}</span>
                 
                             <input type="text"  v-model="addSample.svrprop[itmKey]"
@@ -108,8 +107,8 @@
                             @click.prevent="onAddPrvd" 
                             value="提交" style="margin-right:25px;">
                         <span
-                            :style="addSample.resultStyle">
-                            {{addSample.result}}
+                            :style="addSampleCtrl.resultStyle">
+                            {{addSampleCtrl.result}}
                         </span>
                     </div>
                 </form>

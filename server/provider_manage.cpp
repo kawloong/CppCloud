@@ -4,6 +4,7 @@
 #include "climanage.h"
 #include "cloud/homacro.h"
 #include "broadcastcli.h"
+#include "act_mgr.h"
 #include "rapidjson/json.hpp"
 #include "comm/strparse.h"
 #include "cloud/const.h"
@@ -119,6 +120,7 @@ int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
 	ret = This->setProviderProperty(cli, &doc, regname2);
 	int enableAfterValue = cli->getIntProperty(regname2 + ":enable");
 	bool enableChange = (1 == enableBeforValue && 0 == enableAfterValue);
+	bool isNewPrvd = !This->hasProviderItem(cli, regname, prvdid);
 
 	if (0 == ret && (urlChange || enableChange)) // 禁用服务时触发
 	{
@@ -129,6 +131,14 @@ int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
 	This->updateProvider(cli, regname, prvdid);
 	string resp = _F("{\"code\": 0, \"desc\": \"reg %s result %d\"}", regname2.c_str(), ret);
 	iohand->sendData(CMD_SVRREGISTER_RSP, seqid, resp.c_str(), resp.length(), true);
+
+	// 系统日志记录 (添加Prvd)
+	if (isNewPrvd)
+	{
+		Actmgr::Instance()->appendCliOpLog(_F("PRVDREG| regname=%s| opcli=%s| reqmsg=", 
+				regname2.c_str(), cli->m_idProfile.c_str()) + Rjson::ToString(&doc));
+	}
+	
 	return ret;
 }
 
@@ -328,6 +338,18 @@ ServiceProvider* ProviderMgr::getProviderPtr( const string& regname ) const
 	if (itr != m_providers.end())
 	{
 		ret = itr->second;
+	}
+
+	return ret;
+}
+
+bool ProviderMgr::hasProviderItem( CliBase* cli, const string& regname, int prvdid ) const
+{
+	bool ret = false;
+	ServiceProvider* prvd = getProviderPtr(regname);
+	if (prvd)
+	{
+		ret = prvd->hasItem(cli, prvdid);
 	}
 
 	return ret;

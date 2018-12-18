@@ -35,6 +35,8 @@ public:
 
 private:
 	ServiceProvider* getProviderPtr( const string& regname ) const;
+	bool hasProviderItem( CliBase* cli, const string& regname, int prvdid ) const;
+
 	int getAllJson( string& strjson ) const;
 	int getOneProviderJson( string& strjson, const string& regname ) const;
 	int getOneProviderJson( string& strjson, const string& regname, short idc, short rack, short version, short limit ) const;
