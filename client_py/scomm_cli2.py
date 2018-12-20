@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*- 
 
 '''
-bmsh client tcp-flow client
+提供连接cppclud_serv后，协调发送线程和接收线程，封装出同步调用方法收发tcp报文
 '''
 
 
@@ -204,6 +204,7 @@ class ScommCli2(ScommCli):
 
 if __name__ == '__main__':
     from cliconfig import config as cfg
+    ip = cfg.get('serv_ip')
     obj2 = ScommCli2(
         (cfg['serv_ip'], cfg['serv_port']),
         clitype = 20,

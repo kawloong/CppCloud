@@ -14,7 +14,7 @@ import json
 from const import *
 #from cliconfig import config as cfg
 
-scomm_sevr_addr = ("192.168.228.44", 4800)
+scomm_sevr_addr = ("192.168.1.68", 4800)
 g_version = 1
 g_headlen = 10
 
