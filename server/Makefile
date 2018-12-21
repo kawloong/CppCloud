@@ -1,5 +1,5 @@
 CloudCpp:=switchhand.cpp exception.cpp svrprop.cpp
-SrcCpp:=climanage.cpp flowctrl.cpp act_mgr.cpp listen.cpp iohand.cpp begn_hand.cpp query_hand.cpp clibase.cpp
+SrcCpp:=climanage.cpp flowctrl.cpp listen.cpp iohand.cpp begn_hand.cpp query_hand.cpp act_mgr.cpp clibase.cpp
 SrcCpp+=cppcloud_config.cpp main.cpp peer_serv.cpp peer_cli.cpp  hocfg_mgr.cpp 
 SrcCpp+=peer_mgr.cpp outer_serv.cpp outer_cli.cpp keepaliver.cpp broadcastcli.cpp route_exchange.cpp 
 SrcCpp+=service_provider.cpp provider_manage.cpp

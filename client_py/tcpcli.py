@@ -2,7 +2,8 @@
 # -*- coding:utf-8 -*- 
 
 '''
-与scomm_serv通信模块,封tcp报文收发
+与cppcloud_serv通信模块,封tcp报文收发
+用法比较简单，可参见文件末的__main__处.
 '''
 
 import os
@@ -14,12 +15,11 @@ import json
 from const import *
 #from cliconfig import config as cfg
 
-scomm_sevr_addr = ("192.168.1.68", 4800)
 g_version = 1
 g_headlen = 10
 
 
-class ScommCli(object):
+class TcpCli(object):
     def __init__(self, svraddr, clitype):
         self.svraddr = svraddr
         self.cli = None
@@ -138,7 +138,8 @@ class ScommCli(object):
         return CMD_WHOAMI_REQ, seqid, rqbody
 
 if __name__ == '__main__':
-    cliobj = ScommCli(scomm_sevr_addr, 20)
+    scomm_sevr_addr = ("192.168.228.44", 4800)
+    cliobj = TcpCli(scomm_sevr_addr, 20)
     
     sndret = cliobj.sndMsg(CMD_GETCLI_REQ, 1, {})
     print("sndret=%d" % sndret)

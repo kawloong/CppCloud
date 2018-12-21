@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*- 
 
 '''
-提供连接cppclud_serv后，协调发送线程和接收线程，封装出同步调用方法收发tcp报文
+bmsh client tcp-flow client
 '''
 
 
@@ -12,7 +12,7 @@ from fileop import str2file
 from scomm_cli import *
 from Queue import Queue #LILO队列
 
-class ScommCli2(ScommCli):
+class ScommCli2(TcpCli):
     def __init__(self, svraddr, clitype, **kvarg):
         super(ScommCli2, self).__init__(svraddr, clitype) # 调用基类初始化
         self.reqTimeOutSec = 5
@@ -204,10 +204,9 @@ class ScommCli2(ScommCli):
 
 if __name__ == '__main__':
     from cliconfig import config as cfg
-    ip = cfg.get('serv_ip')
     obj2 = ScommCli2(
-        (cfg['serv_ip'], cfg['serv_port']),
-        clitype = 20,
+        ('192.168.228.44', 4800),
+        clitype = 22,
         progName='progName',
         desc='123')
     obj2.run()
