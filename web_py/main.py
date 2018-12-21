@@ -12,7 +12,7 @@ import time
 import os
 import sys
 sys.path.append("../")
-from client_py.scomm_cli2 import TcpClient
+from client_py.tcpclient import TcpClient
 from client_py.cliconfig import config
 from client_py.const import *
 
@@ -121,7 +121,7 @@ def onRunLogReq(cmdid, seqid, msg):
 
 if __name__ == '__main__':
     gweb_cli = TcpClient( 
-        ('192.168.228.44', 4800),
+        ('192.168.1.68', 4800),
         clitype = 20,
         svrid = 990,
         aliasname="tag1",

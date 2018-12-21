@@ -1,0 +1,20 @@
+[
+    {
+        "enable": 1,
+        "protocol": 3,
+        "weight": 110,
+        "url": "http://192.168.1.100/clidata/0",
+        "regname": "httpApp1",
+        "prvdid": 1,
+        "desc": "test for agent_provider1 ff"
+    },
+    {
+        "enable": 1,
+        "protocol": 3,
+        "weight": 101,
+        "url": "http://192.168.1.100/clidata/0",
+        "regname": "httpApp1",
+        "prvdid": 2,
+        "desc": "test for agent_provider2"
+    }
+]

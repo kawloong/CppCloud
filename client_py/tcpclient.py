@@ -80,8 +80,8 @@ class TcpClient(TcpCliBase):
                     self.sndQ.put(rsptuple)
 
     def _doUnknowCMD(self, cmdid, seqid, msgbody):
-        print('recv Undefine Cmd=0x%x,msgbody=%s' % (cmdid, msgbody))
         if cmdid < CMDID_MID: # discard or not?
+            print('recv Undefine Cmd=0x%x,msgbody=%s' % (cmdid, msgbody))
             return (cmdid|CMDID_MID, seqid, {'code': 404, 'desc': 'unknow command'})
 
     def _doCMD_EXCHANG_REQ(self, cmdid, seqid, msgbody):

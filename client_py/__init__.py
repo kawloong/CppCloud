@@ -1,3 +1,3 @@
-import scomm_cli2
+import tcpclient
 import cliconfig
 import const

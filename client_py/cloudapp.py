@@ -13,9 +13,9 @@ import subprocess
 import os
 from const import *
 from tcpclient import TcpClient
-from cloudconf import CloudConf
 
 class CloudApp(TcpClient):
+    instance = None # 单例
 
     # kvarg 可选key: svrid, svrname, tag, desc, aliasname, clitype
     #                reqTimeOutSec(请求的超时时间); 
@@ -24,37 +24,45 @@ class CloudApp(TcpClient):
         svraddr = (serv_host, serv_port)
         super(CloudApp, self).__init__(svraddr, **kvarg) # 调用基类初始化
         self.setCmdHandle(CMD_EVNOTIFY_REQ, self.onNotify)
-        self.setCmdHandle(CMD_GETCONFIG_RSP, self.onConfResponse)
-    
-    # 分布式配置初始化
-    # confNamePatten 以空格分隔的配置文件名列表
-    def loadConfFile(self, confNamePatten):
-        self.cloudconf = CloudConf()
-        listfname = confNamePatten.split()
-        ngcnt = 0
-        for fname in listfname:
-            rsp = self.request(CMD_GETCONFIG_REQ, {"file_pattern": fname, "incbase": 1})
-            rsp = json.loads(rsp)
-            if 0 != rsp["code"] or None == rsp["contents"]:
-                ngcnt += 1
-                print("No conf file=" + fname, rsp)
-            else:
-                self.cloudconf.setFile(rsp)
-                self.request_nowait(CMD_BOOKCFGCHANGE_REQ, {
-                    "file_pattern": fname, "incbase": 1
-                })
+        CloudApp.instance = self
+        
+        self.notifyCallBack = {} # 'notify-name' -> [(func(), true),]
+        self.setNotifyCallBack("check-alive", self._onChkAlive, True)
+        self.setNotifyCallBack("exit", self._onExit, True)
+        self.setNotifyCallBack("shellcmd", self._onShellcmd, True)
+        self.setNotifyCallBack("iostat", self._onIOstat, True)
+        self.setNotifyCallBack("aliasname", self._onSetAliasName, True)
+        ## self.setNotifyCallBack("cfg_change", self.)
 
-        if self.mconf:
-            CloudConf.mainConfName = self.mconf
-        return ngcnt
     
-    def queryConf(self, qkey, defval = None):
-        return self.cloudconf.query(qkey, defval)
+    def setNotifyCallBack(self, ntfName, cbFunc, hasRet):
+        if not ntfName in self.notifyCallBack:
+            self.notifyCallBack[ntfName] = []
+        self.notifyCallBack[ntfName].append((cbFunc, hasRet))
 
-    def onConfResponse(self, cmdid, seqid, msgbody):
-        msgbody = json.loads(msgbody)
-        if 0 == msgbody["code"] and msgbody["contents"]:
-            self.cloudconf.setFile(msgbody)
+
+    def _onChkAlive(self, cmdid, seqid, msgbody):
+        return 0, time.time()
+    def _onExit(self, cmdid, seqid, msgbody):
+        self.bexit = True
+        return 0, 'closing'
+    def _onShellcmd(self, cmdid, seqid, msgbody):
+        shellcmdid = int(msgbody.get('cmdid', 0))
+        shellcmdarr = ["uptime", "free -h", "df -h"]
+        if os.name == 'nt':
+            return 1, 'windows上未支持'
+        else:
+            if shellcmdid > 0 and shellcmdid < len(shellcmdarr) + 1: ## Linux
+                chiproc = subprocess.Popen(shellcmdarr[shellcmdid-1], shell=True, close_fds=True, stdout=subprocess.PIPE)
+                return 0, str(chiproc.stdout.read())
+            return 400, 'invalid cmdid ' + str(shellcmdid)
+    def _onSetAliasName(self, cmdid, seqid, msgbody):
+        self.aliasname = msgbody["aliasname"]
+        req = {"aliasname": self.aliasname}
+        self.request_nowait(CMD_SETARGS_REQ, req)
+        return 0, 'ok'
+    def _onIOstat(self, cmdid, seqid, msgbody):
+        return 0, { "all": [self.recv_bytes, self.send_bytes, self.recv_pkgn, self.send_pkgn] }
 
     # 通告消息notify处理
     def onNotify(self, cmdid, seqid, msgbody):
@@ -64,37 +72,14 @@ class CloudApp(TcpClient):
         code = 0
         result = ''
         fromsvrid = msgbody.get('from', 0)
-        if "check-alive" == notify:
-            result = time.time()
-        elif "exit" == notify:
-            self.bexit = True
-            result = 'closing'
-            #if msgbody.get('force', 0) > 0:
-            #    exit(1)
-        elif "shellcmd" == notify:
-            shellcmdid = int(msgbody.get('cmdid', 0))
-            shellcmdarr = ["uptime", "free -h", "df -h"]
-            if os.name == 'nt':
-                code = 1
-                result = 'windows上未支持'
-            else:
-                if shellcmdid > 0 and shellcmdid < len(shellcmdarr) + 1: ## Linux
-                    chiproc = subprocess.Popen(shellcmdarr[shellcmdid-1], shell=True, close_fds=True, stdout=subprocess.PIPE)
-                    result = str(chiproc.stdout.read())
+
+        cblist = self.notifyCallBack.get(notify)
+        if cblist:
+            for cbitem in cblist:
+                if cbitem[1]:
+                    code, result = cbitem[0](cmdid, seqid, msgbody)
                 else:
-                    code = 400
-                    result = 'invalid cmdid ' + str(shellcmdid)
-        elif "iostat" == notify:
-            result = { "all": [self.recv_bytes, self.send_bytes, self.recv_pkgn, self.send_pkgn] }
-        elif "aliasname" == notify:
-            self.aliasname = msgbody["aliasname"]
-            req = {"aliasname": self.aliasname}
-            self.request_nowait(CMD_SETARGS_REQ, req)
-            result = 'ok'
-        elif "cfg_change" == notify:
-            fname = msgbody['filename']
-            if msgbody["mtime"] > self.cloudconf.getMTime(fname):
-                self.request_nowait(CMD_GETCONFIG_REQ, {"file_pattern": fname, "incbase": 1})
+                    cbitem[0](cmdid, seqid, msgbody)
         else:
             code = 404
             result = 'undefine handle'
@@ -104,23 +89,22 @@ class CloudApp(TcpClient):
             return
 
         return (cmdid|CMDID_MID, 
-            seqid, {
-            "to": fromsvrid,
-            "code": code,
-            "result": result
-            })
+            seqid, { "to": fromsvrid, 
+            "code": code,"result": result })
 
 
 
 if __name__ == "__main__":
-    pyapp = CloudApp('192.168.228.44', 4800, svrname="PyAppTest")
+    pyapp = CloudApp('192.168.1.68', 4800, svrname="PyAppTest")
     pyapp.run()
 
+    from cloudconf import CloudConf
+    cloudconf = CloudConf(pyapp)
     # 测试：分布式配置获取
-    pyapp.loadConfFile('app1.json app2.json')
+    cloudconf.loadConfFile('app1.json app2.json')
 
     while True:
-        val = pyapp.queryConf('/key3/keyarr/3')
+        val = cloudconf.query('app1.json/key3/keyarr/3')
         print(type(val), val)
         time.sleep(1)
 
