@@ -12,7 +12,7 @@ import time
 import os
 import sys
 sys.path.append("../")
-from client_py.scomm_cli2 import ScommCli2
+from client_py.scomm_cli2 import TcpClient
 from client_py.cliconfig import config
 from client_py.const import *
 
@@ -120,7 +120,7 @@ def onRunLogReq(cmdid, seqid, msg):
         {"log": 1234, "to": dictmsg["from"]})
 
 if __name__ == '__main__':
-    gweb_cli = ScommCli2( 
+    gweb_cli = TcpClient( 
         ('192.168.228.44', 4800),
         clitype = 20,
         svrid = 990,

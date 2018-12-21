@@ -2,19 +2,22 @@
 # -*- coding:utf-8 -*- 
 
 '''
-bmsh client tcp-flow client
+提供连接cppclud_serv后，协调发送线程和接收线程，封装出同步调用方法收发tcp报文
 '''
 
 
 import threading
 import subprocess
+import time
+import json
+from const import *
 from fileop import str2file
-from scomm_cli import *
+from tcpcli import TcpCliBase
 from Queue import Queue #LILO队列
 
-class ScommCli2(TcpCli):
-    def __init__(self, svraddr, clitype, **kvarg):
-        super(ScommCli2, self).__init__(svraddr, clitype) # 调用基类初始化
+class TcpClient(TcpCliBase):
+    def __init__(self, svraddr, **kvarg):
+        super(TcpClient, self).__init__(svraddr) # 调用基类初始化
         self.reqTimeOutSec = 5
         self.cmd2doFun = {} # cmdid -> handle-fun
 
@@ -27,6 +30,7 @@ class ScommCli2(TcpCli):
         self.seqid = 100
         self.running = False
         self.bexit = False
+        self.mconf = None
 
     def _sendLoop(self):
         while not self.bexit:
@@ -44,7 +48,8 @@ class ScommCli2(TcpCli):
             if CMD_WHOAMI_RSP == rspcmd:
                 rspmsg = json.loads(rspmsg)
                 self.svrid = rspmsg["svrid"]
-                print('svrid setto %d'%self.svrid)
+                self.mconf = rspmsg.get('mconf', '')
+                print('svrid setto %d, mconf=%s'% (self.svrid, self.mconf))
                 continue
             if 0 == rspcmd: # 断开,重连
                 if self.checkConn() <=0:
@@ -128,7 +133,7 @@ class ScommCli2(TcpCli):
         self.seqid += 1
         seqid = self.seqid
         #waitq = Queue(1)
-        self.waitRspQMap[seqid] = callback if callback else self._dumresp
+        self.waitRspQMap[seqid] = callback # if callback else self._dumresp
         self.sndQ.put( (cmdid, seqid, reqboby) )
     def post_msg(self, cmdid, seqid, reqbody):
         self.sndQ.put( (cmdid, seqid, reqbody) )
@@ -170,32 +175,6 @@ class ScommCli2(TcpCli):
         desc = 'fail' if 0 != ret else  'savefile ok'
         return ret, desc
 
-    def on_exec(self, cmdid, seqid, msgbody):
-        exitfg = msgbody.get('exitfg')
-        runcmd = msgbody.get('exec') # 需要执行的命令
-        ret = 0
-        desc = ''
-        if runcmd:
-            print('EXEC run: %s'%runcmd)
-            chiproc = subprocess.Popen(runcmd, shell=True, close_fds=True)
-            desc += str(chiproc.poll()) # if chiproc.poll() else 'running'
-        if exitfg:
-            self.bexit = True
-            desc += ' do exit'
-            print('program need exit')
-
-        return ret,desc
-
-    def on_setconf(self, cmdid, seqid, msgbody):
-        paramdict = msgbody.get('param')
-        cfg.setConf(paramdict)
-        if msgbody.get('save'):
-            cfg.save()
-        if msgbody.get('whoami'):
-            self.progName = cfg.get("progName", "")
-            self.progDesc = cfg.get("progDesc", "")
-            self.sndQ.put(self.whoami_str(seqid))
-        return 0, 'success'
 
     def on_checkalive(self, cmdid, seqid, msgbody):
         nowstr = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
@@ -203,12 +182,11 @@ class ScommCli2(TcpCli):
 
 
 if __name__ == '__main__':
-    from cliconfig import config as cfg
-    obj2 = ScommCli2(
+    obj2 = TcpClient(
         ('192.168.228.44', 4800),
         clitype = 22,
         progName='progName',
         desc='123')
     obj2.run()
-    time.sleep(3000)
+    obj2.join()
     print 'prog exit'

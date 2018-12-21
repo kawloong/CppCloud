@@ -19,16 +19,22 @@ g_version = 1
 g_headlen = 10
 
 
-class TcpCli(object):
-    def __init__(self, svraddr, clitype):
+class TcpCliBase(object):
+    def __init__(self, svraddr):
         self.svraddr = svraddr
         self.cli = None
         self.svrid = 0 # 这个是服务端为本连接分配置的ID, 由whoami请求获得
-        self.clitype = clitype
+        self.clitype = 200 # 默认普通py应用
         self.step = 0
-        self.progName = ""
-        self.progDesc = ""
+        self.svrname = "unknow"
+        self.desc = ""
         self.tag = ""
+        self.aliasname = ""
+        # 统计信息
+        self.send_bytes = 0
+        self.recv_bytes = 0
+        self.send_pkgn = 0
+        self.recv_pkgn = 0
     
     
     # return 大于0正常; 0失败
@@ -60,7 +66,10 @@ class TcpCli(object):
 
         try:
             # print('sndMsg bodylen=',bodylen)
-            return self.cli.send(head)
+            retsnd = self.cli.send(head)
+            self.send_pkgn += 1
+            self.send_bytes += retsnd
+            return retsnd
         except socket.error, e:
             print('except happen ', e)
             self.cli.close()
@@ -83,11 +92,15 @@ class TcpCli(object):
                 # 当收到空时,可能tcp连接已断开
                 if len(recvmsg) <= 0:
                     self.close();
-                    return 0,0,0                    
+                    return 0,0,0
+                else:
+                    self.recv_bytes += len(recvmsg)
             
             ver, headlen, bodylen, cmdid, seqid = struct.unpack("!bbIHH", headstr)
             if ver != g_version or headlen != g_headlen or bodylen > 1024*1024*5:
                 print("Recv Large Package| ver=%d headlen=%d bodylen=%d cmdid=0x%X"%(ver, headlen, bodylen, cmdid))
+            else:
+                self.recv_pkgn += 1
 
             body = ''
             while len(body) < bodylen:
@@ -128,10 +141,11 @@ class TcpCli(object):
             "localsock": hhh+":"+str(ppp),
             "svrid": self.svrid,
             "pid": os.getpid(),
-            "svrname": self.progName,
-            "desc": self.progDesc,
+            "svrname": self.svrname,
+            "desc": self.desc,
             "clitype": self.clitype,
             "tag": self.tag,
+            "aliasname": self.aliasname,
             "begin_time": int(time.time()),
             "shell": shellstr
         }
@@ -139,7 +153,7 @@ class TcpCli(object):
 
 if __name__ == '__main__':
     scomm_sevr_addr = ("192.168.228.44", 4800)
-    cliobj = TcpCli(scomm_sevr_addr, 20)
+    cliobj = TcpCliBase(scomm_sevr_addr, 20)
     
     sndret = cliobj.sndMsg(CMD_GETCLI_REQ, 1, {})
     print("sndret=%d" % sndret)

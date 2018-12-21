@@ -623,6 +623,25 @@ int HocfgMgr::OnCMD_BOOKCFGCHANGE_REQ( void* ptr, unsigned cmdid, void* param )
 
 /**
  * @summery: 通过后端配置，完善客户应用属性和定制属性
+ * remark: 按优先级用tag->ip->default只要匹配到就设置app的自身对应属性
+ *         目前可设置机房号idc，机架号rack，主配置文件名
+ * _meta.json 格式
+{
+    "app_profile": {
+        "tag1": {
+            "svrname1": "mainconfile.json",
+            "_idc": 2
+        },
+        "192.168.228.10": {
+            "_rack": 10,
+            "PyAppTest": "app1.json",
+            "_idc": 1
+        },
+        "default": {
+            "_idc": 200
+        }
+    }
+}
  */
 int HocfgMgr::setupPropByServConfig( IOHand* iohand ) const
 {

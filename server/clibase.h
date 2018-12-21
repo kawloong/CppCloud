@@ -48,7 +48,7 @@ public: // interface HEpBase
 
 protected:
 	string m_cliName;
-	int m_cliType; // 何种类型的客户应用: 1 sevr端服务; 10 监控进程; 20 web serv; 30 观察进程; 40
+	int m_cliType; // 何种类型的客户应用: 1 sevr端服务; 10 监控进程; 20 web serv; 30 观察进程; 100 CPP应用； 200 py应用;
 	bool m_isLocal; // 直连为true(有socket connect); 间接的为false;
 	//bool m_outObj; // 外部对象,不交给climgr释放;
 	static int s_my_svrid;

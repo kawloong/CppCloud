@@ -210,7 +210,7 @@ vueapp = new Vue({
     checkCpuInfo: function(idx){
         let self = this;
         let url = '/notify/shellcmd';
-        const cmdarr = ['获取CPU信息', '获取MEMERY'];
+        const cmdarr = ['x', '获取CPU信息', '获取MEMERY'];
 
         self.$data.outtext += cmdarr[idx] + ":";
         this.$http.get(url, {params:{svrid: this.svrid_page, cmdid: idx}} 
@@ -237,7 +237,7 @@ vueapp = new Vue({
                 let allstat = body.result.all;
                 self.$data.outtext += ' 成功 ' + 
                 'recv ' + allstat[0] + 'bytes@' + allstat[2] + 'package' +
-                 ', send ' + allstat[1] + 'bytes@' + allstat[3] + 'package';
+                 ', send ' + allstat[1] + 'bytes@' + allstat[3] + 'package'
                  + '\n';
             });
         }, function(){

@@ -1,0 +1,16 @@
+{
+    "app_profile": {
+        "default": {
+            "_idc": 200
+        },
+        "tag1": {
+            "svrname1": "mainconfile.json",
+            "_idc": 2
+        },
+        "192.168.228.10": {
+            "_rack": 10,
+            "PyAppTest": "app1.json",
+            "_idc": 1
+        }
+    }
+}

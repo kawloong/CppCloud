@@ -49,7 +49,8 @@ class CliConf:
             fil = open(self.conf["filename"], 'r')
             self.conf.update(json.load(fil))
         except BaseException, e:
-            print(e)
+            import os
+            print("OPEN file fail, cwd=" + os.getcwd(), e)
         finally:
             fil and fil.close()
 

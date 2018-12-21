@@ -71,5 +71,7 @@ const int BROADCASTCLI_INTERVAL_SEC = 60*2;
 const int PEERSERV_EXIST_CHKTIME = 500*1000; // ms unit
 const int PEERSERV_NOEXIST_CHKTIME = 20*1000; // ms unit
 
+//cliType; // 何种类型的客户应用: 1 sevr端服务; 10 监控进程; 20 web serv; 30 观察进程; 100 CPP应用； 200 py应用;
+
 
 #endif

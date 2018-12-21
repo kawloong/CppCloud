@@ -33,5 +33,10 @@
 
 # vscode
 *.log
-.vscode/*
+.vscode/
 *.pyc
+*.a
+*.so
+*.log.*
+server/cppcloud_serv
+common/libhocomm*
