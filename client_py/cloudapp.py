@@ -14,8 +14,11 @@ import os
 from const import *
 from tcpclient import TcpClient
 
+cloudapp = None # 单例
+def getCloudApp():
+    return cloudapp
+
 class CloudApp(TcpClient):
-    instance = None # 单例
 
     # kvarg 可选key: svrid, svrname, tag, desc, aliasname, clitype
     #                reqTimeOutSec(请求的超时时间); 
@@ -24,7 +27,8 @@ class CloudApp(TcpClient):
         svraddr = (serv_host, serv_port)
         super(CloudApp, self).__init__(svraddr, **kvarg) # 调用基类初始化
         self.setCmdHandle(CMD_EVNOTIFY_REQ, self.onNotify)
-        CloudApp.instance = self
+        global cloudapp
+        cloudapp = self
         
         self.notifyCallBack = {} # 'notify-name' -> [(func(), true),]
         self.setNotifyCallBack("check-alive", self._onChkAlive, True)
@@ -96,17 +100,10 @@ class CloudApp(TcpClient):
 
 if __name__ == "__main__":
     pyapp = CloudApp('192.168.1.68', 4800, svrname="PyAppTest")
-    pyapp.run()
-
-    from cloudconf import CloudConf
-    cloudconf = CloudConf(pyapp)
-    # 测试：分布式配置获取
-    cloudconf.loadConfFile('app1.json app2.json')
-
-    while True:
-        val = cloudconf.query('app1.json/key3/keyarr/3')
-        print(type(val), val)
-        time.sleep(1)
-
+    ret = pyapp.start()
+    if not ret:
+        print("start fail");
+        exit(-1)
+ 
     pyapp.join()
     print("end 0")

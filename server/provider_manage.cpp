@@ -86,6 +86,7 @@ void ProviderMgr::notify2Invoker( const string& regname, int svrid, int prvdid )
  * request: by CMD_SVRREGISTER_REQ CMD_SVRREGISTER2_REQ
  * format: { "regname": "app1", "svrid": 100, 
  * 		"svrprop": {"prvdid":1, "url": "tcp://x", ..} }
+ * remark: 客户应用上报不需要带svrid
  **/
 int ProviderMgr::OnCMD_SVRREGISTER_REQ( void* ptr, unsigned cmdid, void* param )
 {

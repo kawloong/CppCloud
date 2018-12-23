@@ -7,7 +7,7 @@
 
 
 import threading
-import subprocess
+#import subprocess
 import time
 import json
 from const import *
@@ -36,6 +36,7 @@ class TcpClient(TcpCliBase):
         while not self.bexit:
             itemsnd = self.sndQ.get()
             if (0 == itemsnd):
+                self.shutdownWrite()
                 return 0
             ret = self.sndMsg(*itemsnd)
             print('*%s* Send ret=%d| cmd=0x%x| %s'% (time.ctime(), ret, itemsnd[0], itemsnd))
@@ -52,6 +53,7 @@ class TcpClient(TcpCliBase):
                 print('svrid setto %d, mconf=%s'% (self.svrid, self.mconf))
                 continue
             if 0 == rspcmd: # 断开,重连
+                if self.bexit: break
                 if self.checkConn() <=0:
                     time.sleep(5)
                 else:
@@ -138,7 +140,7 @@ class TcpClient(TcpCliBase):
     def post_msg(self, cmdid, seqid, reqbody):
         self.sndQ.put( (cmdid, seqid, reqbody) )
     
-    def run(self):
+    def start(self):
         if not self.running:
             if self.checkConn() <= 0:
                 return False
@@ -155,6 +157,17 @@ class TcpClient(TcpCliBase):
     def isAliveWait(self, timeout_sec):
         self.trecvthread.join(timeout_sec)
         return self.trecvthread.isAlive()
+    
+    # *关闭流程：
+    # 1 bexit标记为True
+    # 2 向发送队列插入0（代表退出）
+    # 3 发送线程当弹出发现为0时，退出循环，关闭socket写方向，发送线程结束
+    # 4 后端cppcloud_serv收到socket写关闭，于是close本连接
+    # 5 连接关闭后，接收线程(_recvLoop)被打断，判断bexit=True，于是跳出循环
+    # 6 接收线程结束，join()方法得到返回
+    def shutdown(self):
+        self.bexit = True
+        self.sndQ.put(0) # 触发发送线程退出
 
     def join(self):
         if self.running:
@@ -187,6 +200,6 @@ if __name__ == '__main__':
         clitype = 22,
         progName='progName',
         desc='123')
-    obj2.run()
+    obj2.start()
     obj2.join()
     print 'prog exit'

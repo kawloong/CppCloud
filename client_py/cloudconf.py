@@ -6,13 +6,13 @@
 '''
 
 import json
-from cloudapp import CloudApp 
+from cloudapp import CloudApp, getCloudApp 
 from const import *
 
 class CloudConf(object):
     
-    def __init__(self, cloudapp):
-        self.cloudapp = cloudapp
+    def __init__(self):
+        self.cloudapp = getCloudApp()
         self.files = {}
         # 主配置文件名
         ## 作用：当要查询主配置文件中的内存时，query的qkey参数文件名部分可省略
@@ -92,3 +92,23 @@ class CloudConf(object):
         msgbody = json.loads(msgbody)
         if 0 == msgbody["code"] and msgbody["contents"]:
             self.setFile(msgbody)
+
+
+if __name__ == "__main__":
+    pyapp = CloudApp('192.168.1.68', 4800, svrname="PyAppTest")
+    ret = pyapp.start()
+    cloudconf = CloudConf()
+
+    # 测试：分布式配置获取
+    cloudconf.loadConfFile('app1.json app2.json')
+
+    while True:
+        val = cloudconf.query('app1.json/key3/keyarr/3')
+        print(type(val), val)
+        input = raw_input("input q to exit\n")
+        if 'q' == input.strip(): 
+            pyapp.shutdown()
+            break
+
+    pyapp.join()
+    print("end 0")

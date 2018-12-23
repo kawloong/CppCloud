@@ -41,7 +41,7 @@ enum command_id_t
     CMD_SVRSEARCH_REQ = 0x0018, // 服务发现
     CMD_SVRSHOW_REQ = 0x0019, // 列出所有服务
     CMD_APPRUNLOG_REQ = 0x001A,
-    CMD_TCP_SVR_REQ = 0x001B, // tcp微服务请求命令
+    CMD_TCP_SVR_REQ = 0x001B, // tcp微服务默认请求命令
     CMD_SVRSTAT_REQ = 0x001C, // 服务治理上报统计信息
     CMD_WEBCTRL_REQ = 0x001D, // web后台发出的管理命令
 

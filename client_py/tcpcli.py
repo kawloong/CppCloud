@@ -19,9 +19,21 @@ g_version = 1
 g_headlen = 10
 
 
+def Connect(host, port):
+    return TcpCliBase.Connect(host, port)
+def Recv(clisock, tomap):
+    return TcpCliBase.Recv(clisock, tomap)
+def Send(clisock, cmdid, seqid, body):
+    return TcpCliBase.Send(clisock, cmdid, seqid, body)
+def TellExit():
+    TcpCliBase.TellExit()
+
 class TcpCliBase(object):
+    exit_flag = 0
+
     def __init__(self, svraddr):
         self.svraddr = svraddr
+        self.cliIp = ''
         self.cli = None
         self.svrid = 0 # 这个是服务端为本连接分配置的ID, 由whoami请求获得
         self.clitype = 200 # 默认普通py应用
@@ -36,84 +48,121 @@ class TcpCliBase(object):
         self.send_pkgn = 0
         self.recv_pkgn = 0
     
+    @staticmethod
+    def Connect(host, port):
+        ret = None
+        try:
+            cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            ret = cli.connect((host, port))
+        except socket.error, e:
+            print('connect to %s:%d fail: %s'%(host, port, e))
+            cli.close()
+        return ret
     
     # return 大于0正常; 0失败
     def checkConn(self):
         if self.step <= 0:
-            try:
-                self.cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                ret = self.cli.connect(self.svraddr)
-                print('connect tcp to %s, result %s'% (self.svraddr,ret) )
-            except socket.error, e:
-                print('connect %s fail: %s'%(str(self.svraddr),e))
-                return 0
-            
+            clisock = TcpCliBase.Connect(self.svraddr[0], self.svraddr[1])
+            if not clisock: return 0
+
+            self.cli = clisock
+            print('connected tcp to %s'% (self.svraddr) )
+            self.cliIp = self.cli.getsockname()[0]
             self.step = 1
             self.tell_whoami()
         return self.step
+    
+    @staticmethod
+    def TellExit():
+        TcpCliBase.exit_flag = 1
 
-    # return 大于0成功，0失败
-    def sndMsg(self, cmdid, seqid, body):
+    # 发送包，可对外提供接口
+    @staticmethod
+    def Send(clisock, cmdid, seqid, body):
         if isinstance(body, dict) or isinstance(body, list):
             body = json.dumps(body)
         bodylen = len(body)
         head = struct.pack("!bbIHH", g_version, 
             g_headlen, bodylen, cmdid, seqid)
         head += body
-        
-        if self.checkConn() <= 0:
-            return 0
 
         try:
             # print('sndMsg bodylen=',bodylen)
-            retsnd = self.cli.send(head)
-            self.send_pkgn += 1
-            self.send_bytes += retsnd
+            retsnd = clisock.send(head)
             return retsnd
         except socket.error, e:
             print('except happen ', e)
-            self.cli.close()
-            self.cli = None
-            self.step = 0
             return 0
 
+    # return 大于0成功，0失败
+    def sndMsg(self, cmdid, seqid, body):
+        if self.checkConn() <= 0:
+            return 0
 
+        retsnd = self.Send(self.cli, cmdid, seqid, body)
+        if retsnd <= 0:
+            self.cli.close()
+            self.cli = None
+        else:
+            self.send_pkgn += 1
+            self.send_bytes += retsnd
+
+        return retsnd
+
+    @staticmethod
+    def Recv(clisock, tomap):
+        recvBytes = 0;
+        try:
+            # 接收头部
+            headstr = ''
+            while len(headstr) < g_headlen: # 在慢网环境
+                recvmsg = clisock.recv(g_headlen - len(headstr))
+                if TcpCliBase.exit_flag:
+                    return -1,0, 0,0,'programe exit'
+
+                headstr += recvmsg
+                # 当收到空时,可能tcp连接已断开
+                if len(recvmsg) <= 0:
+                    return -10,0, 0,0,'recv 0 peerclose'
+                else:
+                    recvBytes += len(recvmsg)
+            
+            ver, headlen, bodylen, cmdid, seqid = struct.unpack("!bbIHH", headstr)
+            if ver != g_version or headlen != g_headlen or bodylen > 1024*1024*5:
+                print("Recv Large Package| ver=%d headlen=%d bodylen=%d cmdid=0x%X"%(
+                        ver, headlen, bodylen, cmdid))
+
+
+            body = ''
+            while len(body) < bodylen:
+                body += clisock.recv(bodylen)
+                if TcpCliBase.exit_flag:
+                    return -1,0, 0,0,'programe exit'
+            recvBytes += len(body)
+
+        except socket.error, e:
+            print('except happen ', e)
+            return -11,0, 0, 0, ('sockerr %s' % e)
+        
+        if (tomap):
+            body = json.loads(body)
+        
+        return 0,recvBytes, cmdid,seqid,body
+    
     # 失败第1个参数是0;
     def rcvMsg(self, tomap=True):
         if self.step <= 0:
             self.checkConn()
             return 0, 0, ''
-
-        try:
-            headstr = '' # self.cli.recv(g_headlen)
-            while len(headstr) < g_headlen: # 在慢网环境
-                recvmsg = self.cli.recv(g_headlen - len(headstr))
-                headstr += recvmsg
-                # 当收到空时,可能tcp连接已断开
-                if len(recvmsg) <= 0:
-                    self.close();
-                    return 0,0,0
-                else:
-                    self.recv_bytes += len(recvmsg)
-            
-            ver, headlen, bodylen, cmdid, seqid = struct.unpack("!bbIHH", headstr)
-            if ver != g_version or headlen != g_headlen or bodylen > 1024*1024*5:
-                print("Recv Large Package| ver=%d headlen=%d bodylen=%d cmdid=0x%X"%(ver, headlen, bodylen, cmdid))
-            else:
-                self.recv_pkgn += 1
-
-            body = ''
-            while len(body) < bodylen:
-                body += self.cli.recv(bodylen)
-
-        except socket.error, e:
-            print('except happen ', e)
-            self.close()
-            return 0, 0, ('sockerr %s' % e)
         
-        if (tomap):
-            #print 'len:', bodylen, 'recv body:', body
-            body = json.loads(body)
+        result,rbytes, cmdid,seqid,body = self.Recv(self.cli, tomap)
+        if 0 == result:
+            self.recv_pkgn += 1
+            self.recv_bytes += rbytes
+        else:
+            self.close()
+            cmdid = 0
+
         return cmdid,seqid,body
 
     def close(self):
@@ -121,6 +170,9 @@ class TcpCliBase(object):
             self.cli.close()
             self.cli = None
         self.step = 0 # closed
+    
+    def shutdownWrite(self):
+        if self.cli: self.cli.shutdown(socket.SHUT_WR)
 
     # return 大于0正常
     def tell_whoami(self):
