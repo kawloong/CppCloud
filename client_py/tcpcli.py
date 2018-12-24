@@ -52,8 +52,10 @@ class TcpCliBase(object):
     def Connect(host, port):
         ret = None
         try:
+            port = int(port)
             cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            ret = cli.connect((host, port))
+            cli.connect((host, port))
+            ret = cli
         except socket.error, e:
             print('connect to %s:%d fail: %s'%(host, port, e))
             cli.close()
@@ -66,7 +68,7 @@ class TcpCliBase(object):
             if not clisock: return 0
 
             self.cli = clisock
-            print('connected tcp to %s'% (self.svraddr) )
+            print('connected tcp to ' + str(self.svraddr) )
             self.cliIp = self.cli.getsockname()[0]
             self.step = 1
             self.tell_whoami()

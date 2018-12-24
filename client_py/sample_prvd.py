@@ -16,13 +16,14 @@ class PrvdTcp(TcpProviderBase):
 
     # 默认消息消息处理方法()
     def onRequest(self):
-        print("do job .")
+        print(".. do job ..")
+        self.response("hi, input=" + self.reqbody)
 
 class PrvdTcp2(TcpProviderBase):
     regname = 'pp2'
 
 if __name__ == "__main__":
-    cloudapp = CloudApp('192.168.1.68', 4800, svrname="prvd1")
+    cloudapp = CloudApp('192.168.228.44', 4800, svrname="prvd1")
     if cloudapp.start():
         PrvdTcp.Create()
         PrvdTcp.Start()
@@ -35,3 +36,5 @@ if __name__ == "__main__":
         PrvdTcp.Shutdown()
         cloudapp.shutdown()
         cloudapp.join()
+    else:
+        print('CloudApp start fail, exit')

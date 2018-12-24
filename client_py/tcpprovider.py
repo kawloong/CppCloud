@@ -21,7 +21,7 @@ class TcpProviderBase(SocketServer.BaseRequestHandler):
     weight = 100
     enable = 1
     desc = ''
-    handleMap = {}
+    handleMap = None
     server = None
     thread = None
     prvdid = 0
@@ -56,10 +56,29 @@ class TcpProviderBase(SocketServer.BaseRequestHandler):
         else:
             cls.url = 'tcp://' + cls.host + ':' + str(cls.port)
         
+        cls.handleMap = {}
         cls.BindCmdHandle(CMD_TCP_SVR_REQ, cls.onRequest)
+        cloudapp.setNotifyCallBack("reconnect_ok", cls.onServReconnect) # 重连成功回调
+        cloudapp.setNotifyCallBack("provider", cls.onServReconnect) # 设置weight/enable回调
         SocketServer.ThreadingTCPServer.daemon_threads = True
         cls.server = SocketServer.ThreadingTCPServer((listenHost, cls.port), cls)
         return cls
+    
+    # cloudapp断开再连接时，应该再次注册服务提供信息
+    @classmethod
+    def onServReconnect(cls, *param):
+        print("Found serv reconnect ok")
+        cls.regProvider()
+
+    @classmethod
+    def onSetProvider(cls, cmdid, seqid, msgbody):
+        if msgbody["regname"] == cls.regname and msgbody["prvdid"] == cls.prvdid:
+            if 'enable' in msgbody:
+                cls.enable = msgbody['enable']
+            if 'weight' in msgbody:
+                cls.weight = msgbody['weight']
+            cls.regProvider('weight', 'enable')
+            return 0, 'update ok'
     
     # 参数：prop如果为空，则发送所有
     @classmethod
@@ -72,19 +91,12 @@ class TcpProviderBase(SocketServer.BaseRequestHandler):
             if None != val:
                 svrprop[key] = val
 
-        regResult = cls.cloudapp.request(CMD_SVRREGISTER_REQ, {
+        cls.cloudapp.request_nowait(CMD_SVRREGISTER_REQ, {
             "regname": cls.regname,
             "svrprop": svrprop
         })
-        print(regResult)
     
-        
-
-    @classmethod
-    def llop(cls):
-        cls.server.serve_forever()
-        print("llop exited")
-    
+   
     @classmethod
     def Start(cls):
         cls.thread = threading.Thread(target=cls.server.serve_forever, 
@@ -124,7 +136,7 @@ class TcpProviderBase(SocketServer.BaseRequestHandler):
         print("begin handle")
         threading.currentThread().setName('handle:' + str(self.request.getpeername()))
         while not getattr(self, 'closeFlag', False):
-            result,recvBytes, cmdid,seqid,body = tcpcli.Recv(self.request, True)
+            result,recvBytes, cmdid,seqid,body = tcpcli.Recv(self.request, False)
             if 0 == result:
                 self.recvBytes = recvBytes
                 self.reqcmdid = cmdid
@@ -139,20 +151,5 @@ class TcpProviderBase(SocketServer.BaseRequestHandler):
                 self.close()
     
 
-class PrvdTcp(TcpProviderBase):
-    regname = 'prvd1'
-    host = '192.168.1.101'
-    #port = 3744
 
-    def onCustom(self):
-        print("do job .")
-
-if __name__ == "__main__":
-    prvd = PrvdTcp.Create()
-    prvd.BindCmdHandle(1, PrvdTcp.onCustom)
-    import time
-
-    prvd.Start()
-    time.sleep(10)
-    prvd.Shutdown()
  

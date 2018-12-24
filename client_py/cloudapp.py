@@ -30,20 +30,15 @@ class CloudApp(TcpClient):
         global cloudapp
         cloudapp = self
         
-        self.notifyCallBack = {} # 'notify-name' -> [(func(), true),]
-        self.setNotifyCallBack("check-alive", self._onChkAlive, True)
-        self.setNotifyCallBack("exit", self._onExit, True)
-        self.setNotifyCallBack("shellcmd", self._onShellcmd, True)
-        self.setNotifyCallBack("iostat", self._onIOstat, True)
-        self.setNotifyCallBack("aliasname", self._onSetAliasName, True)
+        self.setNotifyCallBack("check-alive", self._onChkAlive)
+        self.setNotifyCallBack("exit", self._onExit)
+        self.setNotifyCallBack("shellcmd", self._onShellcmd)
+        self.setNotifyCallBack("iostat", self._onIOstat)
+        self.setNotifyCallBack("aliasname", self._onSetAliasName)
+        ## self.setNotifyCallBack("connected", self.xxx, False)
         ## self.setNotifyCallBack("cfg_change", self.)
 
-    
-    def setNotifyCallBack(self, ntfName, cbFunc, hasRet):
-        if not ntfName in self.notifyCallBack:
-            self.notifyCallBack[ntfName] = []
-        self.notifyCallBack[ntfName].append((cbFunc, hasRet))
-
+ 
 
     def _onChkAlive(self, cmdid, seqid, msgbody):
         return 0, time.time()
@@ -73,29 +68,17 @@ class CloudApp(TcpClient):
         msgbody = json.loads(msgbody)
         print("-- ", msgbody);
         notify = msgbody['notify']
-        code = 0
-        result = ''
         fromsvrid = msgbody.get('from', 0)
 
-        cblist = self.notifyCallBack.get(notify)
-        if cblist:
-            for cbitem in cblist:
-                if cbitem[1]:
-                    code, result = cbitem[0](cmdid, seqid, msgbody)
-                else:
-                    cbitem[0](cmdid, seqid, msgbody)
-        else:
-            code = 404
-            result = 'undefine handle'
-            print("no hand notify=" + notify)
+        callResult = self.invokerNotifyCallBack(notify, cmdid, seqid, msgbody)
 
-        if 0 == fromsvrid:
+        if 0 == fromsvrid: 
             return
+        code, result = callResult if callResult and len(callResult) > 1 else (0, '')
 
         return (cmdid|CMDID_MID, 
             seqid, { "to": fromsvrid, 
             "code": code,"result": result })
-
 
 
 if __name__ == "__main__":

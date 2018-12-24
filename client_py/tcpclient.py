@@ -27,6 +27,7 @@ class TcpClient(TcpCliBase):
         self.sndQ = Queue()
         self.rcvQ = Queue()
         self.waitRspQMap = {} # 同步等待某个响应队列
+        self.notifyCallBack = {} # 'notify-name' -> [(func(), true),]
         self.seqid = 100
         self.running = False
         self.bexit = False
@@ -51,6 +52,7 @@ class TcpClient(TcpCliBase):
                 self.svrid = rspmsg["svrid"]
                 self.mconf = rspmsg.get('mconf', '')
                 print('svrid setto %d, mconf=%s'% (self.svrid, self.mconf))
+                self.invokerNotifyCallBack("reconnect_ok");
                 continue
             if 0 == rspcmd: # 断开,重连
                 if self.bexit: break
@@ -111,6 +113,11 @@ class TcpClient(TcpCliBase):
     # param: func is def function_name(cmd, seqid, msg)
     def setCmdHandle(self, cmdid, func):
         self.cmd2doFun[cmdid] = func;
+    
+    def setNotifyCallBack(self, ntfName, cbFunc):
+        if not ntfName in self.notifyCallBack:
+            self.notifyCallBack[ntfName] = []
+        self.notifyCallBack[ntfName].append((cbFunc, False))
 
     def tell_whoami(self): # 覆盖基类，无操作
         pass
@@ -177,6 +184,20 @@ class TcpClient(TcpCliBase):
             self.close()
     
     
+    # 驱动回调notifyCallBack, 执行订阅了该notify的方法
+    def invokerNotifyCallBack(self, notifyName, *param, **arg):
+        cblist = self.notifyCallBack.get(notifyName)
+        if cblist:
+            ret = None
+            for cbitem in cblist:
+                reti = cbitem[0](*param, **arg)
+                if reti:
+                    ret = reti
+            return ret
+        
+        return 404, 'undefine handle'
+
+
     # 下载更新文件
     def on_download(self, cmdid, seqid, msgbody):
         filename = msgbody['filename']

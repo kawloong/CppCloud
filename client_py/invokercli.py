@@ -7,6 +7,7 @@
 
 import urlparse
 import tcpcli
+from const import CMD_TCP_SVR_REQ
 
 gIvkClis = {}
 
@@ -27,7 +28,7 @@ class TcpInvokerCli(InvokerCli):
     def good(self):
         return (None != self.clisock)
 
-    def call(self, cmdid, reqmsg, todict = False):
+    def call(self, reqmsg, cmdid = CMD_TCP_SVR_REQ, todict = False):
         TcpInvokerCli.seqid += 1
         seqid = TcpInvokerCli.seqid
         sndbytes = tcpcli.Send(self.clisock, cmdid, seqid, reqmsg)
@@ -50,7 +51,7 @@ class HttpInvokerCli(InvokerCli):
 protocol2Class = {1: TcpInvokerCli, 3: HttpInvokerCli}
 
 def call(regObj, *param, **arg):
-    ivkKey = (regObj["regname"], regObj["prvdid"])
+    ivkKey = (regObj["regname"], regObj["svrid"], regObj["prvdid"])
     ivkcli = gIvkClis.get(ivkKey)
 
     if not ivkcli: # 创建客户端对象
@@ -58,16 +59,16 @@ def call(regObj, *param, **arg):
         if not cls:
             print("Not implete protocol ", regObj['protocol'])
             return -1, ''
-            clio = cls(regObj)
-            if not clio.good(): # 测试是否可用
-                return -2, ''
-            
-            gIvkClis[ivkKey] = clio
+        ivkcli = cls(regObj)
+        if not ivkcli.good(): # 测试是否可用
+            return -2, ''
+        
+        gIvkClis[ivkKey] = ivkcli
     
-    return clio.call(*param, **arg)
+    return ivkcli.call(*param, **arg)
 
 def remove(regObj):
-    ivkKey = (regObj["regname"], regObj["prvdid"])
+    ivkKey = (regObj["regname"], regObj["svrid"], regObj["prvdid"])
     if ivkKey in gIvkClis:
         gIvkClis[ivkKey].close()
         del gIvkClis[ivkKey]
