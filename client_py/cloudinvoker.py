@@ -10,6 +10,7 @@ import random
 import invokercli
 from const import CMD_SVRSEARCH_REQ, CMD_SVRSEARCH_RSP
 from cloudapp import getCloudApp
+from svrstat import svrstat
 
 class CloudInvoker:
     def __init__(self):
@@ -63,11 +64,11 @@ class CloudInvoker:
         self._setPrvdData('', msgbody)
     
     # 消费者接口调用
-    # return (callresult, response)
+    # return (callresult, response, errCallBack)
     def call(self, regname, *param, **arg):
         ivkObj = self.invkers.get(regname)
-        if not ivkObj:
-            return -1, 'not service=' + regname
+        if (not ivkObj) or len(ivkObj["reglist"]) == 0 or ivkObj["weightSum"] <= 1:
+            return -1, 'not service=' + regname, None
         
         randN = random.randint(0, ivkObj["weightSum"]-1)
         selItem = ivkObj["reglist"][0]
@@ -91,8 +92,11 @@ class CloudInvoker:
             invokercli.remove(selItem)
             del ivkObj["reglist"][selIndex]
         
-        return result, rsp
-                
+        def setError(errno):
+            svrstat.addInvkCount(selItem, 0 == errno)
+        
+        return result, rsp, setError
+
     
     def onProviderDown(self, cmdid, seqid, msgbody):
         invokercli.remove(msgbody)

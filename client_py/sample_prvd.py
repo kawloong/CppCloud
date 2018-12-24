@@ -23,7 +23,7 @@ class PrvdTcp2(TcpProviderBase):
     regname = 'pp2'
 
 if __name__ == "__main__":
-    cloudapp = CloudApp('192.168.228.44', 4800, svrname="prvd1")
+    cloudapp = CloudApp('vpc2', 4800, svrname="prvd1")
     if cloudapp.start():
         PrvdTcp.Create()
         PrvdTcp.Start()

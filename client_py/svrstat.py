@@ -17,7 +17,7 @@ class SvrStat:
     def _getVal(self, obj, name, defval = None):
         val = getattr(obj, name, None)
         if None == val:
-            val = obj.get(name, defval)
+            val = obj.get(name, defval) if isinstance(obj, dict) else defval
         return val
 
     def _getStatObj(self, svrObj):
@@ -49,6 +49,7 @@ class SvrStat:
         
         countKey = 'pvd_ok' if isOk else 'pvd_ng'
         statobj[countKey] += dcount
+        self._startStatTimer()
 
     def addInvkCount(self, svrObj, isOk, dcount = 1):
         statobj = self._getStatObj(svrObj)
@@ -61,6 +62,7 @@ class SvrStat:
         if self._getVal(svrObj, 'svrid', False):
             countKey = 'ivk_dok' if isOk else 'ivk_dng'
             statobj[countKey] += dcount
+        self._startStatTimer()
 
 
     def _sendStat(self):
@@ -75,14 +77,16 @@ class SvrStat:
                 self.gStatObj[stkey]["ivk_dok"] = 0
                 self.gStatObj[stkey]["ivk_dng"] = 0
 
+        self.gtimerRun = False
         if len(msg) > 0:
             cloudapp.getCloudApp().request_nowait(CMD_SVRSTAT_REQ, msg)
-        self.timer = threading.Timer(self.gIntervalSec, self._sendStat)
 
 
-    def startStatTimer(self):
+    def _startStatTimer(self, waitSec = 10):
         if not self.gtimerRun:
+            self.gIntervalSec = waitSec
             self.timer = threading.Timer(self.gIntervalSec, self._sendStat)
+            self.timer.start()
             self.gtimerRun = True
     
     def shutdown(self):
@@ -93,8 +97,4 @@ class SvrStat:
 
 svrstat = SvrStat()
 
-def start():
-    svrstat.startStatTimer()
 
-def shutdown():
-    svrstat.shutdown()

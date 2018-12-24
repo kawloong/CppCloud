@@ -94,7 +94,8 @@ vueapp = new Vue({
         if ('_provider_mark' in svrObj) { // 服务提供者
             let prvdarr = svrObj['_provider_mark'].split('+');
             for (let prvdi in prvdarr) { // ['prvd_tt1-1', 'prvd_ff2-2']
-                let prvdItemObj = {}; // { url: xx, regname: xx}
+                let prvdItemObj = {}; // { url: xx, weight: xx}
+                prvdItemObj.regname = prvdarr[prvdi];
                 for (let idx in prvdKeys) {
                     let prvd_keyi = prvdarr[prvdi] + ':' + prvdKeys[idx];
                     //console.log("Prvd: " + prvd_keyi);

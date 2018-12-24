@@ -35,7 +35,7 @@ class TcpInvokerCli(InvokerCli):
         if 0 == sndbytes: return -1, ''
         
         result,recvBytes,rspid,rspseq,body = tcpcli.Recv(self.clisock, todict)
-        if rspid != seqid:
+        if int(rspseq) != seqid:
             print("Warn: seqid not match %d/%d" % (seqid, rspseq))
         return result, body
     

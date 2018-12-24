@@ -10,6 +10,7 @@ import threading
 import SocketServer
 import tcpcli
 from cloudapp import getCloudApp
+from svrstat import svrstat
 from const import CMD_TCP_SVR_REQ, CMD_SVRREGISTER_REQ, CMDID_MID
 
 
@@ -124,12 +125,16 @@ class TcpProviderBase(SocketServer.BaseRequestHandler):
     def close(self):
         setattr(self, 'closeFlag', True)
     
+    def setError(self, err):
+        self.handleerr = err
+
     def response(self, rspmsg):
         ret = tcpcli.Send(self.request, 
                 self.reqcmdid|CMDID_MID, self.reqseqid, rspmsg)
         if 0 == ret:
             self.close()
         return ret
+    
 
     ## override
     def handle(self):
@@ -142,11 +147,15 @@ class TcpProviderBase(SocketServer.BaseRequestHandler):
                 self.reqcmdid = cmdid
                 self.reqseqid = seqid
                 self.reqbody = body
+                self.handleerr = 0
                 func = self.handleMap.get(cmdid)
                 if func:
                     func(self)
                 else:
                     print("No CmdFunc cmd=0x%x(%d)" % (cmdid, seqid))
+                    self.handleerr = 1
+                
+                svrstat.addPrvdCount(self, 0 == self.handleerr)
             else:
                 self.close()
     

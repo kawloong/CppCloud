@@ -4,5 +4,6 @@
         "deque": "cpp",
         "vector": "cpp",
         "list": "cpp"
-    }
+    },
+    "python.pythonPath": "E:/py/env/evn-py2/Scripts/python"
 }

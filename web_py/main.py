@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*- 
 
 '''
+cppcloud的webclient，为中心端间接的restful API和可视化展示/操作界面
 '''
 
 from flask import Flask,request,redirect, url_for,render_template
@@ -120,22 +121,24 @@ def onRunLogReq(cmdid, seqid, msg):
         {"log": 1234, "to": dictmsg["from"]})
 
 if __name__ == '__main__':
-    gweb_cli = TcpClient( 
-        ('192.168.1.68', 4800),
+    gweb_cli = TcpClient(
+        ('vpc2', 4800),
         clitype = 20,
         svrid = 990,
         aliasname="tag1",
-        progName = "Web-Ctrl",
-        progDesc = "Web-Serv(monitor)"
+        svrname = "Web-Ctrl",
+        desc = "CppCloud-Web-Serv"
     )
 
     gweb_cli.setCmdHandle(CMD_EVNOTIFY_REQ, onNotifyMsg);
     gweb_cli.setCmdHandle(CMD_APPRUNLOG_REQ, onRunLogReq);
 
-    if gweb_cli.run():
+    if gweb_cli.start():
         #app.debug = True
         host = config.get('http_host', '0.0.0.0')
         port = config.get('http_port', 80)
 
         app.response_class.default_mimetype = 'application/json; charset=utf-8'
         app.run(host=host,port=port) # , threaded=True
+
+        gweb_cli.shutdown()

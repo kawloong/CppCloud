@@ -12,7 +12,7 @@ invokerServiceName = 'prvd1'
 
 
 def main():
-    cloudapp = CloudApp('192.168.228.44', 4800, svrname='InvkerTest')
+    cloudapp = CloudApp('vpc2', 4800, svrname='InvkerTest')
     if not cloudapp.start(): return -1
 
     inker = CloudInvoker()
@@ -20,9 +20,12 @@ def main():
 
     sendStr = "hello"
     while "q" != sendStr:
-        result, rspmsg = inker.call(invokerServiceName, sendStr)
+        result, rspmsg, errhand = inker.call(invokerServiceName, sendStr)
         print("Response " + str(result) + "| " + rspmsg)
         sendStr = raw_input('input message to send out(input "q" exit):').strip()
+
+        # 上报执行结果给统计模块
+        if errhand: errhand(0 == result)
     
     cloudapp.shutdown()
     cloudapp.join()
