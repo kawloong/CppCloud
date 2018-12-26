@@ -68,6 +68,7 @@ class CloudInvoker:
     def call(self, regname, *param, **arg):
         ivkObj = self.invkers.get(regname)
         if (not ivkObj) or len(ivkObj["reglist"]) == 0 or ivkObj["weightSum"] <= 1:
+            print("Error: not service=" + regname)
             return -1, 'not service=' + regname, None
         
         randN = random.randint(0, ivkObj["weightSum"]-1)
@@ -87,7 +88,7 @@ class CloudInvoker:
                 selIndex += 1
         
         result, rsp = invokercli.call(selItem, *param, **arg)
-        if 0 != result: # 调用过程失败要移除
+        if result < 0: # 调用过程失败要移除 # =1 timeout
             ivkObj["weightSum"] -= selWeight
             invokercli.remove(selItem)
             del ivkObj["reglist"][selIndex]

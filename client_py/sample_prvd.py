@@ -14,10 +14,24 @@ class PrvdTcp(TcpProviderBase):
     #host = '192.168.1.101'  # 不设置，默认自动检测
     #port = 3744 # 不设置，默认用随机端口
 
+
     # 默认消息消息处理方法()
     def onRequest(self):
-        print(".. do job ..")
-        self.response("hi, input=" + self.reqbody)
+        import threading
+        print(".. do job ..", self.reqcmdid, self.reqseqid, self.reqbody)
+        self.seqid = 0
+        self.reqcmdid = 0
+        respsor = self.response_async()
+        
+        if not getattr(self, 'timer', None):
+            self.timer = threading.Timer(6, self.threadTest, (respsor,))
+            self.timer.setDaemon(True)
+            self.timer.start()
+        else:
+            respsor("hi, input=" + self.reqbody)
+    
+    def threadTest(self, respsor):
+        respsor("hi, input=inthread send")
 
 class PrvdTcp2(TcpProviderBase):
     regname = 'pp2'
