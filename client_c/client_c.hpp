@@ -64,7 +64,8 @@ namespace client_c
     int GetSvrPrvd( svr_item_t& pvd, const string& svrname ); // 获取一个服务提供者
 
     // tcp服务消费者
-    int TcpRequest( string& resp, const string& reqmsg, const string& svrname );
+    int TcpRequest( string& resp, const string& reqmsg, const string& svrname ); // 多连接
+    int TcpAioRequest( string& resp, const string& reqmsg, const string& svrname ); // 串行
 
     // http服务消费者
     int HttpGet( string& resp, const string& path, const string& queryStr, const string& svrname );

@@ -17,20 +17,44 @@ int InvokerAio::serv_sendpkg_num = 0;
 
 
 
-InvokerAio::InvokerAio( const string& dsthost, int dstport ): 
-		m_dstHost(dsthost), m_dstPort(dstport), m_stage(0),
-		m_cliFd(INVALID_FD), m_seqid(0), m_timeout_interval_sec(3), 
+InvokerAio::InvokerAio( const string& dsthostp ): 
+		m_dstPort(0), m_stage(0), 
+		m_cliFd(INVALID_FD), m_seqid(0), m_timeout_interval_sec(3), m_atime(0),
 		m_epThreadID(0), m_closeFlag(0),
 		m_recv_bytes(0), m_send_bytes(0), 
 		m_recvpkg_num(0), m_sendpkg_num(0), m_iBufItem(NULL), m_oBufItem(NULL)
 {
-    // m_cliName = dsthost + ":" + _N(dstport);
+	size_t pos = dsthostp.find(":");
+    if (pos > 0)
+    {
+        m_dstHost = dsthostp.substr(0, pos);
+        m_dstPort = atoi(dsthostp.c_str() + pos + 1);
+    }
 }
 
 int InvokerAio::init( int epfd )
 {
 	m_epCtrl.setEPfd(epfd);
+	
+	ERRLOG_IF1RET_N(m_dstPort<=0 || m_dstHost.empty(), -133, 
+			"INVOKERAIO_INIT| msg=invalid hostp %s:%d",
+			m_dstHost.c_str(), m_dstPort);
+	
+	return _connect();
+}
+
+InvokerAio::~InvokerAio(void)
+{
+	clearBuf();
+}
+
+
+int InvokerAio::_connect( void )
+{
+	IFCLOSEFD(m_cliFd);
 	int ret = Sock::connect_noblock(m_cliFd, m_dstHost.c_str(), m_dstPort);
+	m_atime = time(NULL);
+
 	if (ERRSOCK_AGAIN == ret)
 	{
 		m_stage = 1;
@@ -53,20 +77,29 @@ int InvokerAio::init( int epfd )
 	return 0;
 }
 
-InvokerAio::~InvokerAio(void)
-{
-	clearBuf();
-}
-
 void InvokerAio::clearBuf( void )
 {
 	IFDELETE(m_iBufItem);
 	IFDELETE(m_oBufItem);
-	m_reqQueue.clear();
+	clearReqQueue();
+
 	IOBuffItem* buf = NULL;
 	while (m_oBuffq.pop(buf, 0))
 	{
 		IFDELETE(buf);
+	}
+}
+
+void InvokerAio::clearReqQueue( void )
+{
+	if (!m_reqQueue.empty())
+	{
+		RWLOCK_WRITE(m_qLock);
+		for (auto it = m_reqQueue.begin(); m_reqQueue.end() != it; ++it)
+		{
+			it->second->append(""); // to unblock wait
+		}
+		m_reqQueue.clear();
 	}
 }
 
@@ -155,6 +188,7 @@ int InvokerAio::onRead( int p1, long p2 )
 	}
 	while (0);
 
+	m_atime = time(NULL);
 	if (m_iBufItem && m_iBufItem->ioFinish())
 	{
 		IFDELETE(m_iBufItem);
@@ -277,6 +311,11 @@ int InvokerAio::run( int p1, long p2 )
 	return ret;
 }
 
+int InvokerAio::qrun( int flag, long p2 )
+{
+	return -1;
+}
+
 int InvokerAio::sendData( unsigned int cmdid, unsigned int seqid, const char* body, unsigned int bodylen, bool setOutAtonce )
 {
 	IOBuffItem* obf = new IOBuffItem;
@@ -297,6 +336,11 @@ int InvokerAio::sendData( unsigned int cmdid, unsigned int seqid, const char* bo
 	return 0;
 }
 
+
+time_t InvokerAio::getAtime( void )
+{
+	return m_atime;
+}
 
 // @param: [out] format {all:[进程收到的字节数, 进程发出的字节数, 进程收到的报文数, 进程发出的报文数], 
 //		one:[当前连接收到的字节数, 当前连接发出的字节数, 当前连接收到的报文数, 当前连接发出的报文数]}
@@ -379,6 +423,13 @@ int InvokerAio::cmdProcess( IOBuffItem*& iBufItem )
 	return ret;
 }
 
+int InvokerAio::stageCheck( void )
+{
+	IFRETURN_N(2 == m_stage || 1 == m_stage, 0);
+	int ret = _connect();
+	return ret;
+}
+
 // thread-safe
 int InvokerAio::request( string& resp, int cmdid, const string& reqmsg )
 {
@@ -390,14 +441,19 @@ int InvokerAio::request( string& resp, int cmdid, const string& reqmsg )
 		m_reqQueue[seqid] = shareQueue;
 	}
 
-	int ret = 0;
-	bool bpop = shareQueue->pop(resp, m_timeout_interval_sec * sec2us); // block
-	if (!bpop)
+	int ret;
+	do
 	{
-		ret = -15;
-		LOGERROR("INVOKETIMEOUT| msg=req 0x%x at seq%d fail", cmdid, seqid);
+		ret = stageCheck();
+		IFBREAK_N(ret, -13);
+		ret = sendData(cmdid, seqid, reqmsg.c_str(), reqmsg.length(), true);
+		IFBREAK_N(ret, -14);
+
+		bool bpop = shareQueue->pop(resp, m_timeout_interval_sec * sec2us); // block until response
+		ERRLOG_IF1RET_N(!bpop, -15, "INVOKETIMEOUT| msg=req 0x%x at seq%d fail", cmdid, seqid);
 	}
-//	else
+	while(0);
+	
 	{
 		RWLOCK_WRITE(m_qLock);
 		m_reqQueue.erase(seqid);

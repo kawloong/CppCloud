@@ -6,7 +6,8 @@
 #include "listen.h"
 #include "provd_mgr.h"
 #include "svrconsumer.h"
-#include "tcp_invoker_mgr.h"
+#include "tcp_invoker_mgr.h" // 多连接方式调用
+#include "tcpaio_invoker_mgr.h" // 串行复用方式调用
 #include "shttp_invoker_mgr.h"
 #include "climanage.h"
 #include "msgprop.h"
@@ -219,6 +220,7 @@ int PostEnable( const string& regname, int prvdid, bool enable ) // 为避免与
 int InitInvoker( const string& svrList )
 {
     gsdk.bInvoker = true;
+    TcpAioInvokerMgr::Instance()->init(gsdk.hepo.getEPfd());
     return SvrConsumer::Instance()->init(svrList);
 }
 
@@ -246,6 +248,10 @@ void AddInvokerStat( const svr_item_t& pvd, bool isOk, int dcount )
 int TcpRequest( string& resp, const string& reqmsg, const string& svrname )
 {
     return TcpInvokerMgr::Instance()->request(resp, reqmsg, svrname);
+}
+int TcpAioRequest( string& resp, const string& reqmsg, const string& svrname )
+{
+    return TcpAioInvokerMgr::Instance()->request(resp, reqmsg, svrname);
 }
 
 int HttpGet( string& resp, const string& path, const string& queryStr, const string& svrname )

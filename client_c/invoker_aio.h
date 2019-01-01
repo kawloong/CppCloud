@@ -30,16 +30,17 @@ struct InvokerException
 class InvokerAio: ITaskRun2
 {
 public:
-    InvokerAio( const string& dsthost, int dstport );
+    InvokerAio( const string& dsthostp );
     virtual ~InvokerAio( void );
 
 
 public:
 	int init( int epfd );
     virtual int run( int flag, long p2 );
+	virtual int qrun( int flag, long p2 );
 	virtual int onEvent( int evtype, va_list ap );
 
-
+	time_t getAtime( void );
 	int getIOStatJson( string& rspjson ) const;
 
 
@@ -51,22 +52,26 @@ public:
 	
 
 protected:
+	int _connect( void );
 	int onRead( int p1, long p2 );
 	int onWrite( int p1, long p2 );
-	virtual int onClose( int p1, long p2 );
+	int onClose( int p1, long p2 );
 	void clearBuf( void );
+	void clearReqQueue( void );
 
+	int stageCheck( void );
 	int cmdProcess( IOBuffItem*& iBufItem );
 	int sendData( unsigned int cmdid, unsigned int seqid, const char* body, 
 		unsigned int bodylen, bool setOutAtonce );
 
 protected:
-	const string m_dstHost;
-	const int m_dstPort;
+	string m_dstHost;
+	int m_dstPort;
 	int m_stage; // 所处状态：0 未连接；1 连接中；2 已连接；3连接失败
     int m_cliFd;
 	int m_seqid;
 	int m_timeout_interval_sec;
+	time_t m_atime;
 	HEpEvFlag m_epCtrl;
 	pthread_t m_epThreadID; // epoll-IO复用的线程id
 	string m_cliName;
