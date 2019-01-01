@@ -41,7 +41,7 @@ struct OffConnException
 {
     string reson;
 
-    OffConnException(const string reson_param): reson(reson_param){}
+    OffConnException(const string& reson_param): reson(reson_param){}
 };
 
 // 路由消息转发异常
