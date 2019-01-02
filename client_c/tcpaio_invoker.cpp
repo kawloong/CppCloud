@@ -415,10 +415,11 @@ int TcpAioInvoker::cmdProcess( IOBuffItem*& iBufItem )
 			if (m_reqQueue.end() == itr)
 			{
 				auto itrCB = m_reqCBQueue.find(seqid);
-				if (m_reqQueue.end() != itrCB)
+				if (m_reqCBQueue.end() != itrCB)
 				{
 					itrCB->second(0, seqid, iBufItem->body());
 					ret = 0;
+					m_reqCBQueue.erase(itrCB);
 					break;
 				}
 
@@ -476,7 +477,7 @@ int TcpAioInvoker::request( string& resp, int cmdid, const string& reqmsg )
 	return ret;
 }
 
-int TcpAioInvoker::request( InvkCBFunc cb_func, int cmdid, const string& body )
+int TcpAioInvoker::request( InvkCBFunc cb_func, int cmdid, const string& reqmsg )
 {
 	int seqid = ++m_seqid;
 	{

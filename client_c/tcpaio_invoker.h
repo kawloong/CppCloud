@@ -17,6 +17,7 @@ Modification :
 
 using namespace std;
 typedef long long datasize_t;
+typedef void (*InvkCBFunc)( int result, int seqid, const char* msg );
 
 struct InvokerException
 {
@@ -48,6 +49,7 @@ public:
 	void setEpThreadID( pthread_t thid );
 
 	int request( string& resp, int cmdid, const string& body );
+	int request( InvkCBFunc cb_func, int cmdid, const string& body );
 	
 
 protected:
@@ -90,6 +92,7 @@ protected:
 	IOBuffItem* m_oBufItem;
 	Queue<IOBuffItem*, true> m_oBuffq;
 	map< int, shared_ptr< Queue<string, false> > > m_reqQueue;
+	map< int, InvkCBFunc > m_reqCBQueue;
 	RWLock m_qLock;
 };
 
