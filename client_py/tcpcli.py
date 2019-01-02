@@ -124,7 +124,7 @@ class TcpCliBase(object):
 
                 headstr += recvmsg
                 # 当收到空时,可能tcp连接已断开
-                if len(recvmsg) <= 0:
+                if len(recvmsg) == 0:
                     return -10,0, 0,0,'recv 0 peerclose'
                 else:
                     recvBytes += len(recvmsg)

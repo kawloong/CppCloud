@@ -10,7 +10,7 @@ from tcpprovider import TcpProviderBase
 
 
 class PrvdTcp(TcpProviderBase):
-    #regname = 'prvd1' # 不设置，默认用cloudapp.svrname
+    #regname = 'TestPrvd' # 不设置，默认用cloudapp.svrname
     #host = '192.168.1.101'  # 不设置，默认自动检测
     #port = 3744 # 不设置，默认用随机端口
 
@@ -19,9 +19,9 @@ class PrvdTcp(TcpProviderBase):
     def onRequest(self):
         import threading
         print(".. do job ..", self.reqcmdid, self.reqseqid, self.reqbody)
+        respsor = self.response_async()
         self.seqid = 0
         self.reqcmdid = 0
-        respsor = self.response_async()
         
         if not getattr(self, 'timer', None):
             self.timer = threading.Timer(6, self.threadTest, (respsor,))
@@ -31,13 +31,14 @@ class PrvdTcp(TcpProviderBase):
             respsor("hi, input=" + self.reqbody)
     
     def threadTest(self, respsor):
+        print("a-resp: hi, input=inthread send")
         respsor("hi, input=inthread send")
 
 class PrvdTcp2(TcpProviderBase):
     regname = 'pp2'
 
 if __name__ == "__main__":
-    cloudapp = CloudApp('vpc2', 4800, svrname="prvd1")
+    cloudapp = CloudApp('vpc2', 4800, svrname="TestPrvd")
     if cloudapp.start():
         PrvdTcp.Create()
         PrvdTcp.Start()

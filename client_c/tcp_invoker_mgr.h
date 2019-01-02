@@ -30,15 +30,14 @@ public:
 
 	// 向服务提供者发出请求，并等待响应回复 （同步）
 	int request( string& resp, const string& reqmsg, const string& svrname );
-	int requestByHost( string& resp, const string& reqmsg, const string& hostp );
+	int requestByHost( string& resp, const string& reqmsg, const string& hostp, int timeout_sec );
 
 private:
-	TcpInvoker* getInvoker( const string& hostport );
+	TcpInvoker* getInvoker( const string& hostport, int timeout_sec );
 	void relInvoker( TcpInvoker* ivk );
 
 private:
 	int m_eachLimitCount;
-	int m_invokerTimOut_sec;
 	IOVOKER_POOLT m_pool;
 };
 

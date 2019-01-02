@@ -1,5 +1,5 @@
 /*-------------------------------------------------------------------------
-FileName     : invoker_aio.h
+FileName     : tcpaio_invoker.h
 Description  : 服务消费者异步IO处理
 remark       : 
 Modification :
@@ -27,18 +27,17 @@ struct InvokerException
 		reson(reson), code(retcode) { }
 };
 
-class InvokerAio: ITaskRun2
+class TcpAioInvoker: ITaskRun2
 {
 public:
-    InvokerAio( const string& dsthostp );
-    virtual ~InvokerAio( void );
+    TcpAioInvoker( const string& dsthostp );
+    virtual ~TcpAioInvoker( void );
 
 
 public:
-	int init( int epfd );
+	int init( int epfd, int timeout_sec );
     virtual int run( int flag, long p2 );
 	virtual int qrun( int flag, long p2 );
-	virtual int onEvent( int evtype, va_list ap );
 
 	time_t getAtime( void );
 	int getIOStatJson( string& rspjson ) const;

@@ -49,7 +49,7 @@ class Queue
     typedef typename deque<T>::iterator DLIST_ITER;
 
 public:
-    bool append_delay(const T &pNode, int delay_ms) // 加入延后解发的任务
+    bool append_delay(const T &pNode, int delay_ms) // 加入延后触发的任务
     {
         struct timeval destime;
         bool bnotify = true;
@@ -355,6 +355,41 @@ public:
 		pthread_mutex_unlock(&m_mutex);
 		return nSize;
 	}
+
+    void remove( const T& pNode )
+    {
+        pthread_mutex_lock(&m_mutex);
+        DTASK_ITER it = m_dely_task.begin();
+        for (; it != m_dely_task.end(); ++it)
+        {
+            DLIST_ITER lsit = it->second.begin();
+            for (; lsit != it->second.end(); )
+            {
+                if (pNode == *lsit)
+                {
+                    lsit = it->second.erase(lsit);
+                }
+                else
+                {
+                    ++lsit;
+                }
+            }
+        }
+
+        typename storage::iterator iter;
+		for ( iter = m_list.begin(); iter !=m_list.end(); )
+		{
+			if(pNode != *iter)
+			{
+                iter = m_list.erase(iter);
+            }
+            else
+            {
+                ++iter;
+            }
+		}
+		pthread_mutex_unlock(&m_mutex);
+    }
 
 	void each(FUNC func, bool rmall)
     {

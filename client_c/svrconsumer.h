@@ -26,9 +26,10 @@ class SvrConsumer : public ITaskRun2
         vector<svr_item_t> svrItms;
         int weightSum;
         int callcount;
+        int timeout_sec; // 调用时的超时时间，由调用方指定
         time_t ctime;
 
-        SvrItem(): weightSum(0), callcount(0) {}
+        SvrItem(): weightSum(0), callcount(0), timeout_sec(3) {}
         void rmBySvrid( int svrid, int prvdid );
         svr_item_t* randItem( void );
     };
@@ -50,7 +51,10 @@ public:
 
     int init( const string& svrList );
     void uninit( void );
+
     void setRefreshTO( int sec );
+    void setInvokeTimeoutSec( int sec, const string& regname = "all" );
+    int getInvokeTimeoutSec( const string& regname );
 
     // 获取一个服务提供者信息，用于之后发起调用。
     int getSvrPrvd( svr_item_t& pvd, const string& svrname );
@@ -61,15 +65,18 @@ private:
     int parseResponse( string& msg );
     int parseResponse( const void* ptr );
 
-    int appendTimerq( void );
+    int appendTimerq( bool force );
     int _postSvrSearch( const string& regname ) const;
 
 private:
     map<string, SvrItem*> m_allPrvds;
+    map<string, bool> m_emptyPrvds; // 存放失去全部连接的提供者名
+
     int m_refresh_sec;
+    int m_invoker_default_tosec;
+    
     RWLock m_rwLock;
     bool m_inqueue;
-
 
     static SvrConsumer* This;
 };

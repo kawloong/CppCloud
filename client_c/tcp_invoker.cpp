@@ -141,7 +141,7 @@ int TcpInvoker::recv( unsigned& rcmdid, string& msg )
     if (ret)
     {
         int dt = time(NULL) - m_atime;
-        LOGOPT_EI(close_retcode!=ret, "INVOKERRECV| msg=close sock| host=%s:%d| dt=%ds", m_rhost.c_str(), m_port, dt);
+        LOGOPT_EI(close_retcode!=ret, "INVOKERRECV| msg=invoke end| host=%s:%d| dt=%ds", m_rhost.c_str(), m_port, dt);
         release();
     }
 

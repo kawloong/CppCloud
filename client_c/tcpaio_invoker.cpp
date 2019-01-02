@@ -1,4 +1,4 @@
-#include "invoker_aio.h"
+#include "tcpaio_invoker.h"
 #include "msgprop.h"
 #include "comm/hep_base.h"
 #include "comm/strparse.h"
@@ -10,14 +10,14 @@
 #include <cerrno>
 
 
-datasize_t InvokerAio::serv_recv_bytes = 0;
-datasize_t InvokerAio::serv_send_bytes = 0;
-int InvokerAio::serv_recvpkg_num = 0;
-int InvokerAio::serv_sendpkg_num = 0;
+datasize_t TcpAioInvoker::serv_recv_bytes = 0;
+datasize_t TcpAioInvoker::serv_send_bytes = 0;
+int TcpAioInvoker::serv_recvpkg_num = 0;
+int TcpAioInvoker::serv_sendpkg_num = 0;
 
 
 
-InvokerAio::InvokerAio( const string& dsthostp ): 
+TcpAioInvoker::TcpAioInvoker( const string& dsthostp ): 
 		m_dstPort(0), m_stage(0), 
 		m_cliFd(INVALID_FD), m_seqid(0), m_timeout_interval_sec(3), m_atime(0),
 		m_epThreadID(0), m_closeFlag(0),
@@ -32,9 +32,10 @@ InvokerAio::InvokerAio( const string& dsthostp ):
     }
 }
 
-int InvokerAio::init( int epfd )
+int TcpAioInvoker::init( int epfd, int timeout_sec )
 {
 	m_epCtrl.setEPfd(epfd);
+	m_timeout_interval_sec = timeout_sec;
 	
 	ERRLOG_IF1RET_N(m_dstPort<=0 || m_dstHost.empty(), -133, 
 			"INVOKERAIO_INIT| msg=invalid hostp %s:%d",
@@ -43,29 +44,34 @@ int InvokerAio::init( int epfd )
 	return _connect();
 }
 
-InvokerAio::~InvokerAio(void)
+TcpAioInvoker::~TcpAioInvoker(void)
 {
 	clearBuf();
 }
 
 
-int InvokerAio::_connect( void )
+int TcpAioInvoker::_connect( void )
 {
 	IFCLOSEFD(m_cliFd);
+	m_closeFlag = 0;
+	m_closeReason.clear();
+	
 	int ret = Sock::connect_noblock(m_cliFd, m_dstHost.c_str(), m_dstPort);
+	LOGDEBUG("INVOKERAIO_INIT| msg=connecting %s:%d", m_dstHost.c_str(), m_dstPort);
 	m_atime = time(NULL);
 
 	if (ERRSOCK_AGAIN == ret)
 	{
 		m_stage = 1;
 		m_epCtrl.setActFd(m_cliFd);
-		ret = m_epCtrl.setEvt(EPOLLOUT, this);
+		ret = m_epCtrl.setEvt(EPOLLOUT|EPOLLIN, this);
 		ERRLOG_IF1RET_N(ret, -131, "INVOKERAIO_INIT| msg=connect to %s:%d , setev fail| ret=%d",
 				m_dstHost.c_str(), m_dstPort, ret);
 	}
 	else if (0 == ret)
 	{
 		m_epCtrl.setActFd(m_cliFd);
+		ret = m_epCtrl.setEvt(EPOLLOUT|EPOLLIN, this);
 		m_stage = 2;
 	}
 	else
@@ -77,7 +83,7 @@ int InvokerAio::_connect( void )
 	return 0;
 }
 
-void InvokerAio::clearBuf( void )
+void TcpAioInvoker::clearBuf( void )
 {
 	IFDELETE(m_iBufItem);
 	IFDELETE(m_oBufItem);
@@ -90,7 +96,7 @@ void InvokerAio::clearBuf( void )
 	}
 }
 
-void InvokerAio::clearReqQueue( void )
+void TcpAioInvoker::clearReqQueue( void )
 {
 	if (!m_reqQueue.empty())
 	{
@@ -103,7 +109,7 @@ void InvokerAio::clearReqQueue( void )
 	}
 }
 
-int InvokerAio::onRead( int p1, long p2 )
+int TcpAioInvoker::onRead( int p1, long p2 )
 {
 	int ret = 0;
 	
@@ -197,7 +203,7 @@ int InvokerAio::onRead( int p1, long p2 )
 	return ret;
 }
 
-int InvokerAio::onWrite( int p1, long p2 )
+int TcpAioInvoker::onWrite( int p1, long p2 )
 {
 	int ret = 0;
 
@@ -257,7 +263,7 @@ int InvokerAio::onWrite( int p1, long p2 )
 	return ret;
 }
 
-int InvokerAio::run( int p1, long p2 )
+int TcpAioInvoker::run( int p1, long p2 )
 {
 	int ret = 0;
 	
@@ -311,12 +317,12 @@ int InvokerAio::run( int p1, long p2 )
 	return ret;
 }
 
-int InvokerAio::qrun( int flag, long p2 )
+int TcpAioInvoker::qrun( int flag, long p2 )
 {
 	return -1;
 }
 
-int InvokerAio::sendData( unsigned int cmdid, unsigned int seqid, const char* body, unsigned int bodylen, bool setOutAtonce )
+int TcpAioInvoker::sendData( unsigned int cmdid, unsigned int seqid, const char* body, unsigned int bodylen, bool setOutAtonce )
 {
 	IOBuffItem* obf = new IOBuffItem;
 	obf->setData(cmdid, seqid, body, bodylen);
@@ -337,14 +343,14 @@ int InvokerAio::sendData( unsigned int cmdid, unsigned int seqid, const char* bo
 }
 
 
-time_t InvokerAio::getAtime( void )
+time_t TcpAioInvoker::getAtime( void )
 {
 	return m_atime;
 }
 
 // @param: [out] format {all:[进程收到的字节数, 进程发出的字节数, 进程收到的报文数, 进程发出的报文数], 
 //		one:[当前连接收到的字节数, 当前连接发出的字节数, 当前连接收到的报文数, 当前连接发出的报文数]}
-int InvokerAio::getIOStatJson( string& rspjson ) const
+int TcpAioInvoker::getIOStatJson( string& rspjson ) const
 {
 	StrParse::AppendFormat(rspjson, "\"all\":[%lld, %lld, %d, %d]",
 		serv_recv_bytes, serv_send_bytes, serv_recvpkg_num, serv_sendpkg_num);
@@ -355,13 +361,13 @@ int InvokerAio::getIOStatJson( string& rspjson ) const
 	return 0;
 }
 
-int InvokerAio::driveClose( const string& reason )
+int TcpAioInvoker::driveClose( const string& reason )
 {
 	m_closeReason = reason;
 	return onClose(0, 0);
 }
 
-int InvokerAio::onClose( int p1, long p2 )
+int TcpAioInvoker::onClose( int p1, long p2 )
 {
 	int ret = 0;
 
@@ -380,19 +386,19 @@ int InvokerAio::onClose( int p1, long p2 )
 }
 
 
-void InvokerAio::setEpThreadID( void )
+void TcpAioInvoker::setEpThreadID( void )
 {
 	m_epThreadID = pthread_self();
 }
 
-void InvokerAio::setEpThreadID( pthread_t thid )
+void TcpAioInvoker::setEpThreadID( pthread_t thid )
 {
 	m_epThreadID = thid;
 }
 
 
 // 通用（类）消息处理
-int InvokerAio::cmdProcess( IOBuffItem*& iBufItem )
+int TcpAioInvoker::cmdProcess( IOBuffItem*& iBufItem )
 {
 	int ret = 0;
 	do 
@@ -408,6 +414,14 @@ int InvokerAio::cmdProcess( IOBuffItem*& iBufItem )
 			auto itr = m_reqQueue.find(seqid);
 			if (m_reqQueue.end() == itr)
 			{
+				auto itrCB = m_reqCBQueue.find(seqid);
+				if (m_reqQueue.end() != itrCB)
+				{
+					itrCB->second(0, seqid, iBufItem->body());
+					ret = 0;
+					break;
+				}
+
 				LOGERROR("INVOKERPROCESS| msg=no reqQueue wait, maybe response late| "
 					"cmdid=0x%x| seqid=%d| mi=%s", cmdid, seqid, m_cliName.c_str());
 				break;
@@ -423,7 +437,7 @@ int InvokerAio::cmdProcess( IOBuffItem*& iBufItem )
 	return ret;
 }
 
-int InvokerAio::stageCheck( void )
+int TcpAioInvoker::stageCheck( void )
 {
 	IFRETURN_N(2 == m_stage || 1 == m_stage, 0);
 	int ret = _connect();
@@ -431,7 +445,7 @@ int InvokerAio::stageCheck( void )
 }
 
 // thread-safe
-int InvokerAio::request( string& resp, int cmdid, const string& reqmsg )
+int TcpAioInvoker::request( string& resp, int cmdid, const string& reqmsg )
 {
 	static const int sec2us = 1000000;
 	int seqid = ++m_seqid;
@@ -450,7 +464,7 @@ int InvokerAio::request( string& resp, int cmdid, const string& reqmsg )
 		IFBREAK_N(ret, -14);
 
 		bool bpop = shareQueue->pop(resp, m_timeout_interval_sec * sec2us); // block until response
-		ERRLOG_IF1RET_N(!bpop, -15, "INVOKETIMEOUT| msg=req 0x%x at seq%d fail", cmdid, seqid);
+		ERRLOG_IF1BRK(!bpop, -15, "INVOKETIMEOUT| msg=req 0x%x at seq%d fail", cmdid, seqid);
 	}
 	while(0);
 	
@@ -460,4 +474,32 @@ int InvokerAio::request( string& resp, int cmdid, const string& reqmsg )
 	}
 
 	return ret;
+}
+
+int TcpAioInvoker::request( InvkCBFunc cb_func, int cmdid, const string& body )
+{
+	int seqid = ++m_seqid;
+	{
+		RWLOCK_WRITE(m_qLock);
+		m_reqCBQueue[seqid] = cb_func;
+	}
+
+	int ret;
+	do
+	{
+		ret = stageCheck();
+		IFBREAK_N(ret, -17);
+		ret = sendData(cmdid, seqid, reqmsg.c_str(), reqmsg.length(), true);
+		IFBREAK_N(ret, -18);
+	}
+	while(0);
+	
+	if (ret < 0)
+	{
+		RWLOCK_WRITE(m_qLock);
+		m_reqCBQueue.erase(seqid);
+		return ret;
+	}
+
+	return seqid;
 }

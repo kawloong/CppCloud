@@ -16,7 +16,7 @@ Modification :
 
 
 using namespace std;
-class InvokerAio;
+class TcpAioInvoker;
 
 
 class TcpAioInvokerMgr //: public Thread
@@ -30,17 +30,17 @@ public:
 
 	// 向服务提供者发出请求，并等待响应回复 （同步）
 	int request( string& resp, const string& reqmsg, const string& svrname );
-	int requestByHost( string& resp, const string& reqmsg, const string& hostp );
+	int requestByHost( string& resp, const string& reqmsg, const string& hostp, int timeout_sec );
 
 private:
-	InvokerAio* getInvoker( const string& hostport );
+	TcpAioInvoker* getInvoker( const string& hostport, int timeout_sec );
 
 	//virtual void* run(void);
 
 private:
 	int m_invokerTimOut_sec;
 	int m_epfd;
-	map< string, InvokerAio* > m_pool;
+	map< string, TcpAioInvoker* > m_pool;
 };
 
 #endif

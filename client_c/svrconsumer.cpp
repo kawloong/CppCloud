@@ -60,7 +60,8 @@ svr_item_t* SvrConsumer::SvrItem::randItem( void )
 SvrConsumer::SvrConsumer( void )
 {
     This = this;
-    m_refresh_sec = 10;
+    m_refresh_sec = 10*60;
+    m_invoker_default_tosec = 3;
     m_inqueue = false;
 }
 
@@ -103,6 +104,11 @@ int SvrConsumer::onCMD_EVNOTIFY_REQ( void* ptr )
     if (it != m_allPrvds.end())
     {
         it->second->rmBySvrid(svrid, prvdid);
+        if (it->second->svrItms.size() <= 0)
+        {
+            m_emptyPrvds[it->first] = true;
+            appendTimerq(true);
+        }
     }
 
     return 0;
@@ -151,7 +157,7 @@ int SvrConsumer::init( const string& svrList )
         // srand(time(NULL))
         CloudApp::Instance()->setNotifyCB("provider_down", OnCMD_EVNOTIFY_REQ);
         ret = CloudApp::Instance()->addCmdHandle(CMD_SVRSEARCH_RSP, OnCMD_SVRSEARCH_RSP)? 0 : -111;
-        appendTimerq();
+        appendTimerq(false);
     }
 
     return ret;
@@ -191,6 +197,7 @@ int SvrConsumer::parseResponse( const void* ptr )
         {
             prvds = new SvrItem;
             prvds->ctime = time(NULL);
+            prvds->timeout_sec = m_invoker_default_tosec;
             RJSON_GETSTR(regname, node);
         }
         
@@ -226,8 +233,16 @@ int SvrConsumer::parseResponse( const void* ptr )
         {
             RWLOCK_WRITE(m_rwLock);
             SvrItem* oldi = m_allPrvds[regname];
-            IFDELETE(oldi);
+            if (oldi)
+            {
+                prvds->timeout_sec = oldi->timeout_sec;
+                IFDELETE(oldi);
+            }
             m_allPrvds[regname] = prvds;
+            if (prvds->svrItms.size() > 0)
+            {
+                m_emptyPrvds.erase(regname);
+            }
         }
     }
 
@@ -249,6 +264,40 @@ void SvrConsumer::uninit( void )
 void SvrConsumer::setRefreshTO( int sec )
 {
     m_refresh_sec = sec;
+}
+
+void SvrConsumer::setInvokeTimeoutSec( int sec, const string& regname )
+{
+    RWLOCK_WRITE(m_rwLock);
+    if (regname.empty() || "all" == regname)
+    {
+        for (auto it = m_allPrvds.begin(); m_allPrvds.end() != it; ++it)
+        {
+            it->second->timeout_sec = sec;
+        }
+
+        m_invoker_default_tosec = sec;
+    }
+    else
+    {
+        auto it = m_allPrvds.find(regname);
+        if ( m_allPrvds.end() != it )
+        {
+            it->second->timeout_sec = sec;
+        }
+    }
+}
+
+
+int SvrConsumer::getInvokeTimeoutSec( const string& regname )
+{
+    RWLOCK_READ(m_rwLock);
+    auto it = m_allPrvds.find(regname);
+    if ( m_allPrvds.end() != it )
+    {
+        return it->second->timeout_sec;
+    }
+    return m_invoker_default_tosec;
 }
 
 int SvrConsumer::getSvrPrvd( svr_item_t& pvd, const string& svrname )
@@ -285,12 +334,19 @@ int SvrConsumer::_postSvrSearch( const string& svrname ) const
 }
 
 // 驱动定时检查任务，qrun()
-int SvrConsumer::appendTimerq( void )
+int SvrConsumer::appendTimerq( bool force )
 {
 	int ret = 0;
+
+    if (force && m_inqueue)
+    {
+        SwitchHand::Instance()->remove(this);
+        m_inqueue = false;
+    }
+
 	if (!m_inqueue)
 	{
-		int wait_time_msec =m_refresh_sec*1000;
+		int wait_time_msec = m_emptyPrvds.empty()? m_refresh_sec*1000 : 5000; // 如果有某服务提供者全部断链时，5秒尝试重新获得
 		ret = SwitchHand::Instance()->appendQTask(this, wait_time_msec );
 		m_inqueue = (0 == ret);
 		ERRLOG_IF1(ret, "APPENDQTASK| msg=append fail| ret=%d", ret);
@@ -308,17 +364,19 @@ int SvrConsumer::qrun( int flag, long p2 )
         time_t now = time(NULL);
         RWLOCK_READ(m_rwLock);
 		auto itr = m_allPrvds.begin();
+        string desc;
         for (; itr != m_allPrvds.end(); ++itr)
         {
             SvrItem* svitm = itr->second;
             if (svitm->svrItms.empty() || svitm->ctime < now - m_refresh_sec)
             {
                 ret = _postSvrSearch(itr->first);
+                desc += itr->first + " ";
             }
         }
 
-        LOGDEBUG("SVRCONSUMER| msg=checking svr valid");
-        appendTimerq();
+        LOGDEBUG("SVRCONSUMER| msg=post out checking svr req| svrlist=%s", desc.c_str());
+        appendTimerq(false);
 	}
 	else if (1 == flag)
 	{

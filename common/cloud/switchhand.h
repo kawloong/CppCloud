@@ -29,6 +29,7 @@ public:
 
     // 添加到某一任务io-epoll线程
     int appendQTask( ITaskRun2* tsk, int delay_ms );
+    int remove( ITaskRun2* tsk );
 
 private:
     static void TimeWaitThreadFunc( SwitchHand* This );

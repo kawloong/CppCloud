@@ -1,5 +1,5 @@
 #include "tcpaio_invoker_mgr.h"
-#include "invoker_aio.h"
+#include "tcpaio_invoker.h"
 #include "svrconsumer.h"
 #include "comm/strparse.h"
 #include "comm/lock.h"
@@ -11,7 +11,6 @@ static RWLock gLocker;
 
 TcpAioInvokerMgr::TcpAioInvokerMgr( void )
 {
-    m_invokerTimOut_sec = 3; // default
     //gHepo.init();
     m_epfd = -1;
 }
@@ -39,9 +38,9 @@ void TcpAioInvokerMgr::init( int epfd )
     m_epfd = epfd;
 }
 
-InvokerAio* TcpAioInvokerMgr::getInvoker( const string& hostport )
+TcpAioInvoker* TcpAioInvokerMgr::getInvoker( const string& hostport, int timeout_sec )
 {
-    InvokerAio* ivk = NULL;
+    TcpAioInvoker* ivk = NULL;
     {
         RWLOCK_READ(gLocker);
         auto it = m_pool.find(hostport);
@@ -53,8 +52,8 @@ InvokerAio* TcpAioInvokerMgr::getInvoker( const string& hostport )
 
     if (NULL == ivk)
     {
-        ivk = new InvokerAio(hostport);
-        int ret = ivk->init(m_epfd);
+        ivk = new TcpAioInvoker(hostport);
+        int ret = ivk->init(m_epfd, timeout_sec);
         if (0 == ret)
         {
             RWLOCK_WRITE(gLocker);
@@ -62,6 +61,7 @@ InvokerAio* TcpAioInvokerMgr::getInvoker( const string& hostport )
             if (it == m_pool.end())
             {
                 m_pool[hostport] = ivk;
+                LOGDEBUG("NEWINVOKER| msg=new TcpAioInvoker(%s)", hostport.c_str());
             }
             else
             {
@@ -79,7 +79,7 @@ InvokerAio* TcpAioInvokerMgr::getInvoker( const string& hostport )
 }
 
 
-int TcpAioInvokerMgr::requestByHost( string& resp, const string& reqmsg, const string& hostp )
+int TcpAioInvokerMgr::requestByHost( string& resp, const string& reqmsg, const string& hostp, int timeout_sec )
 {
     static const int check_more_dtsec = 30*60; // 超过此时间的连接可能会失败，增加一次重试
     static const int max_trycount = 2;
@@ -87,7 +87,7 @@ int TcpAioInvokerMgr::requestByHost( string& resp, const string& reqmsg, const s
     time_t atime;
     time_t now = time(NULL);
 
-    InvokerAio* ivker = getInvoker(hostp);
+    TcpAioInvoker* ivker = getInvoker(hostp, timeout_sec);
     IFRETURN_N(NULL==ivker, -95);
     atime = ivker->getAtime();
     int trycnt = atime > now - check_more_dtsec ? 1 : max_trycount; // 缰久的连接可重次一次
@@ -111,8 +111,10 @@ int TcpAioInvokerMgr::request( string& resp, const string& reqmsg, const string&
     ret = SvrConsumer::Instance()->getSvrPrvd(pvd, svrname);
     ERRLOG_IF1RET_N(ret, ret, "GETPROVIDER| msg=getSvrPrvd fail %d| svrname=%s", ret, svrname.c_str());
 
+    int tosec = SvrConsumer::Instance()->getInvokeTimeoutSec(svrname);
     string hostp = _F("%s:%d", pvd.host.c_str(), pvd.port);
-    ret = requestByHost(resp, reqmsg, hostp);
+    
+    ret = requestByHost(resp, reqmsg, hostp, tosec);
     SvrConsumer::Instance()->addStat(pvd, 0 == ret);
     
     return ret;

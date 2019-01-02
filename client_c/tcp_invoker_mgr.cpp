@@ -10,7 +10,6 @@ RWLock gLocker;
 TcpInvokerMgr::TcpInvokerMgr( void )
 {
     m_eachLimitCount = 5;
-    m_invokerTimOut_sec = 3; // default
 }
 
 TcpInvokerMgr::~TcpInvokerMgr( void )
@@ -32,7 +31,7 @@ void TcpInvokerMgr::setLimitCount( int n )
      m_eachLimitCount = n;
 }
 
-TcpInvoker* TcpInvokerMgr::getInvoker( const string& hostport )
+TcpInvoker* TcpInvokerMgr::getInvoker( const string& hostport, int timeout_sec )
 {
     TcpInvoker* ivk = NULL;
     {
@@ -51,7 +50,7 @@ TcpInvoker* TcpInvokerMgr::getInvoker( const string& hostport )
     if (NULL == ivk)
     {
         ivk = new TcpInvoker(hostport);
-        if (0 != ivk->init(m_invokerTimOut_sec))
+        if (0 != ivk->init(timeout_sec))
         {
             IFDELETE(ivk);
         }
@@ -78,7 +77,7 @@ void TcpInvokerMgr::relInvoker( TcpInvoker* ivk )
     }
 }
 
-int TcpInvokerMgr::requestByHost( string& resp, const string& reqmsg, const string& hostp )
+int TcpInvokerMgr::requestByHost( string& resp, const string& reqmsg, const string& hostp, int timeout_sec )
 {
     static const int check_more_dtsec = 30*60; // 超过此时间的连接可能会失败，增加一次重试
     static const int max_trycount = 2;
@@ -86,7 +85,7 @@ int TcpInvokerMgr::requestByHost( string& resp, const string& reqmsg, const stri
     time_t atime;
     time_t now = time(NULL);
 
-    TcpInvoker* ivker = getInvoker(hostp);
+    TcpInvoker* ivker = getInvoker(hostp, timeout_sec);
     IFRETURN_N(NULL==ivker, -95)
     atime = ivker->getAtime();
     int trycnt = atime > now - check_more_dtsec ? 1 : max_trycount; // 缰久的连接可重次一次
@@ -124,8 +123,9 @@ int TcpInvokerMgr::request( string& resp, const string& reqmsg, const string& sv
     ret = SvrConsumer::Instance()->getSvrPrvd(pvd, svrname);
     ERRLOG_IF1RET_N(ret, ret, "GETPROVIDER| msg=getSvrPrvd fail %d| svrname=%s", ret, svrname.c_str());
 
+    int tosec = SvrConsumer::Instance()->getInvokeTimeoutSec(svrname);
     string hostp = _F("%s:%d", pvd.host.c_str(), pvd.port);
-    ret = requestByHost(resp, reqmsg, hostp);
+    ret = requestByHost(resp, reqmsg, hostp, tosec);
     SvrConsumer::Instance()->addStat(pvd, 0 == ret);
     
     return ret;

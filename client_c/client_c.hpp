@@ -57,7 +57,8 @@ namespace client_c
 
     // 服务消费者
     int InitInvoker( const string& svrList );
-    void SetRefreshTimeOut( int sec ); // 不设置默认5min
+    void SetRequestTimeout(int sec, const string& svrname ); // svrname='' 设置所有
+    void SetRefreshTimeOut( int sec ); // 不设置默认10min
     void SetReportStatTime( int sec ); // 不设置默认15sec, sec=0时关闭
 
     // 自定义的服务消费者方法
@@ -65,7 +66,7 @@ namespace client_c
 
     // tcp服务消费者
     int TcpRequest( string& resp, const string& reqmsg, const string& svrname ); // 多连接
-    int TcpAioRequest( string& resp, const string& reqmsg, const string& svrname ); // 串行
+    int TcpAioRequest( string& resp, const string& reqmsg, const string& svrname ); // 串行(推荐)
 
     // http服务消费者
     int HttpGet( string& resp, const string& path, const string& queryStr, const string& svrname );

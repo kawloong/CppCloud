@@ -224,6 +224,11 @@ int InitInvoker( const string& svrList )
     return SvrConsumer::Instance()->init(svrList);
 }
 
+void SetRequestTimeout(int sec, const string& svrname )
+{
+    SvrConsumer::Instance()->setInvokeTimeoutSec(sec, svrname); 
+}
+
 void SetRefreshTimeOut( int sec )
 {
     SvrConsumer::Instance()->setRefreshTO(sec);

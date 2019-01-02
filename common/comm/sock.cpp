@@ -313,7 +313,7 @@ int Sock::send(int fd, char* buff, unsigned& begpos, unsigned endpos)
 
 int Sock::connect_noblock(int& fd, const char* ip, int port) // ipv4
 {
-    return connect(fd, ip, port, 0, 0, false);
+    return connect(fd, ip, port, 0, true, false);
 }
 
 int Sock::connect(int& fd, const char* ip, int port, int timout_sec, bool noblock, bool v6)

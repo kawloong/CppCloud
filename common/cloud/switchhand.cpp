@@ -68,6 +68,11 @@ int SwitchHand::appendQTask( ITaskRun2* tsk, int delay_ms )
 {
     return tskwaitq.append_delay(tsk, delay_ms)? 0: -46;
 }
+int SwitchHand::remove( ITaskRun2* tsk )
+{
+    tskwaitq.remove(tsk);
+    return 0;
+}
 
 // 此方法运行于io-epoll线程
 int SwitchHand::run( int flag, long p2 )
