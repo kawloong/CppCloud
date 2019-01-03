@@ -5,6 +5,7 @@
 #include "comm/sock.h"
 #include "comm/lock.h"
 #include "cloud/const.h"
+#include "cloud/switchhand.h"
 #include <sys/epoll.h>
 #include <cstring>
 #include <cerrno>
@@ -22,7 +23,8 @@ TcpAioInvoker::TcpAioInvoker( const string& dsthostp ):
 		m_cliFd(INVALID_FD), m_seqid(0), m_timeout_interval_sec(3), m_atime(0),
 		m_epThreadID(0), m_closeFlag(0),
 		m_recv_bytes(0), m_send_bytes(0), 
-		m_recvpkg_num(0), m_sendpkg_num(0), m_iBufItem(NULL), m_oBufItem(NULL)
+		m_recvpkg_num(0), m_sendpkg_num(0), m_iBufItem(NULL), m_oBufItem(NULL),
+		m_inTimerq(false)
 {
 	size_t pos = dsthostp.find(":");
     if (pos > 0)
@@ -319,7 +321,37 @@ int TcpAioInvoker::run( int p1, long p2 )
 
 int TcpAioInvoker::qrun( int flag, long p2 )
 {
-	return -1;
+	// callback方式调用超时处理
+	time_t now = time(NULL);
+	int dtsec = 0;
+	m_inTimerq = false;
+	for (const auto & waitItem : m_reqCBQueue)
+	{
+		time_t tend = std::get<0>(waitItem.second);
+		if (tend > now)
+		{
+			dtsec = tend - now;
+			break;
+		}
+
+		std::get<1>(waitItem.second)(-15, waitItem.first, "timeout");
+		m_reqCBQueue.erase(waitItem.first);
+	}
+
+	if (dtsec > 0 && 0 == flag)
+	{
+		appendTimerQWait(dtsec);
+	}
+
+	return 0;
+}
+
+void TcpAioInvoker::appendTimerQWait( int dtsec )
+{
+	if (!m_inTimerq)
+	{
+		m_inTimerq = (0 == SwitchHand::Instance()->appendQTask(this, dtsec * 1000));
+	}
 }
 
 int TcpAioInvoker::sendData( unsigned int cmdid, unsigned int seqid, const char* body, unsigned int bodylen, bool setOutAtonce )
@@ -417,7 +449,7 @@ int TcpAioInvoker::cmdProcess( IOBuffItem*& iBufItem )
 				auto itrCB = m_reqCBQueue.find(seqid);
 				if (m_reqCBQueue.end() != itrCB)
 				{
-					itrCB->second(0, seqid, iBufItem->body());
+					std::get<1>(itrCB->second)(0, seqid, iBufItem->body());
 					ret = 0;
 					m_reqCBQueue.erase(itrCB);
 					break;
@@ -482,7 +514,7 @@ int TcpAioInvoker::request( InvkCBFunc cb_func, int cmdid, const string& reqmsg 
 	int seqid = ++m_seqid;
 	{
 		RWLOCK_WRITE(m_qLock);
-		m_reqCBQueue[seqid] = cb_func;
+		m_reqCBQueue[seqid] = std::make_tuple(time(NULL)+m_timeout_interval_sec, cb_func);
 	}
 
 	int ret;
@@ -502,5 +534,6 @@ int TcpAioInvoker::request( InvkCBFunc cb_func, int cmdid, const string& reqmsg 
 		return ret;
 	}
 
+	appendTimerQWait(m_timeout_interval_sec);
 	return seqid;
 }

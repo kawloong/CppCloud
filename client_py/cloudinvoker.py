@@ -6,6 +6,8 @@
 '''
 
 import json
+import threading
+import time
 import random
 import invokercli
 from const import CMD_SVRSEARCH_REQ, CMD_SVRSEARCH_RSP
@@ -16,6 +18,10 @@ class CloudInvoker:
     def __init__(self):
         self.cloudapp = getCloudApp()
         self.invkers = {}
+        self.timerIntervalSec = 10
+        self.endTimestamp = 0
+        self.timer = None
+        self.offInvk = {}
     
 
     # 初始化将所有需要消费的服务名传进来，
@@ -29,16 +35,32 @@ class CloudInvoker:
             })
             ng += self._setPrvdData(regName, resp)
         
+
         self.cloudapp.setNotifyCallBack("provider_down", self.onProviderDown)
         self.cloudapp.setCmdHandle(CMD_SVRSEARCH_RSP, self._onCMD_SVRSEARCH_RSP)
+        if 0 == ng:
+            self.setTimerRefreshInvokers(self.timerIntervalSec);
         return ng
     
+    
     # 重新请求拉取服务提供者信息
-    def refresh(self, regName):
-        self.cloudapp.request_nowait(CMD_SVRSEARCH_REQ, {
-                "regname" : regName,
-                "bookchange" : 1
-            })
+    def onTimer(self):
+        self.timer = None
+        if self.offInvk:
+            for regName in self.offInvk:
+                self.cloudapp.request_nowait(CMD_SVRSEARCH_REQ, {
+                        "regname" : regName,
+                        "bookchange" : 1
+                    })
+            self.setTimerRefreshInvokers(5)
+        else:
+            for regName in self.invkers:
+                self.cloudapp.request_nowait(CMD_SVRSEARCH_REQ, {
+                        "regname" : regName,
+                        "bookchange" : 1
+                    })
+            self.setTimerRefreshInvokers(self.timerIntervalSec)
+       
     
     def _setPrvdData(self, regName, resp):
         ng = 0
@@ -101,6 +123,17 @@ class CloudInvoker:
     
     def onProviderDown(self, cmdid, seqid, msgbody):
         invokercli.remove(msgbody)
+        regname = msgbody.get('regname')
+        invker = self.invkers.get(regname)
+        if invker and len(invker.reglist) == 0:
+            self.offInvk[regname] = True
 
-        
-    
+    def setTimerRefreshInvokers(self, dtSec):
+        now = time.time()
+        if 0 == self.endTimestamp or now + dtSec + 1 < self.endTimestamp:
+            if self.timer:
+                self.timer.cancel()
+            self.timer = threading.Timer(dtSec, self.onTimer)
+            self.endTimestamp = now + dtSec
+            
+

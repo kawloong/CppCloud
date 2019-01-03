@@ -10,6 +10,7 @@ Modification :
 #define _INVOKER_AIO_H_
 #include <arpa/inet.h>
 #include <memory>
+#include <tuple>
 #include "comm/lock.h"
 #include "comm/hep_base.h"
 #include "comm/queue.h"
@@ -65,6 +66,8 @@ protected:
 	int sendData( unsigned int cmdid, unsigned int seqid, const char* body, 
 		unsigned int bodylen, bool setOutAtonce );
 
+	void appendTimerQWait( int dtsec );
+
 protected:
 	string m_dstHost;
 	int m_dstPort;
@@ -92,7 +95,8 @@ protected:
 	IOBuffItem* m_oBufItem;
 	Queue<IOBuffItem*, true> m_oBuffq;
 	map< int, shared_ptr< Queue<string, false> > > m_reqQueue;
-	map< int, InvkCBFunc > m_reqCBQueue;
+	map< int, tuple<time_t, InvkCBFunc> > m_reqCBQueue;
+	bool m_inTimerq;
 	RWLock m_qLock;
 };
 

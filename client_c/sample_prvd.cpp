@@ -7,7 +7,10 @@ Modification :
    1、Date  2018-11-08       create     hejl 
 -------------------------------------------------------------------------*/
 #include "client_c.hpp"
+#include "msgprop.h"
 #include <csignal>
+#include <thread>
+#include <unistd.h>
 
 static const string appName = "TestPrvd";
 static int listenPort = 4900;
@@ -64,6 +67,17 @@ int main( int argc, char* argv[] )
     return 0;
 }
 
+void threadProcess( msg_prop_t msgprop, const string& body )
+{
+    // ... doing job here, maybe stay long time ...
+    sleep(1);
+
+    string echo = string("{\"code\": 0, \"desc\": \"debug provider handle(thread)\", \"echo_data\": ") + body + "}";
+    client_c::ProvdSendMsgAsync(&msgprop, echo);
+
+    client_c::AddProviderStat(appName, 1, true);
+}
+
 // 服务提供处理
 int TcpProviderHandle( msg_prop_t* msgprop, const char* body )
 {
@@ -72,6 +86,13 @@ int TcpProviderHandle( msg_prop_t* msgprop, const char* body )
     // do the job yourself hear
     /// ...
 
+    static int i = 0;
+    if ( (++i&0x1) == 1)
+    {
+        std::thread th(threadProcess, *msgprop, string(body));
+        th.detach();
+        return 0;
+    }
     // resp back to consumer
     string echo = string("{\"code\": 0, \"desc\": \"debug provider handle\", \"echo_data\": ") + body + "}";
     client_c::ProvdSendMsgAsync(msgprop, echo);

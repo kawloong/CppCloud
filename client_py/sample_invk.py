@@ -9,14 +9,14 @@ from cloudapp import CloudApp
 from cloudinvoker import CloudInvoker
 import threading
 
-invokerServiceName = 'prvd1'
+invokerServiceName = 'TestPrvd'
 
 
 def sendThread1(cloudapp, msg, inker):
     print("thread sendding " + msg)
     result, rspmsg, errhand = inker.call(invokerServiceName, msg)
     print("Response " + str(result) + "| " + rspmsg)
-    if errhand: errhand(0 == result)
+    if errhand: errhand(result)
 
 
 def main():
