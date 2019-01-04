@@ -97,6 +97,10 @@ class TcpInvokerCli(InvokerCli):
 class HttpInvokerCli(InvokerCli):
     def __init__(self, regObj):
         self.url = regObj["url"]
+        self.error = True
+    
+    def good(self):
+        return self.error
     
     def call(self, paramDict, method='GET', **kwargs):
         if paramDict:

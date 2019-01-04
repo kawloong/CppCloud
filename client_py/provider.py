@@ -30,7 +30,7 @@ class ProviderBase(object):
     
     # 调用前请确保已初始化CloudApp实例
     @classmethod
-    def Regist(cls):
+    def Regist(cls, reg):
         cloudapp = getCloudApp()
         cls.cloudapp = cloudapp
         if not cloudapp:
@@ -49,6 +49,8 @@ class ProviderBase(object):
 
         cloudapp.setNotifyCallBack("reconnect_ok", cls._onServReconnect) # 重连成功回调
         cloudapp.setNotifyCallBack("provider", cls._onSetProvider) # 设置weight/enable回调
+        if reg:
+            cls.regProvider()
 
         return cls
     

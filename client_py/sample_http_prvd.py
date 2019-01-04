@@ -32,6 +32,7 @@ class TestHTTPHandler(BaseHTTPRequestHandler):
         
         #if exit: http_server.shutdown()
 
+# 服务注册类，只有调用Regist()方法，消费者才能发现此服务
 class HttpProvider(ProviderBase):
     scheme = 'http'
     port = listen_port
@@ -46,7 +47,7 @@ if __name__ == "__main__":
         http_thread.setDaemon(True)
         http_thread.start()
 
-        HttpProvider.Regist()
+        HttpProvider.Regist(True)
 
         raw_input('press any key to exit')
 

@@ -65,6 +65,8 @@ class CloudInvoker:
     
     def _setPrvdData(self, regName, resp):
         ng = 0
+        if not resp: return 1
+            
         resp = json.loads(resp)
         resplist = resp.get("data")
         if 0 == resp["code"] and resplist:

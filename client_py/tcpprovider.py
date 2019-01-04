@@ -31,7 +31,7 @@ class TcpProviderBase(SocketServer.BaseRequestHandler, ProviderBase):
     # 调用前请确保已初始化CloudApp实例
     @classmethod
     def Create(cls):
-        if not cls.Regist(): return None
+        if not cls.Regist(False): return None
 
         cls.handleMap = {}
         cls.BindCmdHandle(CMD_TCP_SVR_REQ, cls.onRequest)

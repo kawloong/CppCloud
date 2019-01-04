@@ -9,14 +9,7 @@ from cloudapp import CloudApp
 from cloudinvoker import CloudInvoker
 import threading
 
-invokerServiceName = 'TestPrvd'
-
-
-def sendThread1(cloudapp, msg, inker):
-    print("thread sendding " + msg)
-    result, rspmsg, errhand = inker.call(invokerServiceName, msg)
-    print("Response " + str(result) + "| " + rspmsg)
-    if errhand: errhand(result)
+invokerServiceName = 'THttpPrvd'
 
 
 def main():
@@ -25,18 +18,13 @@ def main():
 
     inker = CloudInvoker()
     if inker.init(invokerServiceName) == 0:
-
-        for i in range(5):
-            sendStr = "hello" + str(i)
-            th = threading.Thread(target=sendThread1, args=(cloudapp, sendStr, inker))
-            th.setDaemon(True)
-            th.start()
-
+        sendStr = ''
         while "q" != sendStr:
             sendStr = raw_input('input message to send out(input "q" exit):').strip()
-            th = threading.Thread(target=sendThread1, args=(cloudapp, sendStr, inker))
-            th.setDaemon(True)
-            th.start()
+            print("invoker sendding " + sendStr)
+            result, rspmsg, errhand = inker.call(invokerServiceName, {"param": sendStr})
+            print("Response " + str(result) + "| " + rspmsg)
+            if errhand: errhand(result)
 
     cloudapp.shutdown()
     cloudapp.join()
