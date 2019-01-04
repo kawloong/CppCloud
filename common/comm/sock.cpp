@@ -9,6 +9,7 @@ Modification :
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
+#include <netdb.h>
 #include "sock.h"
 
 #ifdef SOCKET_LOG
@@ -163,6 +164,62 @@ std::string Sock::_getName_(int fd, bool hasport /*= false*/, bool v6 /*= false*
     return name;
 }
 
+// summery: 判别传入地址的类型
+// return: -1 无效； 0 ipv4地址；1 ipv6地址; 2 域名
+int Sock::addr_type(const char* addr)
+{
+    if (NULL == addr) return -1;
+
+    int num_cnt = 0;
+    int dot_cnt = 0;
+    int char_cnt1 = 0;
+    int char_cnt2 = 0;
+    int colon_cnt = 0;
+    for (int i = 0; addr[i]; ++i)
+    {
+        char ch = addr[i];
+        if (ch >= '0' && ch <= '9')num_cnt++;
+        else if ('.' == ch)dot_cnt++;
+        else if ((ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F'))char_cnt1++;
+        else if ((ch > 'f' && ch <= 'z') || (ch > 'F' && ch <= 'Z'))char_cnt2++;
+        else if (':' == ch)colon_cnt++;
+        else return -1;
+    }
+
+    if (3 == dot_cnt && num_cnt > 3 && 0 == (char_cnt1+char_cnt2+colon_cnt)) return 0;
+    if (colon_cnt > 0 && (num_cnt + char_cnt1) > 0 && 0 == (char_cnt2 + dot_cnt)) return 1;
+    if (0 == colon_cnt && char_cnt1 + char_cnt2 + num_cnt > 0) return 2;
+
+    return -1;
+}
+
+// param: addrHost [in/out] 输入主机地址，输出对应IP
+// remark: 如果输入IP，则原样返回
+// return:  -1 无效；-2 dns解析失败; 0 ipv4地址；1 ipv6地址;
+int Sock::host2Ip(std::string& addrHost)
+{
+    int ret = addr_type(addrHost.c_str());
+    if (2 == ret) // 域名解析
+    {
+        struct hostent* hst = gethostbyname(addrHost.c_str());
+        
+        if (NULL == hst || NULL == hst->h_addr_list[0]) return -2;
+        ret = (AF_INET6 == hst->h_addrtype)? 1: 0;
+        char buff[64] = {0};
+        const char* rntop = inet_ntop(AF_INET, hst->h_addr_list[0], buff, sizeof(buff));
+        if (rntop)
+        {
+            addrHost = rntop;
+        }
+        else
+        {
+            ret = -2;
+        }
+    }
+
+    return ret;
+}
+
 std::string Sock::sock_name(int fd, bool hasport /*= false*/, bool v6 /*= false*/)
 {
     return _getName_<false>(fd, hasport, v6);
@@ -311,18 +368,28 @@ int Sock::send(int fd, char* buff, unsigned& begpos, unsigned endpos)
     return ret;
 }
 
-int Sock::connect_noblock(int& fd, const char* ip, int port) // ipv4
+int Sock::connect_noblock(int& fd, const char* host, int port) // ipv4
 {
-    return connect(fd, ip, port, 0, true, false);
+    return connect(fd, host, port, 0, true);
 }
 
-int Sock::connect(int& fd, const char* ip, int port, int timout_sec, bool noblock, bool v6)
+int Sock::connect(int& fd, const char* host, int port, int timout_sec, bool noblock)
 {
     int ret;
     int svrfd = -1;
 
     do
     {
+        IFBREAK_N(NULL == host, ERRSOCK_PARAM);
+        std::string strHost(host);
+        ret = host2Ip(strHost);
+
+        ERRLOG_IF1BRK(ret<0, ERRSOCK_PARAM, 
+            "SOCKCONNECT| ret=%d(%s)| ip=%s:%d",
+            ret, -2==ret?"dns parse fail": "invalid host", host, port);
+        bool v6 = (ret == 1);
+        const char* ip = strHost.c_str();
+        
         if (v6)
         {
             struct sockaddr_in6	addr6;

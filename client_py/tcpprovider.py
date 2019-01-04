@@ -10,22 +10,16 @@ import threading
 import SocketServer
 import tcpcli
 from cloudapp import getCloudApp
+from provider import ProviderBase
 from svrstat import svrstat
-from const import CMD_TCP_SVR_REQ, CMD_SVRREGISTER_REQ, CMDID_MID
+from const import CMD_TCP_SVR_REQ, CMDID_MID
 
 
-class TcpProviderBase(SocketServer.BaseRequestHandler):
-    regname = ''
-    host = ''
-    port = 0
+class TcpProviderBase(SocketServer.BaseRequestHandler, ProviderBase):
     protocol = 1
-    weight = 100
-    enable = 1
-    desc = ''
     handleMap = None
     server = None
     thread = None
-    prvdid = 0
     async_response = False
     
     # 绑定消息处理函数
@@ -37,67 +31,15 @@ class TcpProviderBase(SocketServer.BaseRequestHandler):
     # 调用前请确保已初始化CloudApp实例
     @classmethod
     def Create(cls):
-        cloudapp = getCloudApp()
-        cls.cloudapp = cloudapp
-        if not cloudapp:
-            print("Error: cloudapp not init")
-            return None
-        listenHost = cls.host
-
-        if not cls.regname:
-            cls.regname = cloudapp.svrname
-        
-        cls.prvdid = TcpProviderBase.prvdid
-        TcpProviderBase.prvdid += 1
-        if 0 == cls.port:
-            cls.port = 2000 + cls.prvdid
-
-        if not cls.host:
-            listenHost = cloudapp.cliIp
-            cls.url = 'tcp://' + listenHost + ':' + str(cls.port)
-        else:
-            cls.url = 'tcp://' + cls.host + ':' + str(cls.port)
+        if not cls.Regist(): return None
 
         cls.handleMap = {}
         cls.BindCmdHandle(CMD_TCP_SVR_REQ, cls.onRequest)
-        cloudapp.setNotifyCallBack("reconnect_ok", cls.onServReconnect) # 重连成功回调
-        cloudapp.setNotifyCallBack("provider", cls.onServReconnect) # 设置weight/enable回调
+
         SocketServer.ThreadingTCPServer.daemon_threads = True
-        cls.server = SocketServer.ThreadingTCPServer((listenHost, cls.port), cls)
+        cls.server = SocketServer.ThreadingTCPServer((cls.host, cls.port), cls)
         return cls
-    
-    # cloudapp断开再连接时，应该再次注册服务提供信息
-    @classmethod
-    def onServReconnect(cls, *param):
-        print("Found serv reconnect ok")
-        cls.regProvider()
 
-    @classmethod
-    def onSetProvider(cls, cmdid, seqid, msgbody):
-        if msgbody["regname"] == cls.regname and msgbody["prvdid"] == cls.prvdid:
-            if 'enable' in msgbody:
-                cls.enable = msgbody['enable']
-            if 'weight' in msgbody:
-                cls.weight = msgbody['weight']
-            cls.regProvider('weight', 'enable')
-            return 0, 'update ok'
-    
-    # 参数：prop如果为空，则发送所有
-    @classmethod
-    def regProvider(cls, *prop):
-        if not prop:
-            prop = ("prvdid", "url", "desc", "protocol", "weight", "enable", "idc", "rack")
-        svrprop = {}
-        for key in prop:
-            val = getattr(cls, key, None)
-            if None != val:
-                svrprop[key] = val
-
-        cls.cloudapp.request_nowait(CMD_SVRREGISTER_REQ, {
-            "regname": cls.regname,
-            "svrprop": svrprop
-        })
-    
    
     @classmethod
     def Start(cls):

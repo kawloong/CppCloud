@@ -42,8 +42,8 @@ class Sock
 public:
     // 创建监听套接字
     static int create_fd(const char* ip, int port, bool udp = false, bool v6 = false); 
-    static int connect(int& fd, const char* ip, int port, int timout_sec, bool noblock, bool v6);
-    static int connect_noblock(int& fd, const char* ip, int port);
+    static int connect(int& fd, const char* host, int port, int timout_sec, bool noblock);
+    static int connect_noblock(int& fd, const char* host, int port);
 
     static std::string sock_name(int fd, bool hasport = false, bool v6 = false);
     static std::string peer_name(int fd, bool hasport = false, bool v6 = false);
@@ -58,6 +58,8 @@ public:
 
 private:
     template<bool TPeer> static std::string _getName_(int fd, bool hasport, bool v6);
+    static int addr_type(const char* addr);
+    static int host2Ip(std::string& addrHost);
 };
 
 #endif

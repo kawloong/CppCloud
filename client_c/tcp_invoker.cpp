@@ -44,7 +44,7 @@ int TcpInvoker::connect( bool force )
 
     IFCLOSEFD(m_fd);
 
-    int ret = Sock::connect(m_fd, m_rhost.c_str(), m_port, m_timeout_sec, false, false);
+    int ret = Sock::connect(m_fd, m_rhost.c_str(), m_port, m_timeout_sec, false);
     m_broker = !(0==ret && INVALID_FD != m_fd);
     if (!m_broker)
     {

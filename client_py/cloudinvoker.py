@@ -18,7 +18,7 @@ class CloudInvoker:
     def __init__(self):
         self.cloudapp = getCloudApp()
         self.invkers = {}
-        self.timerIntervalSec = 10
+        self.timerIntervalSec = 300 # 5min
         self.endTimestamp = 0
         self.timer = None
         self.offInvk = {}
@@ -46,6 +46,7 @@ class CloudInvoker:
     # 重新请求拉取服务提供者信息
     def onTimer(self):
         self.timer = None
+        self.endTimestamp = 0
         if self.offInvk:
             for regName in self.offInvk:
                 self.cloudapp.request_nowait(CMD_SVRSEARCH_REQ, {
@@ -74,9 +75,12 @@ class CloudInvoker:
                 weightSum += item.get("weight", 0)
             self.invkers[regName] = {
                 "weightSum": weightSum,
-                "reglist": list(resplist)}
+                "reglist": list(resplist)
+                }
+            if weightSum > 0 and regName in self.offInvk: 
+                del self.offInvk[regName]
         else:
-            print("No Service=" + regName)
+            print("No Service=", self.offInvk)
             print(resp)
             ng = 1
         
@@ -125,8 +129,19 @@ class CloudInvoker:
         invokercli.remove(msgbody)
         regname = msgbody.get('regname')
         invker = self.invkers.get(regname)
-        if invker and len(invker.reglist) == 0:
+        if invker:
+            def downFilter(itm):
+                if msgbody['svrid'] != itm['svrid']:
+                    return True
+                elif 0 == msgbody['prvdid'] or msgbody['prvdid'] == itm['prvdid']:
+                    return False
+                return  True
+            invker['reglist'] = filter(downFilter, invker['reglist'])
+
+        if invker and len(invker.get('reglist')) == 0:
+            print("Error: no provider at " + regname)
             self.offInvk[regname] = True
+            self.setTimerRefreshInvokers(5)
 
     def setTimerRefreshInvokers(self, dtSec):
         now = time.time()
@@ -134,6 +149,8 @@ class CloudInvoker:
             if self.timer:
                 self.timer.cancel()
             self.timer = threading.Timer(dtSec, self.onTimer)
+            self.timer.setName("RefreshIvker-" + str(dtSec) + "sec")
             self.endTimestamp = now + dtSec
+            self.timer.start()
             
 

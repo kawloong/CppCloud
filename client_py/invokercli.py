@@ -9,6 +9,7 @@ import urlparse
 import tcpcli
 import threading
 import time
+import requests
 from socket import SHUT_WR
 from Queue import Queue #LILO队列 #from threading import Queue
 from const import CMD_TCP_SVR_REQ
@@ -95,7 +96,15 @@ class TcpInvokerCli(InvokerCli):
 
 class HttpInvokerCli(InvokerCli):
     def __init__(self, regObj):
-        pass
+        self.url = regObj["url"]
+    
+    def call(self, paramDict, method='GET', **kwargs):
+        if paramDict:
+            kwargs['params'] = paramDict
+        rsp = requests.request(method, self.url, **kwargs)
+        ret = 0 if rsp.status_code == 200 else rsp.status_code
+        return ret, rsp.text
+        
 
 protocol2Class = {1: TcpInvokerCli, 3: HttpInvokerCli}
 creatLocker = threading.Lock()

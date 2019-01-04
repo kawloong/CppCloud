@@ -86,6 +86,7 @@ class SvrStat:
         if not self.gtimerRun:
             self.gIntervalSec = waitSec
             self.timer = threading.Timer(self.gIntervalSec, self._sendStat)
+            self.timer.setName("StatTimer-" + str(waitSec) + "sec")
             self.timer.start()
             self.gtimerRun = True
     

@@ -47,7 +47,7 @@ int CloudApp::init( int epfd, const string& svrhost_port, const string& appname 
 
 	// 启动初始，同步方式进行连接
 	reset();
-	ret = Sock::connect(m_cliFd, m_rhost.c_str(), m_port, connect_timeout_sec, false, false);
+	ret = Sock::connect(m_cliFd, m_rhost.c_str(), m_port, connect_timeout_sec, false);
 	ERRLOG_IF1(ret, "CLOUDAPPCONNECT| msg=connect to %s fail| ret=%d", m_rhost.c_str(), ret);
 	if (0 == ret) // 连接成功
 	{
