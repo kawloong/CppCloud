@@ -21,14 +21,17 @@ class TestHTTPHandler(BaseHTTPRequestHandler):
         #self.send_header("Content-Type", 'application/json; charset=utf-8')
         #self.send_header("Content-Length:", len(buff))
         self.end_headers()
-        self.wfile.write("{}")
+        self.wfile.write("request GET from " + str(self.client_address) + ": path=")
+        self.wfile.write(self.path)
 
     def do_POST(self):
         self.send_response(200)
+        datas = self.rfile.read(int(self.headers['content-length']))
         #self.send_header("Content-Type", 'application/json; charset=utf-8')
-        #self.send_header("Content-Length:", len(buff))
+        #self.send_header("Content-Length", len(buff))
         self.end_headers()
-        self.wfile.write("{post-resp}")
+        self.wfile.write("request POST from " + str(self.client_address) + ": body=")
+        self.wfile.write(datas)
         
         #if exit: http_server.shutdown()
 

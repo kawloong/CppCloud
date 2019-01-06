@@ -15,16 +15,16 @@ from Queue import Queue #LILO队列 #from threading import Queue
 from const import CMD_TCP_SVR_REQ
 
 gIvkClis = {}
-reqwait_timeout_sec = 12
+reqwait_timeout_sec = 4
 
 class InvokerCli(object):
+    global reqwait_timeout_sec
     def good(self): return False
     def call(self, *param, **arg): return None, None
     def close(self): pass
 
 class TcpInvokerCli(InvokerCli):
     seqid = 1
-    global reqwait_timeout_sec
 
     def __init__(self, regObj):
         self.url = regObj["url"]
@@ -102,12 +102,18 @@ class HttpInvokerCli(InvokerCli):
     def good(self):
         return self.error
     
-    def call(self, paramDict, method='GET', **kwargs):
-        if paramDict:
-            kwargs['params'] = paramDict
-        rsp = requests.request(method, self.url, **kwargs)
-        ret = 0 if rsp.status_code == 200 else rsp.status_code
-        return ret, rsp.text
+    def call(self, method='GET', **kwargs): #kwargs=[params, timeout, method, headers, cookies, files]
+        if not 'timeout' in kwargs:
+            kwargs['timeout'] = reqwait_timeout_sec
+        ret, text = -3, 'except'
+        try:
+            rsp = requests.request(method, self.url, **kwargs)
+            ret = 0 if rsp.status_code == 200 else rsp.status_code
+            text = rsp.text
+        except Exception,e:
+            print("request Exception", e)
+
+        return ret, text
         
 
 protocol2Class = {1: TcpInvokerCli, 3: HttpInvokerCli}

@@ -22,7 +22,8 @@ def main():
         while "q" != sendStr:
             sendStr = raw_input('input message to send out(input "q" exit):').strip()
             print("invoker sendding " + sendStr)
-            result, rspmsg, errhand = inker.call(invokerServiceName, {"param": sendStr})
+            result, rspmsg, errhand = inker.call(invokerServiceName, 'POST',
+                data=sendStr)
             print("Response " + str(result) + "| " + rspmsg)
             if errhand: errhand(result)
 
