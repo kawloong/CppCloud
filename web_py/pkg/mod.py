@@ -6,4 +6,4 @@ def fun(ss):
     print(ss)
 
 print("mod.py")
-print(sys.path)
+print((sys.path))

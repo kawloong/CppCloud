@@ -11,11 +11,12 @@ import re
 import datetime
 import time
 import os
-import sys
-sys.path.append("../")
-from client_py.tcpclient import TcpClient
-from client_py.cliconfig import config
-from client_py.const import *
+#import sys
+#sys.path.append("../")
+
+from client_py3.tcpclient import TcpClient
+from client_py3.cliconfig import config
+from client_py3.const import *
 
 gweb_cli = None
 # http server
@@ -47,14 +48,14 @@ def bookchange():
         "file_pattern": request.args.get("file_pattern"),
         "incbase": int(request.args.get("incbase", 0))
     })
-    print("bookchange resp:"+rsp)
+    print(("bookchange resp:"+rsp))
     return rsp
 
 @app.route('/setconf', methods=['POST'])
 def setconf():
     data = request.get_data()
     #print(type(data))
-    print(request.json)
+    print((request.json))
     return gweb_cli.request(CMD_SETCONFIG_REQ, request.json)
 
 @app.route('/svrall')
@@ -88,7 +89,7 @@ def clidata(svrid):
 def command(cmd):
     intKey = ('prvdid', 'svrid', 'weight', 'enable')
    
-    reqobj = dict(request.args.items())
+    reqobj = dict(list(request.args.items()))
     reqobj["notify"] = cmd
 
     for key in intKey:
@@ -135,8 +136,8 @@ if __name__ == '__main__':
 
     if gweb_cli.start():
         #app.debug = True
-        host = config.get('http_host', '0.0.0.0')
-        port = config.get('http_port', 80)
+        host = ''
+        port = 80
 
         app.response_class.default_mimetype = 'application/json; charset=utf-8'
         app.run(host=host,port=port) # , threaded=True
