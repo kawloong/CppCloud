@@ -1,2 +1,2 @@
 include README.md LICENSE
-include static/*
+include src/static/*

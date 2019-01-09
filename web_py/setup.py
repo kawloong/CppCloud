@@ -28,11 +28,12 @@ setup(
     #py_modules = ['cppcloud_web'],
     keywords = ['cppcloud', 'spring', 'cloud', 'python', 'flask'],
     install_requires = ['flask', 'cppcloud'],
-    packages =['cppcloud-web'],
+    packages =['cppcloud_web'],
+    package_dir = {'cppcloud_web': 'src'},
     include_package_data = True,
     entry_points={
     'console_scripts': [
-        'cppcloud-web=cppcloud-web/cppcloud_web:run',
+        'cppcloud-web=cppcloud_web.cppcloud_web:run',
         ],
     },
     
