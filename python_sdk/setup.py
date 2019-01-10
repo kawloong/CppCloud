@@ -1,12 +1,10 @@
 #! /usr/bin/pytdon
 # -*- coding:utf-8 -*- 
 
-from setuptools import setup, find_packages
 
 import sys
-if sys.version_info < (3, 2):
-    sys.exit('Python 3.2 or greater is required.')
- 
+
+
 try:
     from setuptools import setup
 except:
@@ -21,20 +19,21 @@ with open('LICENSE') as fp:
 
 setup(
     name='cppcloud',
-    version='1.1.0',
+    version='1.0',
     author = 'valueho',
-    author_email = "valueho@gmail.com",
+    author_email = "hjl_mvp@126.com",
     description = 'CppCloud python3 客户端sdk',
     long_description=readme,
-    license="GPLv3",
+    license=license,
     platforms=['any'],
+    python_requires = '>=3',
 
     packages = ['cppcloud'],
-    #package_data = {'': ['.md', ]},
-    data_files = ['LICENSE', 'README.md'],
     #package_dir = {'xcppcloud': 'cppcloud'},
+
+    include_package_data=True,
     install_requires = ['requests'],
-  
+    
     # 程序的所属分类列表
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -42,4 +41,5 @@ setup(
         "License :: OSI Approved :: GNU General Public License (GPL)"
     ],
     zip_safe=False
+
 )

@@ -15,11 +15,11 @@ pack:
 
 # 打包上传到正式站点
 upload:
-	python setup.py sdist --formats=gztar register upload
+	python setup.py sdist --formats=gztar upload
 
 # 打包、注册、上传
 test:
-	python setup.py sdist --formats=gztar register -r pypitest upload
+	python setup.py sdist --formats=gztar -r pypitest upload
 
 clean:
 	rm -rf dist *.egg-info build __pycache__
