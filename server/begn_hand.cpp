@@ -2,7 +2,7 @@
 #include "cloud/iobuff.h"
 #include "comm/strparse.h"
 #include "cppcloud_config.h"
-#include "redis/redispooladmin.h"
+//#include "redis/redispooladmin.h"
 #include "cloud/const.h"
 #include "cloud/exception.h"
 #include "flowctrl.h"
@@ -297,6 +297,7 @@ int BegnHand::on_ExchangeMsg( IOHand* iohand, const Value* doc, unsigned cmdid, 
 	return ret;
 }
 
+#ifdef APPID_FROM_CACHE
 int BegnHand::getFromCache( string& rdsval, const string& rdskey )
 {
 	Redis* rds = NULL;
@@ -326,3 +327,4 @@ int BegnHand::setToCache( const string& rdskey, const string& rdsval )
 	RedisConnPoolAdmin::Instance()->ReleaseConnect(rds);
 	return ret;
 }
+#endif

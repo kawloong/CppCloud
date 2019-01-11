@@ -2,7 +2,7 @@
 #include "cloud/iobuff.h"
 #include "comm/strparse.h"
 #include "cloud/const.h"
-#include "redis/redispooladmin.h"
+//#include "redis/redispooladmin.h"
 #include "flowctrl.h"
 #include "act_mgr.h"
 #include "iohand.h"

@@ -13,7 +13,7 @@ LIBCOMMON=../common
 
 INCLUDEDIR+=-I.. -I$(LIBCOMMON) 
 CXX=g++
-CXXFLAGS=-Wall -g -std=c++11
+CXXFLAGS=-Wall -g -std=c++11 -fPIC
 #AR=ar rcs
 
 CPPFLAGS+=$(CONF_HEAD_INC) $(INCLUDEDIR)
@@ -24,7 +24,7 @@ ALIBS=
 
 # 以下是使用静态库时选项
 LOADLIBES+=-L/usr/local/lib -L$(LIBCOMMON) -Wl,-rpath,.
-LDLIBS+=-lhocomm -lpthread -lcrypto # CppCloud底层动态库
+LDLIBS+=-lhocomm -lpthread #-lcrypto # CppCloud底层动态库
 
 SRC=$(SrcCpp) $(CloudCpp:%.cpp=../common/cloud/%.cpp)
 OBJ=$(SRC:.cpp=.o) 

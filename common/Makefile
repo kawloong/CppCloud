@@ -2,7 +2,7 @@ SrcCpp:=comm/strparse.cpp comm/log.cpp comm/config.cpp comm/lock.cpp comm/thread
 SrcCpp+=comm/taskpool.cpp comm/file.cpp comm/sock.cpp comm/timef.cpp comm/timespand.cpp
 SrcCpp+=comm/base64.cpp comm/simplehttp.cpp comm/hep_base.cpp comm/hepoll.cpp
 SrcCpp+=rapidxml/bmshxml.cpp
-SrcCpp+=redis/redis.cpp redis/redispool.cpp redis/redispooladmin.cpp
+#SrcCpp+=redis/redis.cpp redis/redispool.cpp redis/redispooladmin.cpp
 SrcCpp+=comm/queue.cpp
 
 
@@ -30,7 +30,7 @@ ALIBS=
 
 # 以下是使用静态库时选项
 LOADLIBES+=-L/usr/local/lib
-LDLIBS+=-lpthread -lhiredis -lcrypto
+LDLIBS+=-lpthread # -lhiredis -lcrypto
 
 SRC=$(SrcCpp)
 OBJ=$(SRC:.cpp=.o)

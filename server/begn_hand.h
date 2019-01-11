@@ -28,8 +28,10 @@ public:
     static int on_CMD_KEEPALIVE_REQ( void* ptr, unsigned cmdid, void* param );
     static int on_CMD_KEEPALIVE_RSP( void* ptr, unsigned cmdid, void* param );
     
+    #ifdef APPID_FROM_CACHE
     static int getFromCache( string& rdsval, const string& rdskey );
     static int setToCache( const string& rdskey, const string& rdsval );
+    #endif
 
 private:
     #define CMD2FUNCCALL_DESC(cmd) static int on_##cmd(IOHand* iohand, const Value* doc, unsigned seqid )

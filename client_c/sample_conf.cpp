@@ -40,7 +40,7 @@ int main( int argc, char* argv[] )
     printf("Main Configue File is %s\n", mainConfFile.c_str());
     
     string oval;
-    ret = client_c::Query(oval, testConfKey);
+    ret = client_c::Query(oval, testConfKey, true);
     printf("Queue: %s=%s\n", testConfKey.c_str(), oval.c_str());
 
     signal(SIGINT, sigdeal);
@@ -58,7 +58,7 @@ int main( int argc, char* argv[] )
             break;
         }
 
-        ret = client_c::Query(oval, line);
+        ret = client_c::Query(oval, line, true);
         printf("Query [%s] = %s (%d)\n", line.c_str(), oval.c_str(), ret);
     }
 
