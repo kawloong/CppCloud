@@ -31,6 +31,7 @@ LOADLIBES+=-L/usr/local/lib -L$(LIBCOMMON) -Wl,-rpath,.
 
 SRC=$(SrcCpp)  $(CloudCpp:%.cpp=../common/cloud/%.cpp)
 OBJ=$(SRC:.cpp=.o)
+SAMPLES=sample_conf sample_prvd sample_tcp_invk sample_http_invk agent_prvd
 
 # linking operation from *.o and lib.
 $(TARGET): $(OBJ)
@@ -43,7 +44,7 @@ $(TARGET): $(OBJ)
 	@echo $(CONF_DESCRIPTION) >> $(MKLLOGFILE)
 	@echo >> $(MKLLOGFILE)
 
-all: $(TARGET) $(samples)
+all: $(TARGET) $(SAMPLES)
 	@echo 'success'
 
 a: $(ATARGET) $(Alib)
@@ -54,7 +55,7 @@ $(ATARGET): $(OBJ) $(Alib)
 sinclude .depend
 .PHONY: clean depend help all
 clean:
-	@rm -rf $(TARGET) $(OBJ) $(COMMON_OBJ) $(LINKNAME) $(TSONAME) $(samples)
+	@rm -rf $(TARGET) $(OBJ) $(COMMON_OBJ) $(LINKNAME) $(TSONAME) $(SAMPLES)
 
 depend: $(SRC)
 	$(CXX) -MM -std=c++11 $< $(INCLUDEDIR) $^ > .depend
@@ -62,6 +63,7 @@ depend: $(SRC)
 help:
 	@echo "Command                     Target/Description"
 	@echo "make                     -> $(LINKNAME)"
+	@echo "make all                 -> $(LINKNAME) $(SAMPLES)"
 	@echo "make clean               -> clean all .o file"
 	@echo "make .depend             -> generate a .depend file by use g++ -MM"
 	@echo "make sample_prvd         -> demo for provider"
@@ -70,7 +72,6 @@ help:
 	@echo "make agent_prvd          -> a simple tool of static agent provider"
 
 ## sample make
-samples=sample_conf sample_prvd sample_tcp_invk sample_http_invk agent_prvd
 sample_conf: sample_conf.cpp
 	g++ -Wall -g -std=c++11 $^  -o $@ libsdk_cppcloud.so  ../common/libhocomm.so
 sample_prvd: sample_prvd.cpp

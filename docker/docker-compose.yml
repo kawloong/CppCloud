@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  cppcloud_serv:
+    image: cppcloud:1
+    ports: 
+      - "4800:4800"
+    volumes: 
+      - /cppcloud/docker/conf
+    command: -i 1
+
