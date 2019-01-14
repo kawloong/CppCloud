@@ -11,7 +11,8 @@ Modification :
 #include <iostream>
 
 static const string appName = "TestConf";
-static const string testConfKey = "/key2";
+static const string testConfKey = "/author";
+static const string testConfKey2 = "test2.json/keyTest2";
 
 static void sigdeal(int signo)
 {
@@ -38,10 +39,13 @@ int main( int argc, char* argv[] )
 
     string mainConfFile = client_c::GetMConfName();
     printf("Main Configue File is %s\n", mainConfFile.c_str());
+    client_c::LoadConfFile("test1.json test2.json");
     
     string oval;
     ret = client_c::Query(oval, testConfKey, true);
-    printf("Queue: %s=%s\n", testConfKey.c_str(), oval.c_str());
+    printf("Queue: %s = %s\n", testConfKey.c_str(), oval.c_str());
+    ret = client_c::Query(oval, testConfKey2, true);
+    printf("Queue: %s = %s\n", testConfKey2.c_str(), oval.c_str());
 
     signal(SIGINT, sigdeal);
     signal(SIGTERM, sigdeal);
@@ -50,6 +54,7 @@ int main( int argc, char* argv[] )
     printf("Run return %d\n", ret);
 
     string line;
+    printf("input query-key to get value (or 'q' to exit demo):\n");
     while (getline(std::cin, line)) // 测试运行时改变配置，app能实时得知变化
     {
         if (line == "q")
@@ -60,6 +65,7 @@ int main( int argc, char* argv[] )
 
         ret = client_c::Query(oval, line, true);
         printf("Query [%s] = %s (%d)\n", line.c_str(), oval.c_str(), ret);
+        printf("input query-key to get value (or 'q' to exit demo):\n");
     }
 
     client_c::Destroy();

@@ -5,6 +5,5 @@
         "vector": "cpp",
         "list": "cpp"
     },
-    "python.pythonPath": "D:\\python3.6\\python.exe",
-    "docker.host": "http://192.168.1.68:2375"
+    "python.pythonPath": "D:\\python3.6\\python.exe"
 }

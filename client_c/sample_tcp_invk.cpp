@@ -22,9 +22,13 @@ static void sigdeal(int signo)
 
 void thread_func( const string& msg )
 {
+    static int seqcount = 0;
     string resp;
+    int seqidx = ++seqcount;
+
+    printf("%d. tcp request msg: %s\n", seqidx, msg.c_str());
     int ret = client_c::TcpAioRequest(resp, msg, invkName);
-    printf("TcpAio Resp-%d: %s\n", ret, resp.c_str());
+    printf("%d. tcpAio response [%d]: %s\n", seqidx, ret, resp.c_str());
 }
 
 int main( int argc, char* argv[] )
@@ -73,7 +77,7 @@ int main( int argc, char* argv[] )
             break;
         }
 
-        req = string("{ \"cmd\": \"") + line + "\"}";
+        req = line; // string("{ \"cmd\": \"") + line + "\"}";
         std::thread th(thread_func, req);
         th.detach();
     }

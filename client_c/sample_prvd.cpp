@@ -72,7 +72,7 @@ void threadProcess( msg_prop_t msgprop, const string& body )
     // ... doing job here, maybe stay long time ...
     sleep(1);
 
-    string echo = string("{\"code\": 0, \"desc\": \"debug provider handle(thread)\", \"echo_data\": ") + body + "}";
+    string echo = string("{\"code\": 0, \"desc\": \"sample provider handle(thread)\", \"echo_data\": ") + body + "}";
     client_c::ProvdSendMsgAsync(&msgprop, echo);
 
     client_c::AddProviderStat(appName, 1, true);
@@ -83,18 +83,16 @@ int TcpProviderHandle( msg_prop_t* msgprop, const char* body )
 {
     printf("Provider| msg=%s\n", body);
 
-    // do the job yourself hear
-    /// ...
-
+    // do the job yourself here
     static int i = 0;
-    if ( (++i&0x1) == 1)
+    if ( (++i&0x1) == 1) // 仅作演示处理请求时可以异步响应
     {
         std::thread th(threadProcess, *msgprop, string(body));
         th.detach();
         return 0;
     }
     // resp back to consumer
-    string echo = string("{\"code\": 0, \"desc\": \"debug provider handle\", \"echo_data\": ") + body + "}";
+    string echo = string("{\"code\": 0, \"desc\": \"sample provider handle\", \"echo_data\": ") + body + "}";
     client_c::ProvdSendMsgAsync(msgprop, echo);
     
     client_c::AddProviderStat(appName, 1, true);

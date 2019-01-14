@@ -1,0 +1,17 @@
+{
+    "key2": "value2 @ key2",
+    "hello": "world",
+    "project": "cppcloud",
+    "author": "hejl",
+    "keymap": {
+        "subkey": 123,
+        "subkey2": [
+            456, "val22", "val33"
+        ],
+        "subkey3": {
+            "subsubkey1": "subsubval1",
+            "subsubkey2": "subsubval2",
+            "subsubkey3": 3
+        }
+    }
+}

@@ -1,8 +1,12 @@
 
 usage:
 docker run cppcloud:tag [cppcloud_serv] -i <svrid> # run main cppcloud server
-docker exec -it <container> sample_conf # run sample_conf demo
-docker exec -it <container> sample_prvd # run sample_prvd demo
-docker exec -it <container> sample_tcp_invk # run sample_tcp_invk demo
-docker exec -it <container> sample_http_invk # run sample_http_invk demo
-docker exec -it <container> agent_prvd # run agent provider tool
+docker exec -it <container> sample_conf [servip:port] # run sample_conf demo
+docker exec -it <container> sample_prvd [servip:port] # run sample_prvd demo
+docker exec -it <container> sample_tcp_invk [servip:port] # run sample_tcp_invk demo
+docker exec -it <container> sample_http_invk [servip:port] # run sample_http_invk demo
+docker exec -it <container> agent_prvd [servip:port] # run agent provider tool
+
+remark: 
+  [servip:port] connect to localhost:4800 if not param
+  cppcloud_serv can take param "-s -v -p", see also ./cppcloud_serv -h

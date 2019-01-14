@@ -1,7 +1,8 @@
 {
     "app_profile": {
         "default": {
-            "_idc": 200
+            "_idc": 200,
+            "TestConf": "test1.json"
         },
         "tag1": {
             "svrname1": "mainconfile.json",
