@@ -7,7 +7,9 @@ SrcCpp+=service_provider.cpp provider_manage.cpp
 TARGET=cppcloud_serv
 
 MKLLOGFILE:=make.log
-CONF_HEAD_INC+=-DLOG2STDOUT -DDEBUG #日志输出至标准输出
+ifeq ($(LOG2STD), 1) 
+CONF_HEAD_INC+=-DLOG2STDOUT#日志输出至标准输出
+endif
 
 LIBCOMMON=../common
 

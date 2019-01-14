@@ -54,11 +54,12 @@ int ConfigMgr::initLoad( const string& confName )
     m_mainConfName = CloudApp::Instance()->getMConf();
     vector<string>::const_iterator cit = vFname.begin();
     RWLOCK_WRITE(g_rwLock0);
-    bool cbOk = false;
+    static bool cbOk = false;
     for (; cit != vFname.end(); ++cit)
     {
         // 同步地下载完所有配置 （CMD_GETCONFIG_REQ）
         const string& fname = *cit;
+        ConfJson* cjn = m_jcfgs[fname];
         string resp;
         
         ret = CloudApp::Instance()->begnRequest(resp, CMD_GETCONFIG_REQ, 
@@ -82,28 +83,23 @@ int ConfigMgr::initLoad( const string& confName )
         }
 
 
-        ConfJson* cjn = m_jcfgs[fname];
-        if (NULL == cjn)
-        {
-            cjn = new ConfJson(fname);
-            ret = cjn->update(&doc);
-            if (ret)
-            {
-                IFDELETE(cjn);
-                ret = -53;
-                break;
-            }
-            m_jcfgs[fname] = cjn;
+        //if (cjn) LOGERROR("CONFINIT| msg=nodef flow| name=%s", fname.c_str());
+        IFDELETE(cjn);
 
-            // 订阅变化推送
-            ret = CloudApp::Instance()->begnRequest( resp, CMD_BOOKCFGCHANGE_REQ, 
-                _F("{\"%s\": \"%s\", \"%s\": \"1\"}", HOCFG_FILENAME_KEY, fname.c_str(), HOCFG_INCLUDEBASE_KEY) );
-            ERRLOG_IF1(ret, "CONFINIT| msg=book cfgchange fail %d| name=%s", ret, fname.c_str());
-        }
-        else
+        cjn = new ConfJson(fname);
+        ret = cjn->update(&doc);
+        if (ret)
         {
-            LOGERROR("CONFINIT| msg=nodef flow| name=%s", fname.c_str());
+            IFDELETE(cjn);
+            ret = -53;
+            break;
         }
+        m_jcfgs[fname] = cjn;
+
+        // 订阅变化推送
+        ret = CloudApp::Instance()->begnRequest( resp, CMD_BOOKCFGCHANGE_REQ, 
+            _F("{\"%s\": \"%s\", \"%s\": \"1\"}", HOCFG_FILENAME_KEY, fname.c_str(), HOCFG_INCLUDEBASE_KEY) );
+        ERRLOG_IF1(ret, "CONFINIT| msg=book cfgchange fail %d| name=%s", ret, fname.c_str());
     }
 
     return ret;

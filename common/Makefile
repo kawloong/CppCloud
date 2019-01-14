@@ -13,8 +13,11 @@ TARGET=$(TSONAME).1.0
 ATARGET:=$(LINKNAME).a # 若要生成静态库.a使用make a
 
 MKLLOGFILE:=make.log
-CONF_HEAD_INC+=-DLOG2STDOUT#日志输出至标准输出
 CONF_HEAD_INC+=-DSOCKET_LOG
+ifeq ($(LOG2STD), 1) 
+CONF_HEAD_INC+=-DLOG2STDOUT#日志输出至标准输出
+endif
+
 
 
 INCLUDEDIR+=-I. # -I$(LIBEVENT)/include/

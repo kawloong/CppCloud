@@ -138,7 +138,7 @@ void CloudApp::setSvrid( int svrid )
 
 void CloudApp::setNotifyCB( const string& notify, NotifyCBFunc func )
 {
-	string key = notify + _F("%p", func);
+	string key = notify + _F("@%p", func);
 	ERRLOG_IF1RET(m_ntfCB.end() != m_ntfCB.find(key), "SETNTFCB| msg=exist notify %s CB", key.c_str());
 	m_ntfCB[key] = func;
 }

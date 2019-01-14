@@ -17,6 +17,7 @@ ADD docker /cppcloud/docker
 ENV LD_LIBRARY_PATH /cppcloud/common:/cppcloud/client_c:$LD_LIBRARY_PATH
 ENV LIBRARY_PATH /cppcloud/common:/cppcloud/client_c:$LIBRARY_PATH
 ENV PATH $PATH:/cppcloud/docker
+ENV LOG2STD 1
 
 # running required command
 RUN ln -sf /usr/share/zoneinfo/Hongkong /etc/localtime \
@@ -40,4 +41,4 @@ ENTRYPOINT ["./docker-entrypoint.sh"]
 
 
 EXPOSE 4800
-VOLUME ["/cppcloud/server/conf"]
+VOLUME ["/cppcloud/docker/conf", "/cppcloud/docker/log"]

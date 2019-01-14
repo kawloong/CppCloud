@@ -43,9 +43,9 @@ int main( int argc, char* argv[] )
     
     string oval;
     ret = client_c::Query(oval, testConfKey, true);
-    printf("Queue: %s = %s\n", testConfKey.c_str(), oval.c_str());
+    printf("Queue: %s => %s\n", testConfKey.c_str(), oval.c_str());
     ret = client_c::Query(oval, testConfKey2, true);
-    printf("Queue: %s = %s\n", testConfKey2.c_str(), oval.c_str());
+    printf("Queue: %s => %s\n", testConfKey2.c_str(), oval.c_str());
 
     signal(SIGINT, sigdeal);
     signal(SIGTERM, sigdeal);
@@ -64,7 +64,7 @@ int main( int argc, char* argv[] )
         }
 
         ret = client_c::Query(oval, line, true);
-        printf("Query [%s] = %s (%d)\n", line.c_str(), oval.c_str(), ret);
+        printf("Query [%s] => %s (%d)\n", line.c_str(), oval.c_str(), ret);
         printf("input query-key to get value (or 'q' to exit demo):\n");
     }
 

@@ -8,6 +8,8 @@ services:
     volumes: 
       - /cppcloud/docker/conf
     command: -i 1
+    environment:
+      - LOG2STD=1
     cap_add:
       - SYS_PTRACE
 

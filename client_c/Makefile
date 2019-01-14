@@ -10,7 +10,9 @@ TARGET=$(TSONAME).1.0
 ATARGET:=$(LINKNAME).a
 
 MKLLOGFILE:=make.log
-CONF_HEAD_INC+=-DLOG2STDOUT # -DDEBUG #日志输出至标准输出
+ifeq ($(LOG2STD), 1) 
+CONF_HEAD_INC+=-DLOG2STDOUT#日志输出至标准输出
+endif
 
 LIBCOMMON=../common
 

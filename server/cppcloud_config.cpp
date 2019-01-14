@@ -103,7 +103,7 @@ static std::string funname(int idx, bool warnlog)                    \
 
 // 快捷配置读取定义
 // <todo>: append reader function implement here
-FUNC_STR_CONF_IMP(CppCloudLogPath, "cloud_serv", "logpath", ".");
+FUNC_STR_CONF_IMP(CppCloudLogPath, "cloud_serv", "logpath", "logs/");
 FUNC_INT_CONF_IMP(CppCloudLogLevel, "cloud_serv", "loglevel", 4);
 FUNC_INT_CONF_IMP(CppCloudLogFSize, "cloud_serv", "logfsize", 2);
 FUNC_INT_CONF_IMP(CppCloudListenPort, "cloud_serv", "port", 4800);
