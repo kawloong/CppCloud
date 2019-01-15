@@ -8,14 +8,14 @@ FROM centos:7
 # MAINTAINER
 MAINTAINER valueho hjl_mvp@126.com
 
-ADD client_c /cppcloud/client_c/
+ADD cpp_sdk /cppcloud/cpp_sdk/
 ADD common /cppcloud/common/
 ADD server /cppcloud/server/
 ADD docker /cppcloud/docker
 
 
-ENV LD_LIBRARY_PATH /cppcloud/common:/cppcloud/client_c:$LD_LIBRARY_PATH
-ENV LIBRARY_PATH /cppcloud/common:/cppcloud/client_c:$LIBRARY_PATH
+ENV LD_LIBRARY_PATH /cppcloud/common:/cppcloud/cpp_sdk:$LD_LIBRARY_PATH
+ENV LIBRARY_PATH /cppcloud/common:/cppcloud/cpp_sdk:$LIBRARY_PATH
 ENV PATH $PATH:/cppcloud/docker
 ENV LOG2STD 1
 

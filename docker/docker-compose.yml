@@ -3,6 +3,9 @@ version: '3'
 services:
   cppcloud_serv:
     image: valueho/cppcloud:1
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
     ports: 
       - "4800:4800"
     volumes: 

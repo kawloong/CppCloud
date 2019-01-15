@@ -21,6 +21,11 @@ case $1 in
         /bin/bash
     ;;
 
+    log)
+        params="${@:2:999}"
+        tail /cppcloud/docker/logs/cppcloud_serv.log $params
+    ;;
+
     *)
         if [ "${1:0:1}" = '-' ]; then
             echo "Start to run ./cppcloud_serv $@"

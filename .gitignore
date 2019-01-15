@@ -40,4 +40,4 @@
 *.log.*
 server/cppcloud_serv
 common/libhocomm*
-client_c/libsdk_cppcloud.so*
+cpp_sdk/libsdk_cppcloud.so*
