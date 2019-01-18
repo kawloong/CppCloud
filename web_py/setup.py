@@ -17,7 +17,7 @@ with open('LICENSE') as fp:
 
 setup(
     name='cppcloud-web',
-    version='1.0.4',
+    version='1.0.1',
     author = 'valueho',
     author_email = "hjl_mvp@126.com",
     description = 'CppCloud python3 Web and RestApi System',

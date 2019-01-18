@@ -15,6 +15,8 @@ CONF_HEAD_INC+=-DLOG2STDOUT#日志输出至标准输出
 endif
 
 LIBCOMMON=../common
+INSTALLDIR:=/usr/lib/cppcloud
+LDCONFIG_PATH:=/etc/ld.so.conf.d/cppcloud.conf
 
 INCLUDEDIR+=-I.. -I$(LIBCOMMON) 
 CXX=g++
@@ -84,3 +86,15 @@ sample_http_invk: sample_http_invk.cpp
 	g++ -Wall -g -std=c++11 $^  -o $@ libsdk_cppcloud.so  ../common/libhocomm.so
 agent_prvd: agent_prvd.cpp
 	g++ -Wall -g -std=c++11 $^  -o $@ libsdk_cppcloud.so  ../common/libhocomm.so
+
+install:
+	@install -d $(INSTALLDIR)
+	@if [ -e $(TARGET) ];  then install -p -s -t $(INSTALLDIR) $(TARGET);  fi
+	@if [ -e $(ATARGET) ]; then install -p -s -t $(INSTALLDIR) $(ATARGET); fi
+	@if [ ! -e $(LDCONFIG_PATH) ]; then echo $(INSTALLDIR) >> $(LDCONFIG_PATH); fi
+	@ldconfig
+	@echo "install success to $(INSTALLDIR)"
+
+uninstall:
+	rm -rf $(INSTALLDIR)
+	@echo "uninstalled $(INSTALLDIR)"

@@ -19,12 +19,12 @@ with open('LICENSE') as fp:
 
 setup(
     name='cppcloud',
-    version='1.0',
+    version='1.0.3',
     author = 'valueho',
     author_email = "hjl_mvp@126.com",
     description = 'CppCloud python3 客户端sdk',
     long_description=readme,
-    license=license,
+    license='GPLv3',
     platforms=['any'],
     python_requires = '>=3',
 

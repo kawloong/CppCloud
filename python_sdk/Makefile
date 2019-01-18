@@ -16,6 +16,7 @@ pack:
 # 打包上传到正式站点
 upload:
 	python setup.py sdist --formats=gztar upload
+	# twine upload dist/*
 
 # 打包、注册、上传
 test:

@@ -11,5 +11,6 @@ clean:
 	make -C $(DIR)/server clean
 	make -C $(DIR)/cpp_sdk clean
 	make -C $(DIR)/python_sdk clean
+	make -C $(DIR)/web_py clean
 
 .PHONY: all clean

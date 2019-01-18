@@ -7,10 +7,12 @@ SrcCpp+=comm/queue.cpp
 
 
 
-LINKNAME:=libhocomm.so
-TSONAME=$(LINKNAME).1
+LINKNAME:=libhocomm
+TSONAME=$(LINKNAME).so.1
 TARGET=$(TSONAME).1.0
 ATARGET:=$(LINKNAME).a # 若要生成静态库.a使用make a
+INSTALLDIR:=/usr/lib/cppcloud
+LDCONFIG_PATH:=/etc/ld.so.conf.d/cppcloud.conf
 
 MKLLOGFILE:=make.log
 CONF_HEAD_INC+=-DSOCKET_LOG
@@ -52,7 +54,19 @@ $(TARGET): $(OBJ)
 a: $(ATARGET) $(Alib)
 
 $(ATARGET): $(OBJ) $(Alib)
-	$(AR) $@ $^ $(ALIBS)	
+	$(AR) $@ $^ $(ALIBS)
+
+install:
+	@install -d $(INSTALLDIR)
+	@if [ -e $(TARGET) ];  then install -p -s -t $(INSTALLDIR) $(TARGET);  fi
+	@if [ -e $(ATARGET) ]; then install -p -s -t $(INSTALLDIR) $(ATARGET); fi
+	@if [ ! -e $(LDCONFIG_PATH) ]; then echo $(INSTALLDIR) >> $(LDCONFIG_PATH); fi
+	@ldconfig
+	@echo "install success to $(INSTALLDIR)"
+
+uninstall:
+	rm -rf $(INSTALLDIR)
+	@echo "uninstalled $(INSTALLDIR)"
 
 #test code # 增加测试程度像如下test1样式添加
 test1:  $(patsubst main.o,test1.o,$(OBJ))
@@ -63,7 +77,7 @@ towork:
 
 # ---------------------------------------- #
 sinclude .depend
-.PHONY: clean depend
+.PHONY: clean depend install uninstall
 clean:
 	@rm -rf $(TARGET) $(OBJ) $(COMMON_OBJ) $(LINKNAME) $(TSONAME)
 

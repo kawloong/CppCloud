@@ -5,6 +5,7 @@ SrcCpp+=peer_mgr.cpp outer_serv.cpp outer_cli.cpp keepaliver.cpp broadcastcli.cp
 SrcCpp+=service_provider.cpp provider_manage.cpp
 
 TARGET=cppcloud_serv
+INSTALLDIR:=/usr/local/bin
 
 MKLLOGFILE:=make.log
 ifeq ($(LOG2STD), 1) 
@@ -34,6 +35,16 @@ OBJ=$(SRC:.cpp=.o)
 # linking operation from *.o and lib.
 $(TARGET): $(OBJ)
 	$(CXX) $(LDFLAGS) $^ -o $@ $(LOADLIBES) $(LDLIBS) $(ALIBS)
+
+install:
+	@install -d $(INSTALLDIR)
+	@install -p -s -t $(INSTALLDIR) $(TARGET)
+	@echo "installed $(TARGET) to $(INSTALLDIR)"
+
+uninstall:
+	rm -f $(INSTALLDIR)/$(TARGET)
+	@echo "uninstalled $(INSTALLDIR)/$(TARGET)"
+
 	
 vpc1:
 	scp $(TARGET) hejl@vpc1:/home/hejl/test/cppcloud/$(TARGET)
