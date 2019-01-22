@@ -43,7 +43,7 @@ class HttpProvider(ProviderBase):
     http_path = '/proj'
 
 if __name__ == "__main__":
-    if cppcloud.init('vpc2', 4800, svrname="THttpPrvd"):
+    if cppcloud.init('vpc2', 4800, svrname="httpApp1"):
         http_server = HTTPServer(('', int(listen_port)), TestHTTPHandler)
         http_thread = threading.Thread(target=http_server.serve_forever, name="Http_server")
         http_thread.setDaemon(True)

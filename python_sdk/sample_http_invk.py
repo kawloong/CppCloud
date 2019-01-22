@@ -8,7 +8,7 @@
 import cppcloud
 import threading
 
-invokerServiceName = 'THttpPrvd'
+invokerServiceName = 'httpApp1'
 
 
 def main():
