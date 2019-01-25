@@ -145,7 +145,7 @@ int QueryHand::on_CMD_GETWARN_REQ( IOHand* iohand, const Value* doc, unsigned se
 }
 
 /** 
- * @format: { "file_pattern": "app1-dev", "key_pattern":"/", 
+ * @format: { "file_pattern": "app1-dev.json", "key_pattern":"/", 
  * 		     "incbase": 1, "gt_mtime": 154000999  }
  * @file_pattern: 文件名
  * @key_pattern: 查询键 （可选）

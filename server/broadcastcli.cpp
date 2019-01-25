@@ -58,7 +58,7 @@ int BroadCastCli::qrun( int flag, long p2 )
         string localEra = CliMgr::Instance()->getLocalClisEraString(); // 获取本地cli的当前版本
         string hocfgEraJson = HocfgMgr::Instance()->getAllCfgNameJson();
 
-        DEBUG_TRACE("2. broadcast self cliera out, era=%s", localEra.c_str());
+        DEBUG_TRACE("2. broadcast self cliera out, local_erastr=%s", localEra.c_str());
         //if (!localEra.empty())
         {
             //ret = toWorld(s_my_svrid, 1, localEra, " ", "");
@@ -329,13 +329,13 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
 {
     int ret;
     int osvrid = 0;
-    string era;
+    string erastr;
     string str_osvrid;
     string excludeSvrid;
     string routepath;
     
     ret = Rjson::GetInt(osvrid, BROARDCAST_KEY_FROM, doc);
-    ret |= Rjson::GetStr(era, CLIS_ERASTRING_KEY, doc);
+    ret |= Rjson::GetStr(erastr, CLIS_ERASTRING_KEY, doc);
     ret |= Rjson::GetStr(routepath, BROARDCAST_KEY_TRAIL, doc);
     str_osvrid = StrParse::Itoa(osvrid);
 
@@ -365,7 +365,7 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
         ret |= CliMgr::Instance()->addAlias2Child(string(SERV_OUT_ALIAS_PREFIX) + str_osvrid + "s", outsvr);
         ret |= CliMgr::Instance()->addAlias2Child(str_osvrid + "_s", outsvr);
         CliMgr::Instance()->updateCliTime(outsvr);
-        needall = !era.empty();
+        needall = !erastr.empty();
 
         if (ret)
         {
@@ -413,7 +413,7 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
     const int reqall_interval_sec = 10;
 
     // era新旧判断
-    string differa = needall? "all": diffOuterCliEra(osvrid, era);
+    string differa = needall? "all": diffOuterCliEra(osvrid, erastr);
     if (!differa.empty() && now > last_reqera_time + reqall_interval_sec)
     {
         // 请求获取某Serv下的所有cli (CMD_CLIERA_REQ)
@@ -430,8 +430,8 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
 
         ret = iohand->sendData(CMD_CLIERA_REQ, seqid, msgbody.c_str(), msgbody.size(), true);
         servptr->setIntProperty(LAST_REQ_SERVMTIME, now);
-        LOGDEBUG("REQERAALL| msg=Serv-%d need %d eraall data| era=%s->%s| differa=%s| refpath=%s| retsend=%d", 
-            s_my_svrid, osvrid, old_era.c_str(), era.c_str(), differa.c_str(), routepath.c_str(), ret);
+        LOGDEBUG("REQERAALL| msg=Serv-%d need %d eraall data| erastr=%s->%s| differa=%s| refpath=%s| retsend=%d", 
+            s_my_svrid, osvrid, old_era.c_str(), erastr.c_str(), differa.c_str(), routepath.c_str(), ret);
         DEBUG_TRACE("d. req %d-serv's cli: %s", osvrid, msgbody.c_str());
     }
 
@@ -447,7 +447,7 @@ int BroadCastCli::on_CMD_BROADCAST_REQ( IOHand* iohand, const Value* doc, unsign
 
 /**
  * 协议格式:
- * {"to": 123, "from": 234, "differa": "xxx", "refer_path": "xxx", "act_path": "xx"}
+ * {"to": 123, "from": 234, "differa": "xxx", "refer_path": "xxx", "path": "xx"}
  *
 **/
 int BroadCastCli::on_CMD_CLIERA_REQ( IOHand* iohand, const Value* doc, unsigned seqid )

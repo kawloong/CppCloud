@@ -183,7 +183,7 @@ CliInfo* CliMgr::getCliInfo( CliBase* child )
 }
 
 /**
- * era格式: svrid:atime:era = 10:15412341234:2 
+ * era格式: svrid:erano:atime = 10:2:15412341234 
  */
 string CliMgr::getLocalClisEraString( void )
 {
