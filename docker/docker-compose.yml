@@ -21,13 +21,13 @@ services:
     image: valueho/cppcloud-py
     build: 
       context: ../
-      dockerfile: docker/Dockerfile_full
+      dockerfile: docker/Dockerfile-py
     ports:
       - 81:80
     links: 
       - cppcloud_serv
     depends_on:
       - cppcloud_serv
-    command: sh ./docker-entrypoint-full.sh 
+    command: sh ./docker-entrypoint-py.sh 
 
 
