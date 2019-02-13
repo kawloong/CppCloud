@@ -2,10 +2,11 @@ version: '3'
 
 services:
   cppcloud_serv:
-    image: valueho/cppcloud:1
+    image: valueho/cppcloud
     build:
       context: ../
       dockerfile: docker/Dockerfile
+
     ports: 
       - "4800:4800"
     volumes: 
@@ -15,4 +16,18 @@ services:
       - LOG2STD=1
     cap_add:
       - SYS_PTRACE
+    
+  cppcloud_py:
+    image: valueho/cppcloud-py
+    build: 
+      context: ../
+      dockerfile: docker/Dockerfile_full
+    ports:
+      - 81:80
+    links: 
+      - cppcloud_serv
+    depends_on:
+      - cppcloud_serv
+    command: sh ./docker-entrypoint-full.sh 
+
 

@@ -20,12 +20,17 @@ gweb_cli = None
 # http server
 app = Flask(__name__)
 
+@app.route('/')
+def index():
+    return redirect('/static/index.html')
+'''
 @app.route('/test')
 def test():
     cmd = request.args.get("cmd")
     resp = gweb_cli.request(CMD_TESTING_REQ, {
         "cmd": cmd, "toSvr": 990})
     return resp
+'''
 
 @app.route('/confname')
 def confname():

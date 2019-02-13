@@ -1,0 +1,8 @@
+
+FROM python:3.6
+
+RUN pip install cppcloud-web
+COPY docker/docker-entrypoint-full.sh docker-entrypoint-full.sh
+# COPY web_py/src/cppcloud_web.py /usr/local/lib/python3.6/site-packages/cppcloud_web/cppcloud_web.py
+
+CMD sh docker-entrypoint-full.sh
