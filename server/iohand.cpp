@@ -214,6 +214,7 @@ int IOHand::onRead( int p1, long p2 )
 			serv_recvpkg_num++;
 			IFBREAK(authCheck(m_iBufItem)); // 权限检查
 			ret = interceptorProcess(m_iBufItem);
+			CliMgr::Instance()->updateCliTime(this);
 			IFBREAK_N(1 != ret, 0);
 
 			if (m_child)
@@ -227,8 +228,6 @@ int IOHand::onRead( int p1, long p2 )
 			{
 				ret = cmdProcess(m_iBufItem);
 			}
-			
-			CliMgr::Instance()->updateCliTime(this);
 		}
 	}
 	while (0);

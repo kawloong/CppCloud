@@ -123,10 +123,19 @@ vueapp = new Vue({
                     if (prvdMarkstr.indexOf(invkArr[0]) >= 0) continue;
                 }
 
-                if (!this.invk_obj.hasOwnProperty(invkArr[0])){
-                    this.invk_obj[invkArr[0]] = {};
+                let invk_obj_key = invkArr[0];
+                if (!this.invk_obj.hasOwnProperty(invk_obj_key)){
+                    this.invk_obj[invk_obj_key] = {};
+                    let regKeyPattern = invk_obj_key.match(/prvd_(\S*)%(\d+)-(\d+)/);
+                    if (regKeyPattern) {
+                        this.invk_obj[invk_obj_key] = {
+                            name: regKeyPattern[1],
+                            svrid: regKeyPattern[2],
+                            prvdid: regKeyPattern[3]
+                        };
+                    }
                 }
-                this.invk_obj[invkArr[0]][invkArr[1]] = value;
+                this.invk_obj[invk_obj_key][invkArr[1]] = value;
             }
         }
     },

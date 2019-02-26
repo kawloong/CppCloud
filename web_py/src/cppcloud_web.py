@@ -114,6 +114,12 @@ def command(cmd):
 def onNotifyMsg(cmdid, seqid, msg):
     print(msg)
 
+@app.route('/syslog')
+def syslog():
+    page = request.args.get('page', 0)
+    size = request.args.get('size', 10)
+    return gweb_cli.request(CMD_GETLOGR_REQ, { "size": size, "page": page })
+
 @app.route('/runlog/<int:svrid>')
 def runlog(svrid):
     return gweb_cli.request(CMD_APPRUNLOG_REQ, {"to": svrid, "type": 1})

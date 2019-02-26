@@ -1,0 +1,65 @@
+version: '3'
+
+services:
+  tcp_c_1:
+    image: valueho/cppcloud
+    ports: 
+      - "4801:4801"
+    environment:
+      - LOG2STD=1
+    entrypoint: "/cppcloud/cpp_sdk/sample_prvd0 www.cppcloud.cn:4800 4801"
+    external_links:
+      - cppcloud_cppcloud_serv_1:www.cppcloud.cn
+    
+  tcp_c_2:
+    image: valueho/cppcloud
+    ports: 
+      - "4802:4802"
+    environment:
+      - LOG2STD=1
+    entrypoint: "/cppcloud/cpp_sdk/sample_prvd0 www.cppcloud.cn:4800 4802"
+    external_links:
+      - cppcloud_cppcloud_serv_1:www.cppcloud.cn
+
+    
+  tcp_py_10:
+    image: valueho/cppcloud-py
+    volumes:
+      - /var/cppcloud/sample-run/:/python_sdk/
+    ports:
+      - 4810:4810
+    environment:
+      - PORT=4810
+    external_links:
+      - cppcloud_cppcloud_serv_1:www.cppcloud.cn
+    command: "python /python_sdk/sample_tcp_prvd.py" 
+  
+  http_py_12:
+    image: valueho/cppcloud-py
+    volumes:
+      - /var/cppcloud/sample-run/:/python_sdk/
+    ports:
+      - 4812:4812
+    environment:
+      - PORT=4812
+    external_links:
+      - cppcloud_cppcloud_serv_1:www.cppcloud.cn
+    command: "python /python_sdk/sample_http_prvd.py" 
+    
+  http_py_13:
+    image: valueho/cppcloud-py
+    volumes:
+      - /var/cppcloud/sample-run/:/python_sdk/
+    ports:
+      - 4813:4813
+    environment:
+      - PORT=4813
+    external_links:
+      - cppcloud_cppcloud_serv_1:www.cppcloud.cn
+    command: "python /python_sdk/sample_http_prvd.py" 
+
+networks:
+  default:
+    external:
+      name: cppcloud_default
+  

@@ -20,8 +20,8 @@ namespace client_c
     // 初始化，连接cppcloud-serv，获得主配置文件名
     int Init( const string& appName, const string& servHostPort, int appid=0, const string& tag=nilstr );
 
-    // 加载配置指定文件(download)
-    int LoadConfFile( const string& fname );
+    // 加载配置指定文件(download) fname=以空格分隔的文件名列表字符串
+    int LoadConfFile( const string& fname ); // 注意：配置文件是在服务端，非本地
     string GetMConfName( void ); // 获取主配置文件名
 
     // 配置查询 

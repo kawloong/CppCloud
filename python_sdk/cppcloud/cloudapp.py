@@ -82,7 +82,7 @@ class CloudApp(TcpClient):
 
 
 if __name__ == "__main__":
-    pyapp = CloudApp('vpc2', 4800, svrname="PyAppTest")
+    pyapp = CloudApp('www.cppcloud.cn', 4800, svrname="PyAppTest")
     ret = pyapp.start()
     if not ret:
         print("start fail");

@@ -12,7 +12,7 @@ invokerServiceName = 'httpApp1'
 
 
 def main():
-    if not cppcloud.init('vpc2', 4800, svrname='TestHttpInvoker'): 
+    if not cppcloud.init('www.cppcloud.cn', 4800, svrname='TestHttpInvoker'): 
         return -1
 
     inker = cppcloud.invokerObject(invokerServiceName)

@@ -19,7 +19,7 @@ def sendThread1(msg, inker):
 
 
 def main():
-    if not cppcloud.init('vpc2', 4800, svrname='InvkerTest'):
+    if not cppcloud.init('www.cppcloud.cn', 4800, svrname='InvkerTest'):
         print('CloudApp start fail, exit')
         exit(-1)
 

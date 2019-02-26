@@ -43,7 +43,7 @@ OBJ=$(SRC:.cpp=.o)
 # linking operation from *.o and lib.
 $(TARGET): $(OBJ)
 	$(CXX) $(LDFLAGS) $^ -o $@ $(LOADLIBES) $(LDLIBS) $(SONAMEFLAG) $(ALIBS)
-	ln -sf $@ $(LINKNAME);
+	ln -sf $@ $(LINKNAME).so;
 	ln -sf $@ $(TSONAME)
 	@echo 
 	@echo "make $(TARGET) ok."  $(CONF_DESCRIPTION)

@@ -5,6 +5,7 @@
 示例演示tcp服务提供者操作
 '''
 
+import os
 import cppcloud
 from cppcloud.tcpprovider import TcpProviderBase
 
@@ -12,6 +13,8 @@ class PrvdTcp(TcpProviderBase):
     #regname = 'TestPrvd' # 不设置，默认用cloudapp.svrname
     #host = '192.168.1.101'  # 不设置，默认自动检测
     #port = 3744 # 不设置，默认用随机端口
+    port = int(os.environ['PORT'])
+    url = 'tcp://www.cppcloud.cn:' + str(port)
 
 
     # 默认消息消息处理方法()
@@ -38,7 +41,7 @@ class PrvdTcp2(TcpProviderBase):
     regname = 'pp2'
 
 if __name__ == "__main__":
-    if not cppcloud.init('vpc2', 4800, svrname="TestPrvd"):
+    if not cppcloud.init('www.cppcloud.cn', 4800, svrname="TestPrvd"):
         print('CloudApp start fail, exit')
         exit(-1)
 

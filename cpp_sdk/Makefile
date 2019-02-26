@@ -35,7 +35,7 @@ LOADLIBES+=-L/usr/local/lib -L$(LIBCOMMON) -Wl,-rpath,.
 
 SRC=$(SrcCpp)  $(CloudCpp:%.cpp=../common/cloud/%.cpp)
 OBJ=$(SRC:.cpp=.o)
-SAMPLES=sample_conf sample_prvd sample_tcp_invk sample_http_invk agent_prvd
+SAMPLES=sample_conf sample_prvd sample_tcp_invk sample_http_invk agent_prvd sample_prvd0
 
 # linking operation from *.o and lib.
 $(TARGET): $(OBJ)
@@ -85,6 +85,8 @@ sample_tcp_invk: sample_tcp_invk.cpp
 sample_http_invk: sample_http_invk.cpp
 	g++ -Wall -g -std=c++11 $^  -o $@ libsdk_cppcloud.so  ../common/libhocomm.so
 agent_prvd: agent_prvd.cpp
+	g++ -Wall -g -std=c++11 $^  -o $@ libsdk_cppcloud.so  ../common/libhocomm.so
+sample_prvd0: sample_prvd0.cpp
 	g++ -Wall -g -std=c++11 $^  -o $@ libsdk_cppcloud.so  ../common/libhocomm.so
 
 install:

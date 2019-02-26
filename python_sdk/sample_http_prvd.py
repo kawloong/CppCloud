@@ -8,11 +8,13 @@ http服务可使用常用web库实现，譬如flask,tornado,django等
 '''
 
 import threading
+import os
 import cppcloud
 from cppcloud.provider import ProviderBase
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-listen_port = 8000
+#listen_port = 8000
+listen_port = int(os.environ['PORT'])
 
 class TestHTTPHandler(BaseHTTPRequestHandler):
     #处理GET请求  
@@ -41,9 +43,10 @@ class HttpProvider(ProviderBase):
     scheme = 'http'
     port = listen_port
     http_path = '/proj'
+    url = 'http://www.cppcloud.cn:' + str(port) + http_path
 
 if __name__ == "__main__":
-    if cppcloud.init('vpc2', 4800, svrname="httpApp1"):
+    if cppcloud.init('www.cppcloud.cn', 4800, svrname="httpApp1"):
         http_server = HTTPServer(('', int(listen_port)), TestHTTPHandler)
         http_thread = threading.Thread(target=http_server.serve_forever, name="Http_server")
         http_thread.setDaemon(True)

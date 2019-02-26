@@ -321,9 +321,10 @@ int ProviderMgr::OnCMD_SVRSTAT_REQ( void* ptr, unsigned cmdid, void* param )
 			}			
 		}
 
-		if (ivk_ok || ivk_ng)
+		if (ivk_ok || ivk_ng) // 设置自身作为消费者时自身调用服务的统计信息
 		{
-			string regname2 = _F("%s%s%%%d", SVRPROP_PREFIX, regname.c_str(), prvdid);
+			// 注意：这里的prvdid非自身（iohand）的，而是被调者的
+			string regname2 = _F("%s%s%%%d-%d", SVRPROP_PREFIX, regname.c_str(), svrid, 0);
 			if (ivk_ok) iohand->setProperty(regname2 + ":ivk_ok", ivk_ok);
 			if (ivk_ng) iohand->setProperty(regname2 + ":ivk_ng", ivk_ng);
 		}
@@ -331,6 +332,7 @@ int ProviderMgr::OnCMD_SVRSTAT_REQ( void* ptr, unsigned cmdid, void* param )
 
 	return 0;
 }
+
 
 ServiceProvider* ProviderMgr::getProviderPtr( const string& regname ) const
 {

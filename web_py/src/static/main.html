@@ -113,11 +113,13 @@
                 <table class="table">
                     <tr>
                         <th>服务名</th>
+                        <th>svrid(prvdid)</th>
                         <th>成功次数</th>
                         <th>失败次数</th>
                     </tr>
                     <tr v-for="(val,key) in invk_obj">
-                        <td>{{key}}</td>
+                        <td>{{val.name}}</td>
+                        <td>{{val.svrid}}({{val.prvdid}})</td>
                         <td>{{val.ivk_ok | filterNullStr}}</td>
                         <td>{{val.ivk_ng | filterNullStr}}</td>
                     </tr>
